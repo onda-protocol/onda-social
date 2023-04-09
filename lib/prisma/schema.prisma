@@ -131,25 +131,42 @@ enum RentalState {
   Cancelled
 }
 
-
-model Entry {
+model Forum {
   id String @id @unique
-  forum String
-  type EntryType
+  slug String @unique
+  collection String?
+  Posts Post[] @relation("ForumToPost")
+}
+
+enum PostType {
+  TextPost
+  ImagePost
+  VideoPost
+}
+
+model Post {
+  id String @id @unique
+  type PostType
   author String
-  title String?
   content String
   createdAt BigInt
   editedAt BigInt?
   nonce BigInt
-  parent String?
-  Parent Entry? @relation("EntryToParent", fields: [parent], references: [id])
-  Children Entry[] @relation("EntryToParent")
+  forum String
+  Forum Forum @relation("ForumToPost", fields: [forum], references: [id])
+  Comments Comment[] @relation("PostToComment")
 }
 
-enum EntryType {
-  TextPost
-  ImagePost
-  VideoPost
-  Comment
+model Comment {
+  id String @id @unique
+  author String
+  content String
+  createdAt BigInt
+  editedAt BigInt?
+  nonce BigInt
+  post String
+  Post Post @relation("PostToComment", fields: [post], references: [id])
+  parent String?
+  Parent Comment? @relation("CommentToParent", fields: [parent], references: [id])
+  Children Comment[] @relation("CommentToParent")
 }
