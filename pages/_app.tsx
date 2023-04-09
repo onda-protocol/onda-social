@@ -1,6 +1,81 @@
-import 'components/styles/globals.css'
-import type { AppProps } from 'next/app'
+import type { AppProps } from "next/app";
+import { ChakraProvider } from "@chakra-ui/react";
+import {
+  ConnectionProvider,
+  WalletProvider,
+} from "@solana/wallet-adapter-react";
+import {
+  LedgerWalletAdapter,
+  PhantomWalletAdapter,
+  SlopeWalletAdapter,
+  SolflareWalletAdapter,
+  TorusWalletAdapter,
+} from "@solana/wallet-adapter-wallets";
+import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import {
+  Hydrate,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+import { useMemo } from "react";
+import { Toaster } from "react-hot-toast";
+import { Inter } from "next/font/google";
+import "@solana/wallet-adapter-react-ui/styles.css";
+
+import theme from "../theme";
+import { Navbar } from "../components/navbar";
+import { DocumentHead } from "../components/document";
+
+const inter = Inter({ subsets: ["latin"], variable: "--inter-font" });
 
 export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />
+  const wallets = useMemo(
+    () => [
+      new PhantomWalletAdapter(),
+      new SlopeWalletAdapter(),
+      new SolflareWalletAdapter(),
+      new TorusWalletAdapter(),
+      new LedgerWalletAdapter(),
+    ],
+    []
+  );
+
+  const queryClient = useMemo(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { refetchOnWindowFocus: false, retry: false },
+        },
+      }),
+    []
+  );
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Hydrate state={pageProps.dehydratedState}>
+        <ConnectionProvider
+          endpoint={process.env.NEXT_PUBLIC_RPC_ENDPOINT as string}
+          config={{
+            commitment: "confirmed",
+            confirmTransactionInitialTimeout: 90_000,
+          }}
+        >
+          <WalletProvider wallets={wallets} autoConnect>
+            <WalletModalProvider>
+              <ChakraProvider theme={theme}>
+                <DocumentHead
+                  title="Onda | Find your community"
+                  description="Decentralized, community-owned, and community-driven. Discover your web3 tribe today with Onda."
+                  url={``}
+                />
+                <Navbar />
+                <Component {...pageProps} />
+                <Toaster />
+              </ChakraProvider>
+            </WalletModalProvider>
+          </WalletProvider>
+        </ConnectionProvider>
+      </Hydrate>
+    </QueryClientProvider>
+  );
 }
