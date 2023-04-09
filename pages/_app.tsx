@@ -19,14 +19,11 @@ import {
 } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Toaster } from "react-hot-toast";
-import { Inter } from "next/font/google";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 import theme from "../theme";
 import { Navbar } from "../components/navbar";
 import { DocumentHead } from "../components/document";
-
-const inter = Inter({ subsets: ["latin"], variable: "--inter-font" });
 
 export default function App({ Component, pageProps }: AppProps) {
   const wallets = useMemo(
@@ -37,6 +34,14 @@ export default function App({ Component, pageProps }: AppProps) {
       new TorusWalletAdapter(),
       new LedgerWalletAdapter(),
     ],
+    []
+  );
+
+  const connectionConfig = useMemo(
+    () => ({
+      commitment: "confirmed" as const,
+      confirmTransactionInitialTimeout: 90_000,
+    }),
     []
   );
 
@@ -55,10 +60,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <Hydrate state={pageProps.dehydratedState}>
         <ConnectionProvider
           endpoint={process.env.NEXT_PUBLIC_RPC_ENDPOINT as string}
-          config={{
-            commitment: "confirmed",
-            confirmTransactionInitialTimeout: 90_000,
-          }}
+          config={connectionConfig}
         >
           <WalletProvider wallets={wallets} autoConnect>
             <WalletModalProvider>
