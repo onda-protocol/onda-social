@@ -1,6 +1,5 @@
 import type { NextPage } from "next";
 import * as anchor from "@project-serum/anchor";
-import Head from "next/head";
 import Image from "next/image";
 import {
   QueryClient,
@@ -18,18 +17,73 @@ import {
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
 
-import { getProgram } from "../lib/anchor";
+import { getProgram, PROGRAM_ID } from "../lib/anchor";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
 }
 
-export const Home: NextPage<PageProps> = () => {
+const Home: NextPage<PageProps> = () => {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
   const query = useQuery(["posts"], fetchPosts);
 
-  const initForumMutation = useMutation(async () => {
+  // const initForumMutation = useMutation(async () => {
+  //   if (!anchorWallet) {
+  //     throw new Error("Wallet not connected");
+  //   }
+
+  //   const program = getProgram(connection, anchorWallet);
+
+  //   if (!program.provider.publicKey || !program.provider.sendAndConfirm) {
+  //     throw new Error("Provider not found");
+  //   }
+
+  //   const maxDepth = 14;
+  //   const maxBufferSize = 64;
+  //   const payer = program.provider.publicKey;
+  //   const merkleTreeKeypair = anchor.web3.Keypair.generate();
+  //   const merkleTree = merkleTreeKeypair.publicKey;
+  //   const forumConfig = findForumConfigPda(merkleTree);
+  //   const space = getConcurrentMerkleTreeAccountSize(maxDepth, maxBufferSize);
+  //   const lamports = await connection.getMinimumBalanceForRentExemption(space);
+  //   console.log("Allocating ", space, " bytes for merkle tree");
+  //   console.log(lamports, " lamports required for rent exemption");
+  //   console.log(
+  //     lamports / anchor.web3.LAMPORTS_PER_SOL,
+  //     " SOL required for rent exemption"
+  //   );
+  //   const allocTreeIx = anchor.web3.SystemProgram.createAccount({
+  //     lamports,
+  //     space,
+  //     fromPubkey: payer,
+  //     newAccountPubkey: merkleTree,
+  //     programId: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+  //   });
+
+  //   const createPostIx = await program.methods
+  //     .initForum(maxDepth, maxBufferSize, {
+  //       // collection: { collection: anchor.web3.Keypair.generate().publicKey },
+  //       none: {},
+  //     })
+  //     .accounts({
+  //       payer,
+  //       forumConfig,
+  //       merkleTree,
+  //       logWrapper: SPL_NOOP_PROGRAM_ID,
+  //       compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+  //     })
+  //     .instruction();
+
+  //   const tx = new anchor.web3.Transaction().add(allocTreeIx).add(createPostIx);
+  //   tx.feePayer = payer;
+
+  //   await program.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
+  //     commitment: "confirmed",
+  //   });
+  // });
+
+  const createPostMutation = useMutation(async () => {
     if (!anchorWallet) {
       throw new Error("Wallet not connected");
     }
@@ -40,48 +94,27 @@ export const Home: NextPage<PageProps> = () => {
       throw new Error("Provider not found");
     }
 
-    const maxDepth = 14;
-    const maxBufferSize = 64;
-    const payer = program.provider.publicKey;
-    const merkleTreeKeypair = anchor.web3.Keypair.generate();
-    const merkleTree = merkleTreeKeypair.publicKey;
-    const forumConfig = findForumConfigPda(merkleTree);
-    const space = getConcurrentMerkleTreeAccountSize(maxDepth, maxBufferSize);
-    const lamports = await connection.getMinimumBalanceForRentExemption(space);
-    console.log("Allocating ", space, " bytes for merkle tree");
-    console.log(lamports, " lamports required for rent exemption");
-    console.log(
-      lamports / anchor.web3.LAMPORTS_PER_SOL,
-      " SOL required for rent exemption"
+    const forumConfig = new anchor.web3.PublicKey(
+      "3rmSmHQKevpDjY8WbmRq15QZ4HnpsfmmpR1FvHNH9g2T"
     );
-    const allocTreeIx = anchor.web3.SystemProgram.createAccount({
-      lamports,
-      space,
-      fromPubkey: payer,
-      newAccountPubkey: merkleTree,
-      programId: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-    });
+    const merkleTree = new anchor.web3.PublicKey(
+      "RRDm68bqGqV9ZdRuoEaoWPiY71wm3wJc3VEHyozX78c"
+    );
 
-    const createPostIx = await program.methods
-      .initForum(maxDepth, maxBufferSize, {
-        // collection: { collection: anchor.web3.Keypair.generate().publicKey },
-        none: {},
+    await program.methods
+      .addEntry({
+        data: { textPost: { title: "Hello World!", body: "Foobar" } },
       })
       .accounts({
-        payer,
         forumConfig,
         merkleTree,
+        mint: null,
+        tokenAccount: null,
+        metadata: null,
         logWrapper: SPL_NOOP_PROGRAM_ID,
         compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
       })
-      .instruction();
-
-    const tx = new anchor.web3.Transaction().add(allocTreeIx).add(createPostIx);
-    tx.feePayer = payer;
-
-    await program.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
-      commitment: "confirmed",
-    });
+      .rpc({ commitment: "confirmed" });
   });
 
   return (
@@ -92,7 +125,9 @@ export const Home: NextPage<PageProps> = () => {
           <p>{post.content}</p>
         </div>
       ))}
-      <Button onClick={() => initForumMutation.mutate()}>Init Forum</Button>
+      <Button onClick={() => createPostMutation.mutate()}>
+        Create Text Post
+      </Button>
     </Container>
   );
 };
@@ -116,10 +151,12 @@ Home.getInitialProps = async (ctx) => {
   };
 };
 
+export default Home;
+
 function fetchPosts(): Promise<Entry[]> {
-  return fetch(`${process.env.NEXT_PUBLIC_URL}/api/posts`).then((res) =>
-    res.json()
-  );
+  return fetch(
+    `${process.env.NEXT_PUBLIC_HOST}/api/posts/3rmSmHQKevpDjY8WbmRq15QZ4HnpsfmmpR1FvHNH9g2T`
+  ).then((res) => res.json());
 }
 
 function findEntryId(merkleTree: anchor.web3.PublicKey, entryIndex: number) {
@@ -129,13 +166,13 @@ function findEntryId(merkleTree: anchor.web3.PublicKey, entryIndex: number) {
       merkleTree.toBuffer(),
       new anchor.BN(entryIndex).toBuffer("le", 8),
     ],
-    program.programId
+    PROGRAM_ID
   )[0];
 }
 
 function findForumConfigPda(merkleTree: anchor.web3.PublicKey) {
   return anchor.web3.PublicKey.findProgramAddressSync(
     [merkleTree.toBuffer()],
-    program.programId
+    PROGRAM_ID
   )[0];
 }

@@ -76,15 +76,16 @@ export function Navbar() {
         >
           <Box display="flex" flexDir="row" alignItems="center">
             <Box position="relative">
-              <NextLink href="/">
-                <a style={{ display: "inline-block", height: 25 }}>
-                  <Image
-                    src="/onda-logo.svg"
-                    width={100}
-                    height={25}
-                    alt="onda logo"
-                  />
-                </a>
+              <NextLink
+                href="/"
+                style={{ display: "inline-block", height: 25 }}
+              >
+                <Image
+                  src="/onda-logo.svg"
+                  width={100}
+                  height={25}
+                  alt="onda logo"
+                />
               </NextLink>
             </Box>
           </Box>

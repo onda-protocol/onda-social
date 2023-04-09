@@ -2,14 +2,19 @@ import * as anchor from "@project-serum/anchor";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
 import { OndaSocial, IDL } from "./idl";
 
-const PROGRAM_ID = "62616yhPNbv1uxcGbs84pk9PmGbBaaEBXAZmLE6P1nGS";
+export const PROGRAM_ID = new anchor.web3.PublicKey(
+  "BWWPkJpv6fV2ZM5aNua8btxBXooWdW2qjWwUDBhz1p9S"
+);
 
 export function getProgram(
   connection: anchor.web3.Connection,
-  wallet: AnchorWallet
+  wallet?: AnchorWallet
 ): anchor.Program<OndaSocial> {
-  const provider = getProvider(connection, wallet);
-  return new anchor.Program<OndaSocial>(IDL, PROGRAM_ID, provider);
+  return new anchor.Program<OndaSocial>(
+    IDL,
+    PROGRAM_ID,
+    wallet ? getProvider(connection, wallet) : undefined
+  );
 }
 
 export function getProvider(

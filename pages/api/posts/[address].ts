@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import * as utils from "../../../../common/utils";
-import prisma from "../../../../common/lib/prisma";
+import prisma from "../../../lib/prisma";
 
 export default async function handler(
   req: NextApiRequest,
@@ -19,5 +18,11 @@ export default async function handler(
     },
   });
 
-  res.json(utils.parseBigInts(result));
+  res.json(
+    JSON.parse(
+      JSON.stringify(result, (_, v) =>
+        typeof v === "bigint" ? v.toString() : v
+      )
+    )
+  );
 }
