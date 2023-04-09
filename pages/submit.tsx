@@ -79,7 +79,7 @@ const Submit: NextPage<PageProps> = () => {
   );
 
   return (
-    <Container maxW="container.md">
+    <Container maxW="container.sm">
       <PostEditor onSubmit={createPostMutation.mutate} />
     </Container>
   );
