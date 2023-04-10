@@ -10,7 +10,7 @@ interface PostListItemProps {
 
 export const PostListItem = ({ id, title, body }: PostListItemProps) => {
   return (
-    <Link href={`/post/${id}`}>
+    <Link href={`/comments/${id}`}>
       <Box
         p="6"
         borderBottom="1px"

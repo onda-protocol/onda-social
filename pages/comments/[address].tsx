@@ -9,16 +9,16 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 
-import { Editor } from "../../components/editor";
-import { Markdown } from "../../components/markdown";
-import { CommentListItem } from "../../components/comment";
-import { UserWidget } from "../../components/user";
+import { Editor } from "components/editor";
+import { Markdown } from "components/markdown";
+import { CommentListItem } from "components/comment";
+import { PostMeta } from "components/post/meta";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
 }
 
-const Post: NextPage<PageProps> = () => {
+const Comments: NextPage<PageProps> = () => {
   const router = useRouter();
   const id = router.query.address as string;
   const postQuery = useQuery(["post", id], () => fetchPost(id));
@@ -27,8 +27,9 @@ const Post: NextPage<PageProps> = () => {
   return (
     <Container maxW="container.md">
       <Box my="12">
-        <UserWidget
-          address={postQuery.data?.author}
+        <PostMeta
+          author={postQuery.data?.author}
+          forum={postQuery.data?.forum}
           createdAt={String(postQuery.data?.createdAt)}
         />
         <Heading as="h1">{postQuery.data?.title}</Heading>
@@ -65,7 +66,7 @@ const Post: NextPage<PageProps> = () => {
   );
 };
 
-Post.getInitialProps = async (ctx) => {
+Comments.getInitialProps = async (ctx) => {
   if (typeof window === "undefined") {
     try {
       const queryClient = new QueryClient();
@@ -85,7 +86,7 @@ Post.getInitialProps = async (ctx) => {
   };
 };
 
-export default Post;
+export default Comments;
 
 function fetchPost(id: string): Promise<Post> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/post/${id}`).then((res) =>

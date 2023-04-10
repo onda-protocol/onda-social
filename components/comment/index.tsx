@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { Markdown } from "../markdown";
 import { IoChatbox } from "react-icons/io5";
 import { Editor } from "../editor";
-import { UserWidget } from "../user";
+import { PostMeta } from "../post/meta";
 
 interface CommentListItemProps {
   id: string;
@@ -33,7 +33,7 @@ export const CommentListItem = ({
     <Box>
       <Box borderWidth="1px" borderColor="gray.800" borderRadius="md" mt="4">
         <Box p="4">
-          <UserWidget address={author} createdAt={createdAt} />
+          <PostMeta author={author} createdAt={createdAt} />
           <Box pt="2">
             <Markdown>{body}</Markdown>
           </Box>

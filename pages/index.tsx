@@ -17,7 +17,7 @@ import {
 } from "@solana/spl-account-compression";
 
 import { getProgram, PROGRAM_ID } from "../lib/anchor";
-import { PostListItem } from "components/components/post";
+import { PostListItem } from "components/post/listItem";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
