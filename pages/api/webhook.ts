@@ -69,13 +69,11 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  console.log(JSON.stringify(req.body, null, 2));
   for (const tx of req.body) {
     for (const ix of tx.instructions) {
       if (ix.programId === PROGRAM_ID.toBase58()) {
         const ixData = base58.decode(ix.data);
         const ixId = base58.encode(ixData.slice(0, 8));
-        console.log("Ix id: ", ixId);
         const ixName = ixIds.find((i) => i.id === ixId)?.name;
         const ixAccounts = IDL.instructions.find(
           (i) => i.name === ixName
@@ -178,7 +176,7 @@ export default async function handler(
                     author: schemaV1.author.toBase58(),
                     createdAt: schemaV1.createdAt.toNumber(),
                     parent: content.parent?.toBase58(),
-                    post: content.parent!.toBase58(),
+                    post: content.post!.toBase58(),
                     body: content.body!,
                     nonce: schemaV1.nonce.toNumber(),
                   },

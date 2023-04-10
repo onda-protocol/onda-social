@@ -7,7 +7,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { address } = req.query;
-  console.log("address", address);
+
   const result = await prisma.post.findMany({
     where: {
       forum: address as string,
@@ -20,7 +20,7 @@ export default async function handler(
       },
     },
   });
-  console.log(result);
+
   res.json(
     JSON.parse(
       JSON.stringify(result, (_, v) =>

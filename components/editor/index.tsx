@@ -1,4 +1,4 @@
-import * as anchor from "@project-serum/anchor";
+import { web3 } from "@project-serum/anchor";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import {
@@ -29,14 +29,16 @@ type EntryConfig =
     };
 
 interface EditorProps {
+  placeholder?: string;
   invalidateQueries?: string[];
   redirect?: string;
-  successMessage: string;
+  successMessage?: string;
   config: EntryConfig;
 }
 
 export const Editor = ({
   invalidateQueries,
+  placeholder,
   redirect,
   successMessage,
   config,
@@ -65,10 +67,10 @@ export const Editor = ({
         throw new Error("Provider not found");
       }
 
-      const forumConfig = new anchor.web3.PublicKey(
+      const forumConfig = new web3.PublicKey(
         process.env.NEXT_PUBLIC_FORUM as string
       );
-      const merkleTree = new anchor.web3.PublicKey(
+      const merkleTree = new web3.PublicKey(
         process.env.NEXT_PUBLIC_MERKLE_TREE as string
       );
 
@@ -78,7 +80,11 @@ export const Editor = ({
         data = { textPost: { title, body } };
       } else {
         data = {
-          comment: { post: config.post, parent: config.parent, body },
+          comment: {
+            post: new web3.PublicKey(config.post),
+            parent: config.parent ? new web3.PublicKey(config.parent) : null,
+            body,
+          },
         };
       }
 
@@ -97,7 +103,9 @@ export const Editor = ({
     },
     {
       async onSuccess() {
-        toast.success(successMessage);
+        if (successMessage) {
+          toast.success(successMessage);
+        }
 
         if (invalidateQueries) {
           await queryClient.invalidateQueries(invalidateQueries);
@@ -129,7 +137,7 @@ export const Editor = ({
       )}
       <Textarea
         mt="2"
-        placeholder="Hello world"
+        placeholder={placeholder}
         {...methods.register("body", { required: true })}
       />
       <Box display="flex" mt="2" justifyContent="right">

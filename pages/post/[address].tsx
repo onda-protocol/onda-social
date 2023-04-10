@@ -9,6 +9,8 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 
+import { Editor } from "../../components/editor";
+
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
 }
@@ -23,7 +25,13 @@ const Post: NextPage<PageProps> = () => {
     <Container maxW="container.md">
       <Heading as="h1">{postQuery.data?.title}</Heading>
 
-      {commentsQuery.isFetching ? (
+      <Editor
+        placeholder="Got some thinky thoughts?"
+        config={{ type: "comment", post: id }}
+        invalidateQueries={["comments", id]}
+      />
+
+      {commentsQuery.isLoading ? (
         <p>Loading...</p>
       ) : (
         commentsQuery.data?.map((comment) => (
