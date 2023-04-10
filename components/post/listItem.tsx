@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Box, Heading, Text } from "@chakra-ui/react";
+import { IoChatbox } from "react-icons/io5";
 
 import { Markdown } from "../markdown";
 import { PostMeta } from "../post/meta";
-import { IoChatbox } from "react-icons/io5";
 
 interface PostListItemProps {
   id: string;
   author: string;
-  forum: string;
+  forum?: string;
   title: string;
   body: string;
   createdAt: string;

@@ -17,9 +17,8 @@ interface PageProps {
 
 const Home: NextPage<PageProps> = () => {
   const router = useRouter();
-  const query = useQuery(["posts", router.query.address as string], () =>
-    fetchPostsByForum(router.query.address as string)
-  );
+  const id = router.query.address as string;
+  const query = useQuery(["posts", id], () => fetchPostsByForum(id));
 
   return (
     <Container maxW="container.md">
@@ -34,7 +33,6 @@ const Home: NextPage<PageProps> = () => {
               key={post.id}
               id={post.id}
               author={post.author}
-              forum={post.forum}
               title={post.title!}
               body={post.body!}
               createdAt={String(post.createdAt)}
