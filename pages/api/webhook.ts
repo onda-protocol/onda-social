@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { web3, Wallet, AnchorProvider, Program } from "@project-serum/anchor";
-import { EntryType } from "@prisma/client";
 import base58 from "bs58";
 import camelcase from "camelcase";
 import { snakeCase } from "snake-case";
@@ -8,8 +7,15 @@ import { sha256 } from "js-sha256";
 
 import { PROGRAM_ID } from "../../lib/anchor";
 import { IDL, OndaSocial } from "../../lib/anchor/idl";
-import { LeafSchema, EntryData } from "../../lib/anchor/types";
+import { LeafSchemaV1, EntryData } from "../../lib/anchor/types";
 import prisma from "../../lib/prisma";
+
+enum EntryType {
+  TextPost = "TextPost",
+  LinkPost = "LinkPost",
+  ImagePost = "ImagePost",
+  Comment = "Comment",
+}
 
 const ixIds = IDL.instructions.map((ix) => {
   return {
@@ -76,6 +82,7 @@ export default async function handler(
             "EntryData",
             buffer
           ) as EntryData;
+          const content = getEntryFields(entryDecoded);
           // Decode schema event data
           const noopIx = ix.innerInstructions[0];
           const serializedSchemaEvent = noopIx.data;
@@ -84,11 +91,16 @@ export default async function handler(
           const schemaEventDecoded = program.coder.types.decode(
             "LeafSchema",
             schemaEventBuffer
-          ) as LeafSchema;
-          const schemaV1 = schemaEventDecoded.v1;
-
+          );
+          const schemaV1 = schemaEventDecoded["v1"] as LeafSchemaV1;
           if (schemaV1 === undefined) {
             throw new Error("Unknown schema version");
+          }
+
+          // Parse entry type
+          const entryType = getState<EntryType>(schemaV1.entryType);
+          if (entryType === undefined) {
+            throw new Error(`Unknown entry type: ${schemaV1.entryType}`);
           }
 
           // Get forum address
@@ -96,33 +108,41 @@ export default async function handler(
             (account) => account.name === "forumConfig"
           );
           const forumAddress = ix.accounts[forumConfigIndex];
-          // Parse entry type
-          // @ts-expect-error
-          const entryType = getState<EntryType>(schemaV1.entryType);
 
-          if (entryType === undefined) {
-            // @ts-expect-error
-            throw new Error(`Unknown entry type: ${schemaV1.entryType}`);
+          switch (entryType) {
+            case "TextPost":
+            case "LinkPost":
+            case "ImagePost": {
+              await prisma.post.create({
+                data: {
+                  id: schemaV1.id.toBase58(),
+                  forum: forumAddress,
+                  author: schemaV1.author.toBase58(),
+                  title: content.title!,
+                  body: content.body,
+                  url: content.url,
+                  createdAt: schemaV1.createdAt.toNumber(),
+                  nonce: schemaV1.nonce.toNumber(),
+                },
+              });
+              break;
+            }
+
+            case "Comment": {
+              // Decode entry data
+              await prisma.comment.create({
+                data: {
+                  id: schemaV1.id.toBase58(),
+                  author: schemaV1.author.toBase58(),
+                  createdAt: schemaV1.createdAt.toNumber(),
+                  parent: content.parent?.toBase58(),
+                  post: content.parent!.toBase58(),
+                  body: content.body!,
+                  nonce: schemaV1.nonce.toNumber(),
+                },
+              });
+            }
           }
-
-          const { title, parent, content } = getEntryFields(entryDecoded);
-
-          await prisma.entry.create({
-            data: {
-              id: schemaV1.id.toBase58(),
-              forum: forumAddress,
-              author: schemaV1.author.toBase58(),
-              type: entryType,
-              title: title,
-              content: content,
-              // @ts-expect-error
-              createdAt: schemaV1.createdAt.toNumber(),
-              nonce: schemaV1.nonce.toNumber(),
-              parent: parent?.toBase58(),
-            },
-          });
-
-          break;
         }
 
         default: {
@@ -139,28 +159,29 @@ function getEntryFields(entryData: EntryData) {
   if (entryData.textPost) {
     return {
       title: entryData.textPost.title,
-      content: entryData.textPost.body,
+      body: entryData.textPost.body,
     };
   }
 
   if (entryData.linkPost) {
     return {
       title: entryData.linkPost.title,
-      content: entryData.linkPost.url,
+      url: entryData.linkPost.url,
     };
   }
 
   if (entryData.imagePost) {
     return {
       title: entryData.imagePost.title,
-      content: entryData.imagePost.src,
+      src: entryData.imagePost.src,
     };
   }
 
   if (entryData.comment) {
     return {
+      post: entryData.comment.post,
       parent: entryData.comment.parent,
-      content: entryData.comment.body,
+      body: entryData.comment.body,
     };
   }
 

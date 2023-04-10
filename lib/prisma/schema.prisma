@@ -138,17 +138,12 @@ model Forum {
   Posts Post[] @relation("ForumToPost")
 }
 
-enum PostType {
-  TextPost
-  ImagePost
-  VideoPost
-}
-
 model Post {
   id String @id @unique
-  type PostType
   author String
-  content String
+  title String
+  body String?
+  url String?
   createdAt BigInt
   editedAt BigInt?
   nonce BigInt
@@ -160,7 +155,7 @@ model Post {
 model Comment {
   id String @id @unique
   author String
-  content String
+  body String
   createdAt BigInt
   editedAt BigInt?
   nonce BigInt

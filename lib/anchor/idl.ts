@@ -254,8 +254,14 @@ export type OndaSocial = {
             name: "Comment";
             fields: [
               {
-                name: "parent";
+                name: "post";
                 type: "publicKey";
+              },
+              {
+                name: "parent";
+                type: {
+                  option: "publicKey";
+                };
               },
               {
                 name: "body";
@@ -629,8 +635,14 @@ export const IDL: OndaSocial = {
             name: "Comment",
             fields: [
               {
-                name: "parent",
+                name: "post",
                 type: "publicKey",
+              },
+              {
+                name: "parent",
+                type: {
+                  option: "publicKey",
+                },
               },
               {
                 name: "body",
