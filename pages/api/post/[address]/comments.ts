@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import prisma from "../../../lib/prisma";
+import prisma from "../../../../lib/prisma";
 
 export default async function handler(
   req: NextApiRequest,
@@ -8,9 +8,10 @@ export default async function handler(
 ) {
   const { address } = req.query;
 
-  const result = await prisma.entry.findMany({
+  const result = await prisma.comment.findMany({
     where: {
-      id: address as string,
+      post: address as string,
+      parent: null,
     },
     include: {
       Children: {
@@ -21,5 +22,11 @@ export default async function handler(
     },
   });
 
-  res.json(result);
+  res.json(
+    JSON.parse(
+      JSON.stringify(result, (_, v) =>
+        typeof v === "bigint" ? v.toString() : v
+      )
+    )
+  );
 }

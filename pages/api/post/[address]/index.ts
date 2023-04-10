@@ -1,16 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import prisma from "../../../lib/prisma";
+import prisma from "../../../../lib/prisma";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   const { address } = req.query;
-  console.log("address", address);
-  const result = await prisma.post.findMany({
+
+  const result = await prisma.post.findUnique({
     where: {
-      forum: address as string,
+      id: address as string,
     },
     include: {
       _count: {
@@ -20,7 +20,7 @@ export default async function handler(
       },
     },
   });
-  console.log(result);
+
   res.json(
     JSON.parse(
       JSON.stringify(result, (_, v) =>

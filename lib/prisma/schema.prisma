@@ -133,8 +133,8 @@ enum RentalState {
 
 model Forum {
   id String @id @unique
-  slug String @unique
   collection String?
+  totalCapacity BigInt
   Posts Post[] @relation("ForumToPost")
 }
 

@@ -1,5 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { web3, Wallet, AnchorProvider, Program } from "@project-serum/anchor";
+import {
+  web3,
+  Wallet,
+  AnchorProvider,
+  Program,
+  BN,
+} from "@project-serum/anchor";
 import base58 from "bs58";
 import camelcase from "camelcase";
 import { snakeCase } from "snake-case";
@@ -7,7 +13,11 @@ import { sha256 } from "js-sha256";
 
 import { PROGRAM_ID } from "../../lib/anchor";
 import { IDL, OndaSocial } from "../../lib/anchor/idl";
-import { LeafSchemaV1, EntryData } from "../../lib/anchor/types";
+import {
+  EntryData,
+  LeafSchemaV1,
+  RestrictionType,
+} from "../../lib/anchor/types";
 import prisma from "../../lib/prisma";
 
 enum EntryType {
@@ -23,6 +33,8 @@ const ixIds = IDL.instructions.map((ix) => {
     id: genIxIdentifier(ix.name),
   };
 });
+
+console.log("Ix ids: ", ixIds);
 
 function getState<T>(state: unknown) {
   let formattedState;
@@ -57,64 +69,91 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  console.log(JSON.stringify(req.body, null, 2));
   for (const tx of req.body) {
     for (const ix of tx.instructions) {
-      const ixData = base58.decode(ix.data);
-      const ixId = base58.encode(ixData.slice(0, 8));
-      const ixName = ixIds.find((i) => i.id === ixId)?.name;
-      const ixAccounts = IDL.instructions.find(
-        (i) => i.name === ixName
-      )?.accounts;
+      if (ix.programId === PROGRAM_ID.toBase58()) {
+        const ixData = base58.decode(ix.data);
+        const ixId = base58.encode(ixData.slice(0, 8));
+        console.log("Ix id: ", ixId);
+        const ixName = ixIds.find((i) => i.id === ixId)?.name;
+        const ixAccounts = IDL.instructions.find(
+          (i) => i.name === ixName
+        )?.accounts;
 
-      if (ixName === undefined || ixAccounts === undefined) {
-        throw new Error(`Unknown instruction: ${ixId}`);
-      }
+        console.log("Handling ix: ", ixName);
 
-      switch (ixName) {
-        case "initForum": {
-          break;
+        if (ixName === undefined || ixAccounts === undefined) {
+          throw new Error(`Unknown instruction: ${ixId}`);
         }
 
-        case "addEntry": {
-          // Decode entry data
-          const buffer = Buffer.from(ixData.slice(8));
-          const entryDecoded = program.coder.types.decode(
-            "EntryData",
-            buffer
-          ) as EntryData;
-          const content = getEntryFields(entryDecoded);
-          // Decode schema event data
-          const noopIx = ix.innerInstructions[0];
-          const serializedSchemaEvent = noopIx.data;
-          const schemaEvent = base58.decode(serializedSchemaEvent);
-          const schemaEventBuffer = Buffer.from(schemaEvent.slice(8));
-          const schemaEventDecoded = program.coder.types.decode(
-            "LeafSchema",
-            schemaEventBuffer
-          );
-          const schemaV1 = schemaEventDecoded["v1"] as LeafSchemaV1;
-          if (schemaV1 === undefined) {
-            throw new Error("Unknown schema version");
+        switch (ixName) {
+          case "initForum": {
+            // Get forum address
+            const forumConfigIndex = ixAccounts.findIndex(
+              (account) => account.name === "forumConfig"
+            );
+            const forumAddress = new web3.PublicKey(
+              ix.accounts[forumConfigIndex]
+            );
+            const buffer = Buffer.from(ixData.slice(8));
+            const maxDepth = new BN(buffer.subarray(0, 4), "le");
+            const totalCapacity = new BN(1).shln(maxDepth.toNumber());
+            console.log("Total capacity: ", totalCapacity.toNumber());
+            const restriction = program.coder.types.decode<RestrictionType>(
+              "RestrictionType",
+              buffer.subarray(8)
+            );
+            console.log("Restriction: ", restriction);
+            await prisma.forum.create({
+              data: {
+                id: forumAddress.toBase58(),
+                collection: restriction?.collection?.collection?.toBase58(),
+                totalCapacity: totalCapacity.toNumber(),
+              },
+            });
+
+            break;
           }
 
-          // Parse entry type
-          const entryType = getState<EntryType>(schemaV1.entryType);
-          if (entryType === undefined) {
-            throw new Error(`Unknown entry type: ${schemaV1.entryType}`);
-          }
+          case "addEntry": {
+            // Get forum address
+            const forumConfigIndex = ixAccounts.findIndex(
+              (account) => account.name === "forumConfig"
+            );
+            const forumAddress = ix.accounts[forumConfigIndex];
+            // Decode entry data
+            const buffer = Buffer.from(ixData.slice(8));
+            const entryDecoded = program.coder.types.decode<EntryData>(
+              "EntryData",
+              buffer
+            );
+            const content = getEntryFields(entryDecoded);
+            // Decode schema event data
+            const noopIx = ix.innerInstructions[0];
+            const serializedSchemaEvent = noopIx.data;
+            const schemaEvent = base58.decode(serializedSchemaEvent);
+            const schemaEventBuffer = Buffer.from(schemaEvent.slice(8));
+            const schemaEventDecoded = program.coder.types.decode(
+              "LeafSchema",
+              schemaEventBuffer
+            );
+            const schemaV1 = schemaEventDecoded["v1"] as LeafSchemaV1;
+            if (schemaV1 === undefined) {
+              throw new Error("Unknown schema version");
+            }
 
-          // Get forum address
-          const forumConfigIndex = ixAccounts.findIndex(
-            (account) => account.name === "forumConfig"
-          );
-          const forumAddress = ix.accounts[forumConfigIndex];
+            // Parse entry type
+            const entryType = getState<EntryType>(schemaV1.entryType);
+            if (entryType === undefined) {
+              throw new Error(`Unknown entry type: ${schemaV1.entryType}`);
+            }
 
-          switch (entryType) {
-            case "TextPost":
-            case "LinkPost":
-            case "ImagePost": {
-              await prisma.post.create({
-                data: {
+            switch (entryType) {
+              case "TextPost":
+              case "LinkPost":
+              case "ImagePost": {
+                const data = {
                   id: schemaV1.id.toBase58(),
                   forum: forumAddress,
                   author: schemaV1.author.toBase58(),
@@ -123,30 +162,34 @@ export default async function handler(
                   url: content.url,
                   createdAt: schemaV1.createdAt.toNumber(),
                   nonce: schemaV1.nonce.toNumber(),
-                },
-              });
-              break;
-            }
+                };
+                console.log(data);
+                await prisma.post.create({
+                  data: data,
+                });
+                break;
+              }
 
-            case "Comment": {
-              // Decode entry data
-              await prisma.comment.create({
-                data: {
-                  id: schemaV1.id.toBase58(),
-                  author: schemaV1.author.toBase58(),
-                  createdAt: schemaV1.createdAt.toNumber(),
-                  parent: content.parent?.toBase58(),
-                  post: content.parent!.toBase58(),
-                  body: content.body!,
-                  nonce: schemaV1.nonce.toNumber(),
-                },
-              });
+              case "Comment": {
+                // Decode entry data
+                await prisma.comment.create({
+                  data: {
+                    id: schemaV1.id.toBase58(),
+                    author: schemaV1.author.toBase58(),
+                    createdAt: schemaV1.createdAt.toNumber(),
+                    parent: content.parent?.toBase58(),
+                    post: content.parent!.toBase58(),
+                    body: content.body!,
+                    nonce: schemaV1.nonce.toNumber(),
+                  },
+                });
+              }
             }
           }
-        }
 
-        default: {
-          break;
+          default: {
+            break;
+          }
         }
       }
     }
