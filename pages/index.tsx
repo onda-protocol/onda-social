@@ -7,7 +7,7 @@ import {
   useQuery,
   useMutation,
 } from "@tanstack/react-query";
-import { Box, Button, Container } from "@chakra-ui/react";
+import { Box, Button, Container, Grid, GridItem } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Post } from "@prisma/client";
 import {
@@ -18,6 +18,7 @@ import {
 
 import { getProgram, PROGRAM_ID } from "../lib/anchor";
 import { PostListItem } from "components/post/listItem";
+import { Sidebar } from "components/sidebar";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -88,22 +89,33 @@ const Home: NextPage<PageProps> = () => {
   });
 
   return (
-    <Container maxW="container.md">
-      <Box borderLeftWidth="1px" borderRightWidth="1px" borderColor="gray.800">
-        {query.data?.map((post) => (
-          <PostListItem
-            key={post.id}
-            id={post.id}
-            author={post.author}
-            forum={post.forum}
-            title={post.title!}
-            body={post.body!}
-            createdAt={String(post.createdAt)}
-            commentCount={post._count?.Comments}
-          />
-        ))}
-      </Box>
-      <Button onClick={() => initForumMutation.mutate()}>Init Forum</Button>
+    <Container maxW="container.lg">
+      <Grid templateColumns="150px 1fr" gap="1">
+        <GridItem>
+          <Sidebar />
+        </GridItem>
+        <GridItem>
+          <Box
+            borderLeftWidth="1px"
+            borderRightWidth="1px"
+            borderColor="gray.800"
+          >
+            {query.data?.map((post) => (
+              <PostListItem
+                key={post.id}
+                id={post.id}
+                author={post.author}
+                forum={post.forum}
+                title={post.title!}
+                body={post.body!}
+                createdAt={String(post.createdAt)}
+                commentCount={post._count?.Comments}
+              />
+            ))}
+          </Box>
+        </GridItem>
+      </Grid>
+      {/* <Button onClick={() => initForumMutation.mutate()}>Init Forum</Button> */}
     </Container>
   );
 };

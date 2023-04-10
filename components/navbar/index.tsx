@@ -16,6 +16,8 @@ import Image from "next/image";
 import { useMemo } from "react";
 import { IoWallet } from "react-icons/io5";
 
+import { PopoverMenu } from "components/menu/popover";
+
 export function Navbar() {
   const modal = useWalletModal();
   const wallet = useWallet();
@@ -88,6 +90,9 @@ export function Navbar() {
                 />
               </NextLink>
             </Box>
+            {/* <Box>
+              <PopoverMenu />
+            </Box> */}
           </Box>
 
           <Flex align="center">
