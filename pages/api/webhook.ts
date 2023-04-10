@@ -75,11 +75,10 @@ export default async function handler(
         const ixData = base58.decode(ix.data);
         const ixId = base58.encode(ixData.slice(0, 8));
         const ixName = ixIds.find((i) => i.id === ixId)?.name;
+        console.log("Handling ix: ", ixName);
         const ixAccounts = IDL.instructions.find(
           (i) => i.name === ixName
         )?.accounts;
-
-        console.log("Handling ix: ", ixName);
 
         if (ixName === undefined || ixAccounts === undefined) {
           throw new Error(`Unknown instruction: ${ixId}`);
@@ -163,23 +162,25 @@ export default async function handler(
                 };
                 console.log(data);
                 await prisma.post.create({
-                  data: data,
+                  data,
                 });
                 break;
               }
 
               case "Comment": {
+                const data = {
+                  id: schemaV1.id.toBase58(),
+                  author: schemaV1.author.toBase58(),
+                  createdAt: schemaV1.createdAt.toNumber(),
+                  parent: content.parent?.toBase58(),
+                  post: content.post!.toBase58(),
+                  body: content.body!,
+                  nonce: schemaV1.nonce.toNumber(),
+                };
+                console.log(data);
                 // Decode entry data
                 await prisma.comment.create({
-                  data: {
-                    id: schemaV1.id.toBase58(),
-                    author: schemaV1.author.toBase58(),
-                    createdAt: schemaV1.createdAt.toNumber(),
-                    parent: content.parent?.toBase58(),
-                    post: content.post!.toBase58(),
-                    body: content.body!,
-                    nonce: schemaV1.nonce.toNumber(),
-                  },
+                  data,
                 });
               }
             }

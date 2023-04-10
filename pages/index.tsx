@@ -7,7 +7,7 @@ import {
   useQuery,
   useMutation,
 } from "@tanstack/react-query";
-import { Container, Button, Box, Heading } from "@chakra-ui/react";
+import { Container, Button } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Post } from "@prisma/client";
 import {
@@ -17,7 +17,7 @@ import {
 } from "@solana/spl-account-compression";
 
 import { getProgram, PROGRAM_ID } from "../lib/anchor";
-import { PostListItem } from "components/components/post/listItem";
+import { PostListItem } from "components/components/post";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;

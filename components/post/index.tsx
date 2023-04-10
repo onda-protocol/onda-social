@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Container, Button, Box, Heading } from "@chakra-ui/react";
+import { Box, Heading } from "@chakra-ui/react";
 import { Markdown } from "../markdown";
 
 interface PostListItemProps {

@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { Container, Heading } from "@chakra-ui/react";
+import { Box, Container, Divider, Heading, Spinner } from "@chakra-ui/react";
 import { Comment, Post } from "@prisma/client";
 import {
   QueryClient,
@@ -10,6 +10,8 @@ import {
 } from "@tanstack/react-query";
 
 import { Editor } from "../../components/editor";
+import { Markdown } from "../../components/markdown";
+import { CommentListItem } from "../../components/comment";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -23,21 +25,33 @@ const Post: NextPage<PageProps> = () => {
 
   return (
     <Container maxW="container.md">
-      <Heading as="h1">{postQuery.data?.title}</Heading>
+      <Heading as="h1" my="12">
+        {postQuery.data?.title}
+      </Heading>
+      <Box mb="6">
+        <Markdown>{postQuery.data?.body ?? ""}</Markdown>
+      </Box>
 
       <Editor
+        buttonLabel="Comment"
         placeholder="Got some thinky thoughts?"
-        config={{ type: "comment", post: id }}
+        config={{ type: "comment", post: id, parent: null }}
         invalidateQueries={["comments", id]}
       />
 
-      {commentsQuery.isLoading ? (
-        <p>Loading...</p>
-      ) : (
-        commentsQuery.data?.map((comment) => (
-          <div key={comment.id}>{comment.body}</div>
-        ))
-      )}
+      <Divider my="6" />
+
+      <Box pb="12">
+        {commentsQuery.isLoading ? (
+          <Box display="flex" alignItems="center" justifyContent="center">
+            <Spinner />
+          </Box>
+        ) : (
+          commentsQuery.data?.map((comment) => (
+            <CommentListItem key={comment.id} {...comment} />
+          ))
+        )}
+      </Box>
     </Container>
   );
 };

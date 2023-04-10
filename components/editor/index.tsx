@@ -25,10 +25,11 @@ type EntryConfig =
   | {
       type: "comment";
       post: string;
-      parent?: string;
+      parent: string | null;
     };
 
 interface EditorProps {
+  buttonLabel?: string;
   placeholder?: string;
   invalidateQueries?: string[];
   redirect?: string;
@@ -37,6 +38,7 @@ interface EditorProps {
 }
 
 export const Editor = ({
+  buttonLabel,
   invalidateQueries,
   placeholder,
   redirect,
@@ -141,8 +143,13 @@ export const Editor = ({
         {...methods.register("body", { required: true })}
       />
       <Box display="flex" mt="2" justifyContent="right">
-        <Button isLoading={mutation.isLoading} type="submit">
-          Submit
+        <Button
+          size="sm"
+          isLoading={mutation.isLoading}
+          variant="solid"
+          type="submit"
+        >
+          {buttonLabel || "Submit"}
         </Button>
       </Box>
     </Box>
