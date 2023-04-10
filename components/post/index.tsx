@@ -12,16 +12,21 @@ export const PostListItem = ({ id, title, body }: PostListItemProps) => {
   return (
     <Link href={`/post/${id}`}>
       <Box
-        p="4"
-        m="4"
-        borderWidth="1px"
+        p="6"
+        borderBottom="1px"
         borderColor="gray.800"
-        borderRadius="md"
+        maxHeight="20ch"
+        _hover={{
+          backgroundColor: "whiteAlpha.50",
+          cursor: "pointer",
+        }}
       >
-        <Heading mb="2" fontSize="lg" fontWeight="semibold">
-          {title}
-        </Heading>
-        <Markdown>{body}</Markdown>
+        <Box background="linear-gradient(to bottom, transparent, #090A20)">
+          <Heading mb="4" fontSize="xl" fontWeight="semibold">
+            {title}
+          </Heading>
+          <Markdown>{body}</Markdown>
+        </Box>
       </Box>
     </Link>
   );

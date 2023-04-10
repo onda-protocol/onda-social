@@ -12,6 +12,7 @@ import {
 import { Editor } from "../../components/editor";
 import { Markdown } from "../../components/markdown";
 import { CommentListItem } from "../../components/comment";
+import { UserWidget } from "../../components/user";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -22,12 +23,16 @@ const Post: NextPage<PageProps> = () => {
   const id = router.query.address as string;
   const postQuery = useQuery(["post", id], () => fetchPost(id));
   const commentsQuery = useQuery(["comments", id], () => fetchComments(id));
-
+  console.log(postQuery);
   return (
     <Container maxW="container.md">
-      <Heading as="h1" my="12">
-        {postQuery.data?.title}
-      </Heading>
+      <Box my="12">
+        <UserWidget
+          address={postQuery.data?.author}
+          createdAt={String(postQuery.data?.createdAt)}
+        />
+        <Heading as="h1">{postQuery.data?.title}</Heading>
+      </Box>
       <Box mb="6">
         <Markdown>{postQuery.data?.body ?? ""}</Markdown>
       </Box>
@@ -48,7 +53,11 @@ const Post: NextPage<PageProps> = () => {
           </Box>
         ) : (
           commentsQuery.data?.map((comment) => (
-            <CommentListItem key={comment.id} {...comment} />
+            <CommentListItem
+              key={comment.id}
+              {...comment}
+              createdAt={String(comment.createdAt)}
+            />
           ))
         )}
       </Box>

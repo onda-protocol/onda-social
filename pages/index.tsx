@@ -7,7 +7,7 @@ import {
   useQuery,
   useMutation,
 } from "@tanstack/react-query";
-import { Container, Button } from "@chakra-ui/react";
+import { Box, Button, Container } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Post } from "@prisma/client";
 import {
@@ -88,14 +88,16 @@ const Home: NextPage<PageProps> = () => {
 
   return (
     <Container maxW="container.md">
-      {query.data?.map((post) => (
-        <PostListItem
-          key={post.id}
-          id={post.id}
-          title={post.title!}
-          body={post.body!}
-        />
-      ))}
+      <Box borderLeftWidth="1px" borderRightWidth="1px" borderColor="gray.800">
+        {query.data?.map((post) => (
+          <PostListItem
+            key={post.id}
+            id={post.id}
+            title={post.title!}
+            body={post.body!}
+          />
+        ))}
+      </Box>
       <Button onClick={() => initForumMutation.mutate()}>Init Forum</Button>
     </Container>
   );
