@@ -39,8 +39,8 @@ const Home: NextPage<PageProps> = () => {
       throw new Error("Provider not found");
     }
 
-    const maxDepth = 5; // 14;
-    const maxBufferSize = 8; // 64;
+    const maxDepth = 14;
+    const maxBufferSize = 64;
     const payer = program.provider.publicKey;
     const merkleTreeKeypair = anchor.web3.Keypair.generate();
     const merkleTree = merkleTreeKeypair.publicKey;
@@ -83,7 +83,8 @@ const Home: NextPage<PageProps> = () => {
     });
 
     console.log("Forum initialized");
-    console.log("address: ", forumConfig.toBase58());
+    console.log("forumConfig: ", forumConfig.toBase58());
+    console.log("merkleTree: ", merkleTree.toBase58());
   });
 
   return (
@@ -93,8 +94,12 @@ const Home: NextPage<PageProps> = () => {
           <PostListItem
             key={post.id}
             id={post.id}
+            author={post.author}
+            forum={post.forum}
             title={post.title!}
             body={post.body!}
+            createdAt={String(post.createdAt)}
+            commentCount={post._count?.Comments}
           />
         ))}
       </Box>
@@ -124,21 +129,12 @@ Home.getInitialProps = async (ctx) => {
 
 export default Home;
 
-function fetchPosts(): Promise<Post[]> {
-  return fetch(
-    `${process.env.NEXT_PUBLIC_HOST}/api/posts/${process.env.NEXT_PUBLIC_FORUM}`
-  ).then((res) => res.json());
-}
+type PostWithCommentsCount = Post & { _count: { Comments: number } };
 
-function findEntryId(merkleTree: anchor.web3.PublicKey, entryIndex: number) {
-  return anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("entry"),
-      merkleTree.toBuffer(),
-      new anchor.BN(entryIndex).toBuffer("le", 8),
-    ],
-    PROGRAM_ID
-  )[0];
+function fetchPosts(): Promise<PostWithCommentsCount[]> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/posts`).then((res) =>
+    res.json()
+  );
 }
 
 function findForumConfigPda(merkleTree: anchor.web3.PublicKey) {

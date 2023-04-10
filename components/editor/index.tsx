@@ -10,7 +10,7 @@ import { Box, Button, Input, Textarea } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
 
-import { getProgram, PROGRAM_ID } from "../../lib/anchor";
+import { getProgram } from "lib/anchor";
 
 interface EntryForm {
   title: string;

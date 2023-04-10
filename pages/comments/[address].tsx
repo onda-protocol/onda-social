@@ -23,7 +23,7 @@ const Comments: NextPage<PageProps> = () => {
   const id = router.query.address as string;
   const postQuery = useQuery(["post", id], () => fetchPost(id));
   const commentsQuery = useQuery(["comments", id], () => fetchComments(id));
-  console.log(postQuery);
+
   return (
     <Container maxW="container.md">
       <Box my="12">

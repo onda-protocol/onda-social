@@ -6,7 +6,7 @@ import {
   dehydrate,
   useQuery,
 } from "@tanstack/react-query";
-import { Box, Container } from "@chakra-ui/react";
+import { Box, Container, Spinner } from "@chakra-ui/react";
 import { Post } from "@prisma/client";
 
 import { PostListItem } from "components/post/listItem";
@@ -24,14 +24,24 @@ const Home: NextPage<PageProps> = () => {
   return (
     <Container maxW="container.md">
       <Box borderLeftWidth="1px" borderRightWidth="1px" borderColor="gray.800">
-        {query.data?.map((post) => (
-          <PostListItem
-            key={post.id}
-            id={post.id}
-            title={post.title!}
-            body={post.body!}
-          />
-        ))}
+        {query.isLoading ? (
+          <Box display="flex" alignItems="center" justifyContent="center">
+            <Spinner />
+          </Box>
+        ) : (
+          query.data?.map((post) => (
+            <PostListItem
+              key={post.id}
+              id={post.id}
+              author={post.author}
+              forum={post.forum}
+              title={post.title!}
+              body={post.body!}
+              createdAt={String(post.createdAt)}
+              commentCount={post._count?.Comments}
+            />
+          ))
+        )}
       </Box>
     </Container>
   );
@@ -61,7 +71,9 @@ Home.getInitialProps = async (ctx) => {
 
 export default Home;
 
-function fetchPostsByForum(address: string): Promise<Post[]> {
+type PostWithCommentsCount = Post & { _count: { Comments: number } };
+
+function fetchPostsByForum(address: string): Promise<PostWithCommentsCount[]> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/posts/${address}`).then(
     (res) => res.json()
   );
