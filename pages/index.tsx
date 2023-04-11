@@ -64,8 +64,12 @@ const Home: NextPage<PageProps> = () => {
 
     const createPostIx = await program.methods
       .initForum(maxDepth, maxBufferSize, {
-        // collection: { collection: anchor.web3.Keypair.generate().publicKey },
-        none: {},
+        collection: {
+          address: new anchor.web3.PublicKey(
+            "EotJ4wYtYQUbx6E2Tn5aAbsr79KBFRcwj5usriv2Xj7i"
+          ),
+        },
+        // none: {},
       })
       .accounts({
         payer,
@@ -115,7 +119,7 @@ const Home: NextPage<PageProps> = () => {
           </Box>
         </GridItem>
       </Grid>
-      {/* <Button onClick={() => initForumMutation.mutate()}>Init Forum</Button> */}
+      <Button onClick={() => initForumMutation.mutate()}>Init Forum</Button>
     </Container>
   );
 };

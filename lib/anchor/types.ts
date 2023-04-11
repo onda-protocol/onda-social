@@ -5,7 +5,7 @@ import {
 import { OndaSocial } from "./idl";
 
 export type OndaSocialTypes = IdlTypes<OndaSocial>;
-export type EntryData = OndaSocialTypes["EntryData"];
+export type DataV1 = OndaSocialTypes["DataV1"];
 export type LeafSchemaV1 = SnakeToCamelCaseObj<
   OndaSocialTypes["LeafSchema"]["v1"]
 >;

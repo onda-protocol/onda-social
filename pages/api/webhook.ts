@@ -13,19 +13,8 @@ import { sha256 } from "js-sha256";
 
 import { PROGRAM_ID } from "../../lib/anchor";
 import { IDL, OndaSocial } from "../../lib/anchor/idl";
-import {
-  EntryData,
-  LeafSchemaV1,
-  RestrictionType,
-} from "../../lib/anchor/types";
+import { DataV1, LeafSchemaV1, RestrictionType } from "../../lib/anchor/types";
 import prisma from "../../lib/prisma";
-
-enum EntryType {
-  TextPost = "TextPost",
-  LinkPost = "LinkPost",
-  ImagePost = "ImagePost",
-  Comment = "Comment",
-}
 
 const ixIds = IDL.instructions.map((ix) => {
   return {
@@ -35,18 +24,6 @@ const ixIds = IDL.instructions.map((ix) => {
 });
 
 console.log("Ix ids: ", ixIds);
-
-function getState<T>(state: unknown) {
-  let formattedState;
-
-  if (typeof state === "object" && state !== null) {
-    formattedState = camelcase(Object.keys(state)[0], {
-      pascalCase: true,
-    }) as T;
-  }
-
-  return formattedState;
-}
 
 function genIxIdentifier(ixName: string) {
   const namespace = "global";
@@ -69,6 +46,11 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (req.headers.authorization !== process.env.WEBHOOK_AUTH_TOKEN) {
+    res.status(401).end();
+    return;
+  }
+
   for (const tx of req.body) {
     for (const ix of tx.instructions) {
       if (ix.programId === PROGRAM_ID.toBase58()) {
@@ -96,16 +78,15 @@ export default async function handler(
             const buffer = Buffer.from(ixData.slice(8));
             const maxDepth = new BN(buffer.subarray(0, 4), "le");
             const totalCapacity = new BN(1).shln(maxDepth.toNumber());
-            console.log("Total capacity: ", totalCapacity.toNumber());
             const restriction = program.coder.types.decode<RestrictionType>(
               "RestrictionType",
               buffer.subarray(8)
             );
-            console.log("Restriction: ", restriction);
+
             await prisma.forum.create({
               data: {
                 id: forumAddress.toBase58(),
-                collection: restriction?.collection?.collection?.toBase58(),
+                collection: restriction?.collection?.address?.toBase58(),
                 totalCapacity: totalCapacity.toNumber(),
               },
             });
@@ -121,11 +102,11 @@ export default async function handler(
             const forumAddress = ix.accounts[forumConfigIndex];
             // Decode entry data
             const buffer = Buffer.from(ixData.slice(8));
-            const entryDecoded = program.coder.types.decode<EntryData>(
-              "EntryData",
+            const dataDecoded = program.coder.types.decode<DataV1>(
+              "DataV1",
               buffer
             );
-            const content = getEntryFields(entryDecoded);
+            const dataV1 = getDataV1Fields(dataDecoded);
             // Decode schema event data
             const noopIx = ix.innerInstructions[0];
             const serializedSchemaEvent = noopIx.data;
@@ -140,13 +121,7 @@ export default async function handler(
               throw new Error("Unknown schema version");
             }
 
-            // Parse entry type
-            const entryType = getState<EntryType>(schemaV1.entryType);
-            if (entryType === undefined) {
-              throw new Error(`Unknown entry type: ${schemaV1.entryType}`);
-            }
-
-            switch (entryType) {
+            switch (dataV1.type) {
               case "TextPost":
               case "LinkPost":
               case "ImagePost": {
@@ -154,9 +129,9 @@ export default async function handler(
                   id: schemaV1.id.toBase58(),
                   forum: forumAddress,
                   author: schemaV1.author.toBase58(),
-                  title: content.title!,
-                  body: content.body,
-                  url: content.url,
+                  title: dataV1.title!,
+                  body: dataV1.body,
+                  url: dataV1.url,
                   createdAt: schemaV1.createdAt.toNumber(),
                   nonce: schemaV1.nonce.toNumber(),
                 };
@@ -172,9 +147,9 @@ export default async function handler(
                   id: schemaV1.id.toBase58(),
                   author: schemaV1.author.toBase58(),
                   createdAt: schemaV1.createdAt.toNumber(),
-                  parent: content.parent?.toBase58(),
-                  post: content.post!.toBase58(),
-                  body: content.body!,
+                  parent: dataV1.parent?.toBase58(),
+                  post: dataV1.post!.toBase58(),
+                  body: dataV1.body!,
                   nonce: schemaV1.nonce.toNumber(),
                 };
                 console.log(data);
@@ -197,9 +172,10 @@ export default async function handler(
   res.status(200).end();
 }
 
-function getEntryFields(entryData: EntryData) {
+function getDataV1Fields(entryData: DataV1) {
   if (entryData.textPost) {
     return {
+      type: "TextPost",
       title: entryData.textPost.title,
       body: entryData.textPost.body,
     };
@@ -207,6 +183,7 @@ function getEntryFields(entryData: EntryData) {
 
   if (entryData.linkPost) {
     return {
+      type: "LinkPost",
       title: entryData.linkPost.title,
       url: entryData.linkPost.url,
     };
@@ -214,6 +191,7 @@ function getEntryFields(entryData: EntryData) {
 
   if (entryData.imagePost) {
     return {
+      type: "ImagePost",
       title: entryData.imagePost.title,
       src: entryData.imagePost.src,
     };
@@ -221,6 +199,7 @@ function getEntryFields(entryData: EntryData) {
 
   if (entryData.comment) {
     return {
+      type: "Comment",
       post: entryData.comment.post,
       parent: entryData.comment.parent,
       body: entryData.comment.body,

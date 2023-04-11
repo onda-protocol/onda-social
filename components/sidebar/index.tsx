@@ -7,22 +7,22 @@ export const Sidebar = () => {
   return (
     <Box my="6">
       <SidebarItem
-        href="/o/DdZsY59wtUaqyAR3rfCCgouWvhwWfzoWCCvYC61DcSoY"
+        href="/o/7NDfZJ64xXtZqsLvGgxkJh48iZ7priEHp8MnCH5DCert"
         label="ChickenTribe"
         image="https://chickentribe.s3.us-west-2.amazonaws.com/collection.png"
       />
       <SidebarItem
-        href="/o/DdZsY59wtUaqyAR3rfCCgouWvhwWfzoWCCvYC61DcSoY"
+        href="/o/7NDfZJ64xXtZqsLvGgxkJh48iZ7priEHp8MnCH5DCert"
         label="ChickenTribe"
         image="https://chickentribe.s3.us-west-2.amazonaws.com/collection.png"
       />
       <SidebarItem
-        href="/o/DdZsY59wtUaqyAR3rfCCgouWvhwWfzoWCCvYC61DcSoY"
+        href="/o/7NDfZJ64xXtZqsLvGgxkJh48iZ7priEHp8MnCH5DCert"
         label="ChickenTribe"
         image="https://chickentribe.s3.us-west-2.amazonaws.com/collection.png"
       />
       <SidebarItem
-        href="/o/DdZsY59wtUaqyAR3rfCCgouWvhwWfzoWCCvYC61DcSoY"
+        href="/o/7NDfZJ64xXtZqsLvGgxkJh48iZ7priEHp8MnCH5DCert"
         label="Breadheads"
         image="https://chickentribe.s3.us-west-2.amazonaws.com/collection.png"
       />

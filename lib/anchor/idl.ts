@@ -107,9 +107,9 @@ export type OndaSocial = {
       ];
       args: [
         {
-          name: "entry";
+          name: "data";
           type: {
-            defined: "EntryArgs";
+            defined: "DataV1";
           };
         }
       ];
@@ -140,20 +140,6 @@ export type OndaSocial = {
     }
   ];
   types: [
-    {
-      name: "EntryArgs";
-      type: {
-        kind: "struct";
-        fields: [
-          {
-            name: "data";
-            type: {
-              defined: "EntryData";
-            };
-          }
-        ];
-      };
-    },
     {
       name: "LeafSchemaEvent";
       type: {
@@ -198,7 +184,7 @@ export type OndaSocial = {
             name: "Collection";
             fields: [
               {
-                name: "collection";
+                name: "address";
                 type: "publicKey";
               }
             ];
@@ -207,7 +193,32 @@ export type OndaSocial = {
       };
     },
     {
-      name: "EntryData";
+      name: "OndaSocialEventType";
+      type: {
+        kind: "enum";
+        variants: [
+          {
+            name: "Uninitialized";
+          },
+          {
+            name: "LeafSchemaEvent";
+          }
+        ];
+      };
+    },
+    {
+      name: "Version";
+      type: {
+        kind: "enum";
+        variants: [
+          {
+            name: "V1";
+          }
+        ];
+      };
+    },
+    {
+      name: "DataV1";
       type: {
         kind: "enum";
         variants: [
@@ -273,51 +284,6 @@ export type OndaSocial = {
       };
     },
     {
-      name: "OndaSocialEventType";
-      type: {
-        kind: "enum";
-        variants: [
-          {
-            name: "Uninitialized";
-          },
-          {
-            name: "LeafSchemaEvent";
-          }
-        ];
-      };
-    },
-    {
-      name: "Version";
-      type: {
-        kind: "enum";
-        variants: [
-          {
-            name: "V1";
-          }
-        ];
-      };
-    },
-    {
-      name: "EntryType";
-      type: {
-        kind: "enum";
-        variants: [
-          {
-            name: "TextPost";
-          },
-          {
-            name: "ImagePost";
-          },
-          {
-            name: "LinkPost";
-          },
-          {
-            name: "Comment";
-          }
-        ];
-      };
-    },
-    {
       name: "LeafSchema";
       type: {
         kind: "enum";
@@ -328,12 +294,6 @@ export type OndaSocial = {
               {
                 name: "id";
                 type: "publicKey";
-              },
-              {
-                name: "entry_type";
-                type: {
-                  defined: "EntryType";
-                };
               },
               {
                 name: "author";
@@ -488,9 +448,9 @@ export const IDL: OndaSocial = {
       ],
       args: [
         {
-          name: "entry",
+          name: "data",
           type: {
-            defined: "EntryArgs",
+            defined: "DataV1",
           },
         },
       ],
@@ -521,20 +481,6 @@ export const IDL: OndaSocial = {
     },
   ],
   types: [
-    {
-      name: "EntryArgs",
-      type: {
-        kind: "struct",
-        fields: [
-          {
-            name: "data",
-            type: {
-              defined: "EntryData",
-            },
-          },
-        ],
-      },
-    },
     {
       name: "LeafSchemaEvent",
       type: {
@@ -579,7 +525,7 @@ export const IDL: OndaSocial = {
             name: "Collection",
             fields: [
               {
-                name: "collection",
+                name: "address",
                 type: "publicKey",
               },
             ],
@@ -588,7 +534,32 @@ export const IDL: OndaSocial = {
       },
     },
     {
-      name: "EntryData",
+      name: "OndaSocialEventType",
+      type: {
+        kind: "enum",
+        variants: [
+          {
+            name: "Uninitialized",
+          },
+          {
+            name: "LeafSchemaEvent",
+          },
+        ],
+      },
+    },
+    {
+      name: "Version",
+      type: {
+        kind: "enum",
+        variants: [
+          {
+            name: "V1",
+          },
+        ],
+      },
+    },
+    {
+      name: "DataV1",
       type: {
         kind: "enum",
         variants: [
@@ -654,51 +625,6 @@ export const IDL: OndaSocial = {
       },
     },
     {
-      name: "OndaSocialEventType",
-      type: {
-        kind: "enum",
-        variants: [
-          {
-            name: "Uninitialized",
-          },
-          {
-            name: "LeafSchemaEvent",
-          },
-        ],
-      },
-    },
-    {
-      name: "Version",
-      type: {
-        kind: "enum",
-        variants: [
-          {
-            name: "V1",
-          },
-        ],
-      },
-    },
-    {
-      name: "EntryType",
-      type: {
-        kind: "enum",
-        variants: [
-          {
-            name: "TextPost",
-          },
-          {
-            name: "ImagePost",
-          },
-          {
-            name: "LinkPost",
-          },
-          {
-            name: "Comment",
-          },
-        ],
-      },
-    },
-    {
       name: "LeafSchema",
       type: {
         kind: "enum",
@@ -709,12 +635,6 @@ export const IDL: OndaSocial = {
               {
                 name: "id",
                 type: "publicKey",
-              },
-              {
-                name: "entry_type",
-                type: {
-                  defined: "EntryType",
-                },
               },
               {
                 name: "author",

@@ -1,6 +1,7 @@
 import { web3 } from "@project-serum/anchor";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AccountLayout, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
@@ -10,7 +11,10 @@ import { Box, Button, Input, Textarea } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
 
+import { findMetadataPda } from "utils/pda";
+import { fetchAllAccounts } from "utils/web3";
 import { getProgram } from "lib/anchor";
+import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 
 interface EntryForm {
   title: string;
@@ -69,14 +73,63 @@ export const Editor = ({
         throw new Error("Provider not found");
       }
 
+      const collection = new web3.PublicKey(
+        "EotJ4wYtYQUbx6E2Tn5aAbsr79KBFRcwj5usriv2Xj7i"
+      );
       const forumConfig = new web3.PublicKey(
-        process.env.NEXT_PUBLIC_FORUM as string
+        "FghMS8HrXVt9RsXwfLCVydQQKhz5Ce3StjQcvscSyWcy"
       );
       const merkleTree = new web3.PublicKey(
-        process.env.NEXT_PUBLIC_MERKLE_TREE as string
+        "HrUvs6YZgs1LbvFbF6gMrzC7Z1qobXsVuLjngE7EB1TH"
       );
 
       let data = {};
+
+      const tokenAccounts = await connection.getTokenAccountsByOwner(
+        program.provider.publicKey,
+        {
+          programId: TOKEN_PROGRAM_ID,
+        }
+      );
+      const decodedTokenAccounts = tokenAccounts.value.map((value) => ({
+        ...AccountLayout.decode(value.account.data),
+        pubkey: value.pubkey,
+      }));
+      const metadataPdas = decodedTokenAccounts.map((account) =>
+        findMetadataPda(account.mint)
+      );
+      const metadataAccounts = await fetchAllAccounts(connection, metadataPdas);
+      const metadata = metadataAccounts
+        .map((account) => {
+          try {
+            return Metadata.fromAccountInfo(account)[0];
+          } catch (err) {
+            console.log("err: ", err);
+            return null;
+          }
+        })
+        .filter(
+          (metadata): metadata is NonNullable<Metadata> => metadata !== null
+        );
+
+      console.log("metadata: ", metadata);
+      const selectedMetadataAccount = metadata.find((metadata) =>
+        metadata.collection?.key.equals(collection)
+      );
+      console.log("selectedMetadataAccount: ", selectedMetadataAccount);
+
+      if (!selectedMetadataAccount) {
+        throw new Error("Unahthorized");
+      }
+
+      const selectedMetadataPda = findMetadataPda(selectedMetadataAccount.mint);
+      const selectedTokenAddress = decodedTokenAccounts.find((value) =>
+        value.mint.equals(selectedMetadataAccount.mint)
+      )?.pubkey;
+
+      if (!selectedTokenAddress) {
+        throw new Error("Token account not found");
+      }
 
       if (config.type === "post") {
         data = { textPost: { title, body } };
@@ -91,13 +144,13 @@ export const Editor = ({
       }
 
       await program.methods
-        .addEntry({ data })
+        .addEntry(data)
         .accounts({
           forumConfig,
           merkleTree,
-          mint: null,
-          tokenAccount: null,
-          metadata: null,
+          mint: selectedMetadataAccount.mint,
+          tokenAccount: selectedTokenAddress,
+          metadata: selectedMetadataPda,
           logWrapper: SPL_NOOP_PROGRAM_ID,
           compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
         })
@@ -118,6 +171,8 @@ export const Editor = ({
         }
       },
       onError(error) {
+        // @ts-ignore
+        console.log(error.logs);
         toast.error("Failed to submit: " + error.message);
       },
     }
