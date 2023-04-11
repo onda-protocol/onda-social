@@ -13,6 +13,7 @@ import { Editor } from "components/editor";
 import { Markdown } from "components/markdown";
 import { CommentListItem } from "components/comment";
 import { PostMeta } from "components/post/meta";
+import { PostButtons } from "components/post/buttons";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -26,17 +27,36 @@ const Comments: NextPage<PageProps> = () => {
 
   return (
     <Container maxW="container.md">
-      <Box my="12">
-        <PostMeta
-          author={postQuery.data?.author}
-          forum={postQuery.data?.forum}
-          createdAt={String(postQuery.data?.createdAt)}
-        />
-        <Heading as="h1">{postQuery.data?.title}</Heading>
-      </Box>
-      <Box mb="6">
-        <Markdown>{postQuery.data?.body ?? ""}</Markdown>
-      </Box>
+      <>
+        {postQuery.isLoading ? (
+          <Box display="flex" alignItems="center" justifyContent="center">
+            <Spinner />
+          </Box>
+        ) : (
+          <>
+            <Box mt="12">
+              <PostMeta
+                author={postQuery.data?.author}
+                forum={postQuery.data?.forum}
+                createdAt={String(postQuery.data?.createdAt)}
+              />
+              <Heading my="6" as="h1">
+                {postQuery.data?.title}
+              </Heading>
+            </Box>
+            <Box mb="6">
+              <Markdown>{postQuery.data?.body ?? ""}</Markdown>
+            </Box>
+
+            <Box mb="6">
+              <PostButtons
+                id={id}
+                commentCount={postQuery.data?._count.Comments ?? 0}
+              />
+            </Box>
+          </>
+        )}
+      </>
 
       <Editor
         buttonLabel="Comment"
@@ -88,7 +108,9 @@ Comments.getInitialProps = async (ctx) => {
 
 export default Comments;
 
-function fetchPost(id: string): Promise<Post> {
+type PostWithCommentsCount = Post & { _count: { Comments: number } };
+
+function fetchPost(id: string): Promise<PostWithCommentsCount> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/post/${id}`).then((res) =>
     res.json()
   );

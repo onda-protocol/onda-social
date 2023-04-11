@@ -62,14 +62,13 @@ const Home: NextPage<PageProps> = () => {
       programId: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
     });
 
-    const createPostIx = await program.methods
+    const initIx = await program.methods
       .initForum(maxDepth, maxBufferSize, {
         collection: {
           address: new anchor.web3.PublicKey(
             "EotJ4wYtYQUbx6E2Tn5aAbsr79KBFRcwj5usriv2Xj7i"
           ),
         },
-        // none: {},
       })
       .accounts({
         payer,
@@ -80,7 +79,7 @@ const Home: NextPage<PageProps> = () => {
       })
       .instruction();
 
-    const tx = new anchor.web3.Transaction().add(allocTreeIx).add(createPostIx);
+    const tx = new anchor.web3.Transaction().add(allocTreeIx).add(initIx);
     tx.feePayer = payer;
 
     await program.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
@@ -94,7 +93,7 @@ const Home: NextPage<PageProps> = () => {
 
   return (
     <Container maxW="container.lg">
-      <Grid templateColumns="150px 1fr" gap="1">
+      <Grid templateColumns="180px 1fr" gap="6">
         <GridItem>
           <Sidebar />
         </GridItem>
@@ -103,6 +102,7 @@ const Home: NextPage<PageProps> = () => {
             borderLeftWidth="1px"
             borderRightWidth="1px"
             borderColor="gray.800"
+            maxWidth="720px"
           >
             {query.data?.map((post) => (
               <PostListItem

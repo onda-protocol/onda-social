@@ -1,7 +1,7 @@
 import { shortenAddress } from "./format";
 
 const profiles = new Map();
-profiles.set("DdZsY59wtUaqyAR3rfCCgouWvhwWfzoWCCvYC61DcSoY", {
+profiles.set("FghMS8HrXVt9RsXwfLCVydQQKhz5Ce3StjQcvscSyWcy", {
   name: "ChickenTribe",
   image: "https://chickentribe.s3.us-west-2.amazonaws.com/collection.png",
 });
