@@ -1,7 +1,4 @@
-import {
-  IdlTypes,
-  InstructionContextFnArgs,
-} from "@project-serum/anchor/dist/cjs/program/namespace/types";
+import { IdlTypes } from "@project-serum/anchor/dist/cjs/program/namespace/types";
 import { OndaSocial } from "./idl";
 
 export type OndaSocialTypes = IdlTypes<OndaSocial>;

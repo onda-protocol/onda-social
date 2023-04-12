@@ -10,6 +10,7 @@ datasource db {
 
 model Forum {
   id String @id @unique
+  config String @unique
   collection String?
   totalCapacity BigInt
   Posts Post[] @relation("ForumToPost")

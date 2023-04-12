@@ -13,7 +13,7 @@ import { useRouter } from "next/router";
 
 import { findMetadataPda } from "utils/pda";
 import { fetchAllAccounts } from "utils/web3";
-import { getProgram } from "lib/anchor";
+import { getProgram } from "lib/anchor/provider";
 import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 
 interface EntryForm {

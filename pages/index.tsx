@@ -16,7 +16,7 @@ import {
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
 
-import { getProgram, PROGRAM_ID } from "../lib/anchor";
+import { getProgram, PROGRAM_ID } from "../lib/anchor/provider";
 import { PostListItem } from "components/post/listItem";
 import { Sidebar } from "components/sidebar";
 

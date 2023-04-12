@@ -11,7 +11,7 @@ import camelcase from "camelcase";
 import { snakeCase } from "snake-case";
 import { sha256 } from "js-sha256";
 
-import { PROGRAM_ID } from "../../lib/anchor";
+import { PROGRAM_ID } from "../../lib/anchor/provider";
 import { IDL, OndaSocial } from "../../lib/anchor/idl";
 import { DataV1, LeafSchemaV1, RestrictionType } from "../../lib/anchor/types";
 import prisma from "../../lib/prisma";
@@ -72,8 +72,14 @@ export default async function handler(
             const forumConfigIndex = ixAccounts.findIndex(
               (account) => account.name === "forumConfig"
             );
-            const forumAddress = new web3.PublicKey(
+            const merkleTreeIndex = ixAccounts.findIndex(
+              (account) => account.name === "merkleTree"
+            );
+            const forumConfigAddress = new web3.PublicKey(
               ix.accounts[forumConfigIndex]
+            );
+            const merkleTreeAddress = new web3.PublicKey(
+              ix.accounts[merkleTreeIndex]
             );
             const buffer = Buffer.from(ixData.slice(8));
             const maxDepth = new BN(buffer.subarray(0, 4), "le");
@@ -85,7 +91,8 @@ export default async function handler(
 
             await prisma.forum.create({
               data: {
-                id: forumAddress.toBase58(),
+                id: merkleTreeAddress.toBase58(),
+                config: forumConfigAddress.toBase58(),
                 collection: restriction?.collection?.address?.toBase58(),
                 totalCapacity: totalCapacity.toNumber(),
               },

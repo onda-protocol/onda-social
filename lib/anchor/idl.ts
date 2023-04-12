@@ -113,6 +113,47 @@ export type OndaSocial = {
           };
         }
       ];
+    },
+    {
+      name: "likeEntry";
+      accounts: [
+        {
+          name: "payer";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "author";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "forumConfig";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "likeRecord";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "merkleTree";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "entryId";
+          type: "publicKey";
+        }
+      ];
     }
   ];
   accounts: [
@@ -134,6 +175,18 @@ export type OndaSocial = {
             type: {
               defined: "RestrictionType";
             };
+          }
+        ];
+      };
+    },
+    {
+      name: "likeRecord";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "amount";
+            type: "u64";
           }
         ];
       };
@@ -455,6 +508,47 @@ export const IDL: OndaSocial = {
         },
       ],
     },
+    {
+      name: "likeEntry",
+      accounts: [
+        {
+          name: "payer",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "author",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "forumConfig",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "likeRecord",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "merkleTree",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "entryId",
+          type: "publicKey",
+        },
+      ],
+    },
   ],
   accounts: [
     {
@@ -475,6 +569,18 @@ export const IDL: OndaSocial = {
             type: {
               defined: "RestrictionType",
             },
+          },
+        ],
+      },
+    },
+    {
+      name: "likeRecord",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "amount",
+            type: "u64",
           },
         ],
       },
