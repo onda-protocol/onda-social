@@ -1,10 +1,22 @@
 import { shortenAddress } from "./format";
 
-const profiles = new Map();
+interface Profile {
+  name: string;
+  image: string;
+}
+
+const profiles = new Map<string, Profile>();
 profiles.set("FghMS8HrXVt9RsXwfLCVydQQKhz5Ce3StjQcvscSyWcy", {
   name: "ChickenTribe",
   image: "https://chickentribe.s3.us-west-2.amazonaws.com/collection.png",
 });
+
+export function getProfiles(): (Profile & { id: string })[] {
+  return Array.from(profiles, ([key, value]) => ({
+    id: key,
+    ...value,
+  }));
+}
 
 export function getImageFromAddress(address: string): string | null {
   return profiles.get(address)?.image ?? null;

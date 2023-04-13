@@ -7,7 +7,7 @@ import {
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
 import toast from "react-hot-toast";
-import { Box, Button, Input, Textarea } from "@chakra-ui/react";
+import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
 
@@ -15,10 +15,12 @@ import { findMetadataPda } from "utils/pda";
 import { fetchAllAccounts } from "utils/web3";
 import { getProgram } from "lib/anchor/provider";
 import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
+import { getProfiles } from "utils/profile";
 
 interface EntryForm {
   title: string;
   body: string;
+  community: string;
 }
 
 type EntryConfig =
@@ -62,7 +64,7 @@ export const Editor = ({
   });
 
   const mutation = useMutation<void, Error, EntryForm>(
-    async ({ title, body }) => {
+    async ({ title, body, community }) => {
       if (!anchorWallet) {
         throw new Error("Wallet not connected");
       }
@@ -73,9 +75,7 @@ export const Editor = ({
         throw new Error("Provider not found");
       }
 
-      const collection = new web3.PublicKey(
-        "EotJ4wYtYQUbx6E2Tn5aAbsr79KBFRcwj5usriv2Xj7i"
-      );
+      const collection = new web3.PublicKey();
       const forumConfig = new web3.PublicKey(
         "3feAsAELMWZ5QFQgCZriCuQSsTttUbypMj4y5TMtE27e"
       );
@@ -185,8 +185,22 @@ export const Editor = ({
       onSubmit={methods.handleSubmit((data) => mutation.mutate(data))}
     >
       {config.type === "post" && (
+        <Select
+          mt="6"
+          placeholder="Choose a community"
+          {...methods.register("community", { required: true })}
+        >
+          {getProfiles().map((profile) => (
+            <option key={profile.id} value={profile.id}>
+              {profile.name}
+            </option>
+          ))}
+        </Select>
+      )}
+      {config.type === "post" && (
         <Input
           mt="6"
+          placeholder="Title"
           {...methods.register("title", {
             required: true,
           })}
@@ -198,12 +212,7 @@ export const Editor = ({
         {...methods.register("body", { required: true })}
       />
       <Box display="flex" mt="2" justifyContent="right">
-        <Button
-          size="sm"
-          isLoading={mutation.isLoading}
-          variant="solid"
-          type="submit"
-        >
+        <Button isLoading={mutation.isLoading} variant="solid" type="submit">
           {buttonLabel || "Submit"}
         </Button>
       </Box>

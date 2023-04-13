@@ -12,15 +12,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
   return (
     <Container maxW="container.lg">
       <Grid templateColumns="1fr 360px" gap="2">
-        <GridItem>
-          <Box
-            borderLeftWidth="1px"
-            borderRightWidth="1px"
-            borderColor="gray.800"
-          >
-            {leftColumn}
-          </Box>
-        </GridItem>
+        <GridItem>{leftColumn}</GridItem>
         <GridItem>{rightColumn}</GridItem>
       </Grid>
     </Container>

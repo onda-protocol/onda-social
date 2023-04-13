@@ -96,7 +96,7 @@ const SidebarItem = ({ href, image, label }: SidebarItemProps) => {
 
 export const SidebarButtons = () => {
   return (
-    <Box my="6" mx="2">
+    <Box my="6" mx="4">
       <Button
         as={Link}
         href="/submit"

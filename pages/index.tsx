@@ -7,7 +7,7 @@ import {
   useQuery,
   useMutation,
 } from "@tanstack/react-query";
-import { Button } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import {
   getConcurrentMerkleTreeAccountSize,
@@ -18,7 +18,7 @@ import {
 import { getProgram, PROGRAM_ID } from "lib/anchor/provider";
 import { fetchPosts } from "lib/api";
 import { PostListItem } from "components/post/listItem";
-import { Sidebar, SidebarButtons } from "components/layout/sidebar";
+import { Sidebar } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
 
 interface PageProps {
@@ -101,11 +101,11 @@ const Home: NextPage<PageProps> = () => {
   return (
     <GridLayout
       leftColumn={
-        <>
+        <Box mt="6" borderTop="1px" borderColor="gray.800" borderRadius="md">
           {query.data?.map((post) => (
             <PostListItem key={post.id} post={post} />
           ))}
-        </>
+        </Box>
       }
       rightColumn={<Sidebar />}
     />
