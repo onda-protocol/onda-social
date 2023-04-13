@@ -13,7 +13,7 @@ import { Editor } from "components/editor";
 import { Markdown } from "components/markdown";
 import { CommentListItem } from "components/comment";
 import { PostMeta } from "components/post/meta";
-import { PostButtons } from "components/post/buttons";
+import { PostButtons } from "components/post/ItemButtons";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;

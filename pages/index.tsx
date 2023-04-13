@@ -7,7 +7,7 @@ import {
   useQuery,
   useMutation,
 } from "@tanstack/react-query";
-import { Box, Button, Container, Grid, GridItem } from "@chakra-ui/react";
+import { Button } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import {
   getConcurrentMerkleTreeAccountSize,
@@ -18,7 +18,8 @@ import {
 import { getProgram, PROGRAM_ID } from "lib/anchor/provider";
 import { fetchPosts } from "lib/api";
 import { PostListItem } from "components/post/listItem";
-import { Sidebar } from "components/sidebar";
+import { Sidebar, SidebarButtons } from "components/layout/sidebar";
+import { GridLayout } from "components/layout";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -98,26 +99,16 @@ const Home: NextPage<PageProps> = () => {
   });
 
   return (
-    <Container maxW="container.lg">
-      <Grid templateColumns="180px 1fr" gap="6">
-        <GridItem>
-          <Sidebar />
-        </GridItem>
-        <GridItem>
-          <Box
-            borderLeftWidth="1px"
-            borderRightWidth="1px"
-            borderColor="gray.800"
-            maxWidth="720px"
-          >
-            {query.data?.map((post) => (
-              <PostListItem key={post.id} post={post} />
-            ))}
-          </Box>
-        </GridItem>
-      </Grid>
-      <Button onClick={() => initForumMutation.mutate()}>Init Forum</Button>
-    </Container>
+    <GridLayout
+      leftColumn={
+        <>
+          {query.data?.map((post) => (
+            <PostListItem key={post.id} post={post} />
+          ))}
+        </>
+      }
+      rightColumn={<Sidebar />}
+    />
   );
 };
 

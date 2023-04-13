@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import { PostWithCommentsCountAndForum } from "lib/api";
 import { Markdown } from "../markdown";
 import { PostMeta } from "../post/meta";
-import { PostButtons } from "./buttons";
+import { PostButtons } from "./ItemButtons";
 
 interface PostListItemProps {
   post: PostWithCommentsCountAndForum;
