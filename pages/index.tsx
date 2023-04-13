@@ -9,14 +9,14 @@ import {
 } from "@tanstack/react-query";
 import { Box, Button, Container, Grid, GridItem } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { Post } from "@prisma/client";
 import {
   getConcurrentMerkleTreeAccountSize,
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
 
-import { getProgram, PROGRAM_ID } from "../lib/anchor/provider";
+import { getProgram, PROGRAM_ID } from "lib/anchor/provider";
+import { fetchPosts } from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import { Sidebar } from "components/sidebar";
 
@@ -82,9 +82,15 @@ const Home: NextPage<PageProps> = () => {
     const tx = new anchor.web3.Transaction().add(allocTreeIx).add(initIx);
     tx.feePayer = payer;
 
-    await program.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
-      commitment: "confirmed",
-    });
+    try {
+      await program.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
+        commitment: "confirmed",
+      });
+    } catch (err) {
+      // @ts-ignore
+      console.log(err.logs);
+      throw err;
+    }
 
     console.log("Forum initialized");
     console.log("forumConfig: ", forumConfig.toBase58());
@@ -105,16 +111,7 @@ const Home: NextPage<PageProps> = () => {
             maxWidth="720px"
           >
             {query.data?.map((post) => (
-              <PostListItem
-                key={post.id}
-                id={post.id}
-                author={post.author}
-                forum={post.forum}
-                title={post.title!}
-                body={post.body!}
-                createdAt={String(post.createdAt)}
-                commentCount={post._count?.Comments}
-              />
+              <PostListItem key={post.id} post={post} />
             ))}
           </Box>
         </GridItem>
@@ -144,14 +141,6 @@ Home.getInitialProps = async (ctx) => {
 };
 
 export default Home;
-
-type PostWithCommentsCount = Post & { _count: { Comments: number } };
-
-function fetchPosts(): Promise<PostWithCommentsCount[]> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/posts`).then((res) =>
-    res.json()
-  );
-}
 
 function findForumConfigPda(merkleTree: anchor.web3.PublicKey) {
   return anchor.web3.PublicKey.findProgramAddressSync(

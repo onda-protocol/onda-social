@@ -77,10 +77,10 @@ export const Editor = ({
         "EotJ4wYtYQUbx6E2Tn5aAbsr79KBFRcwj5usriv2Xj7i"
       );
       const forumConfig = new web3.PublicKey(
-        "FghMS8HrXVt9RsXwfLCVydQQKhz5Ce3StjQcvscSyWcy"
+        "3feAsAELMWZ5QFQgCZriCuQSsTttUbypMj4y5TMtE27e"
       );
       const merkleTree = new web3.PublicKey(
-        "HrUvs6YZgs1LbvFbF6gMrzC7Z1qobXsVuLjngE7EB1TH"
+        "vP4yRKvMDAnVU2Zs5bJuYBJnYsQJgprDeiq9N2zWXMw"
       );
 
       let data = {};

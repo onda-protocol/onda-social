@@ -25,7 +25,7 @@ model Post {
   createdAt BigInt
   editedAt BigInt?
   nonce BigInt
-  votes BigInt @default(0)
+  likes BigInt @default(0)
   forum String
   Forum Forum @relation("ForumToPost", fields: [forum], references: [id])
   Comments Comment[] @relation("PostToComment")
@@ -38,7 +38,7 @@ model Comment {
   createdAt BigInt
   editedAt BigInt?
   nonce BigInt
-  votes BigInt @default(0)
+  likes BigInt @default(0)
   post String
   Post Post @relation("PostToComment", fields: [post], references: [id])
   parent String?

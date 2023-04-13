@@ -7,7 +7,6 @@ import {
   BN,
 } from "@project-serum/anchor";
 import base58 from "bs58";
-import camelcase from "camelcase";
 import { snakeCase } from "snake-case";
 import { sha256 } from "js-sha256";
 
@@ -46,10 +45,11 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.headers.authorization !== process.env.WEBHOOK_AUTH_TOKEN) {
-    res.status(401).end();
-    return;
-  }
+  // IMPORTANT! Uncomment this line to enable webhook auth
+  // if (req.headers.authorization !== process.env.WEBHOOK_AUTH_TOKEN) {
+  //   res.status(401).end();
+  //   return;
+  // }
 
   for (const tx of req.body) {
     for (const ix of tx.instructions) {
@@ -89,13 +89,15 @@ export default async function handler(
               buffer.subarray(8)
             );
 
+            const data = {
+              id: merkleTreeAddress.toBase58(),
+              config: forumConfigAddress.toBase58(),
+              collection: restriction?.collection?.address?.toBase58(),
+              totalCapacity: totalCapacity.toNumber(),
+            };
+            console.log(data);
             await prisma.forum.create({
-              data: {
-                id: merkleTreeAddress.toBase58(),
-                config: forumConfigAddress.toBase58(),
-                collection: restriction?.collection?.address?.toBase58(),
-                totalCapacity: totalCapacity.toNumber(),
-              },
+              data,
             });
 
             break;
@@ -103,10 +105,10 @@ export default async function handler(
 
           case "addEntry": {
             // Get forum address
-            const forumConfigIndex = ixAccounts.findIndex(
-              (account) => account.name === "forumConfig"
+            const merkleTreeIndex = ixAccounts.findIndex(
+              (account) => account.name === "merkleTree"
             );
-            const forumAddress = ix.accounts[forumConfigIndex];
+            const forumAddress = ix.accounts[merkleTreeIndex];
             // Decode entry data
             const buffer = Buffer.from(ixData.slice(8));
             const dataDecoded = program.coder.types.decode<DataV1>(
@@ -114,6 +116,7 @@ export default async function handler(
               buffer
             );
             const dataV1 = getDataV1Fields(dataDecoded);
+            console.log(dataV1);
             // Decode schema event data
             const noopIx = ix.innerInstructions[0];
             const serializedSchemaEvent = noopIx.data;
@@ -164,8 +167,43 @@ export default async function handler(
                 await prisma.comment.create({
                   data,
                 });
+                break;
               }
             }
+
+            break;
+          }
+
+          case "likeEntry": {
+            const buffer = Buffer.from(ixData.slice(8));
+            const entryId = new web3.PublicKey(buffer);
+
+            // expect one of these to fail
+            try {
+              await prisma.post.update({
+                where: {
+                  id: entryId.toBase58(),
+                },
+                data: {
+                  likes: {
+                    increment: 1,
+                  },
+                },
+              });
+            } catch (err) {
+              await prisma.comment.update({
+                where: {
+                  id: entryId.toBase58(),
+                },
+                data: {
+                  likes: {
+                    increment: 1,
+                  },
+                },
+              });
+            }
+
+            break;
           }
 
           default: {

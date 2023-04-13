@@ -9,6 +9,7 @@ export default async function handler(
 ) {
   const result = await prisma.post.findMany({
     include: {
+      Forum: true,
       _count: {
         select: {
           Comments: true,

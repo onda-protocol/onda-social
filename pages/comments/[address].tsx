@@ -1,7 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { Box, Container, Divider, Heading, Spinner } from "@chakra-ui/react";
-import { Comment, Post } from "@prisma/client";
 import {
   QueryClient,
   DehydratedState,
@@ -9,6 +8,7 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 
+import { fetchPost, fetchComments } from "lib/api";
 import { Editor } from "components/editor";
 import { Markdown } from "components/markdown";
 import { CommentListItem } from "components/comment";
@@ -28,7 +28,7 @@ const Comments: NextPage<PageProps> = () => {
   return (
     <Container maxW="container.md">
       <>
-        {postQuery.isLoading ? (
+        {postQuery.isLoading || !postQuery.data ? (
           <Box display="flex" alignItems="center" justifyContent="center">
             <Spinner />
           </Box>
@@ -49,10 +49,7 @@ const Comments: NextPage<PageProps> = () => {
             </Box>
 
             <Box mb="6">
-              <PostButtons
-                id={id}
-                commentCount={postQuery.data?._count.Comments ?? 0}
-              />
+              <PostButtons id={id} post={postQuery.data} />
             </Box>
           </>
         )}
@@ -107,17 +104,3 @@ Comments.getInitialProps = async (ctx) => {
 };
 
 export default Comments;
-
-type PostWithCommentsCount = Post & { _count: { Comments: number } };
-
-function fetchPost(id: string): Promise<PostWithCommentsCount> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/post/${id}`).then((res) =>
-    res.json()
-  );
-}
-
-function fetchComments(id: string): Promise<Comment[]> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/post/${id}/comments`).then(
-    (res) => res.json()
-  );
-}

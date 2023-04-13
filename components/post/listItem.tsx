@@ -1,32 +1,17 @@
 import Link from "next/link";
 import { Box, Heading, Text } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { IoChatbox, IoHeart } from "react-icons/io5";
-import { MouseEventHandler } from "react";
 
+import { PostWithCommentsCountAndForum } from "lib/api";
 import { Markdown } from "../markdown";
 import { PostMeta } from "../post/meta";
 import { PostButtons } from "./buttons";
 
 interface PostListItemProps {
-  id: string;
-  author: string;
-  forum?: string;
-  title: string;
-  body: string;
-  createdAt: string;
-  commentCount: number;
+  post: PostWithCommentsCountAndForum;
 }
 
-export const PostListItem = ({
-  id,
-  author,
-  forum,
-  title,
-  body,
-  createdAt,
-  commentCount,
-}: PostListItemProps) => {
+export const PostListItem = ({ post }: PostListItemProps) => {
   const router = useRouter();
 
   return (
@@ -40,15 +25,19 @@ export const PostListItem = ({
       _hover={{
         cursor: "pointer",
       }}
-      onClick={() => router.push(`/comments/${id}`)}
+      onClick={() => router.push(`/comments/${post.id}`)}
     >
-      <PostMeta author={author} forum={forum} createdAt={String(createdAt)} />
+      <PostMeta
+        author={post.author}
+        forum={post.forum}
+        createdAt={String(post.createdAt)}
+      />
       <Box overflow="hidden">
         <Heading my="4" fontSize="xl" fontWeight="semibold">
-          {title}
+          {post.title}
         </Heading>
         <Box position="relative" maxHeight="250px">
-          <Markdown>{body}</Markdown>
+          <Markdown>{post.body ?? ""}</Markdown>
           <Box
             position="absolute"
             inset={0}
@@ -56,7 +45,7 @@ export const PostListItem = ({
           />
         </Box>
       </Box>
-      <PostButtons id={id} commentCount={commentCount} />
+      <PostButtons post={post} />
     </Box>
   );
 };

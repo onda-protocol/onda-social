@@ -14,6 +14,7 @@ export default async function handler(
       id: address as string,
     },
     include: {
+      Forum: true,
       _count: {
         select: {
           Comments: true,
