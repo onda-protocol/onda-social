@@ -1,23 +1,17 @@
 import { web3 } from "@project-serum/anchor";
-import { AccountLayout, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-  SPL_NOOP_PROGRAM_ID,
-} from "@solana/spl-account-compression";
 import toast from "react-hot-toast";
 import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
 
-import { findMetadataPda } from "utils/pda";
-import { fetchAllAccounts } from "utils/web3";
+import { sleep } from "utils/async";
+import { SerializedCommentNested, fetchFora } from "lib/api";
+import { addEntry } from "lib/anchor/actions";
 import { getProgram } from "lib/anchor/provider";
-import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
-import { getNameFromAddress, getProfiles } from "utils/profile";
+import { getNameFromAddress } from "utils/profile";
 import React from "react";
-import { SerializedForum, fetchFora } from "lib/api";
 
 interface EntryForm {
   title: string;
@@ -40,6 +34,7 @@ interface EditorProps {
   buttonLabel?: string;
   placeholder?: string;
   invalidateQueries?: string[];
+  queryKey?: string[];
   redirect?: string;
   successMessage?: string;
   config: EntryConfig;
@@ -48,6 +43,7 @@ interface EditorProps {
 export const Editor = ({
   buttonLabel,
   invalidateQueries,
+  queryKey,
   placeholder,
   redirect,
   successMessage,
@@ -65,7 +61,7 @@ export const Editor = ({
     },
   });
 
-  const mutation = useMutation<void, Error, EntryForm>(
+  const mutation = useMutation<[string, string] | void, Error, EntryForm>(
     async (data) => {
       if (!anchorWallet) {
         throw new Error("Wallet not connected");
@@ -75,6 +71,15 @@ export const Editor = ({
 
       if (!program.provider.publicKey || !program.provider.sendAndConfirm) {
         throw new Error("Provider not found");
+      }
+
+      const forumId = config.type === "comment" ? config.forum : data.forum;
+      const forum = await queryClient
+        .fetchQuery(["fora"], fetchFora)
+        .then((fora) => fora.find((forum) => forum.id === forumId));
+
+      if (!forum) {
+        throw new Error("Forum not found");
       }
 
       let dataArgs = {};
@@ -91,51 +96,56 @@ export const Editor = ({
         };
       }
 
-      const forumId = config.type === "comment" ? config.forum : data.forum;
-      const forum = queryClient
-        .getQueryData<SerializedForum[]>(["fora"])
-        ?.find((forum) => forum.id === forumId);
-
-      if (!forum) {
-        throw new Error("Forum not found");
-      }
-
-      const merkleTree = new web3.PublicKey(forum.id);
-      const forumConfig = new web3.PublicKey(forum.config);
-      const collection = forum.collection
-        ? new web3.PublicKey(forum.collection)
-        : undefined;
-
-      let mint, metadata, tokenAccount;
-
-      if (collection) {
-        [mint, metadata, tokenAccount] = await fetchTokenAccounts(
-          connection,
-          anchorWallet.publicKey,
-          collection
-        );
-      }
-
-      await program.methods
-        .addEntry(dataArgs)
-        .accounts({
-          forumConfig,
-          merkleTree,
-          mint,
-          tokenAccount,
-          metadata,
-          logWrapper: SPL_NOOP_PROGRAM_ID,
-          compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-        })
-        .rpc({ commitment: "confirmed" });
+      return addEntry(connection, anchorWallet, {
+        data: dataArgs,
+        forumId: forum.id,
+        forumConfig: forum.config,
+        collection: forum.collection,
+      });
     },
     {
-      async onSuccess() {
+      async onSuccess(data, variables) {
+        methods.reset();
+
         if (successMessage) {
           toast.success(successMessage);
         }
 
+        if (data && config.type === "comment" && config.parent && queryKey) {
+          queryClient.setQueryData<SerializedCommentNested[]>(
+            queryKey,
+            (comments) => {
+              console.log("comments: ", comments);
+              if (comments) {
+                comments.forEach((c) => {
+                  if (config.parent === c.id) {
+                    c.Children = [
+                      ...c.Children,
+                      {
+                        id: data[0],
+                        author: anchorWallet?.publicKey?.toBase58() || "",
+                        createdAt: BigInt(
+                          Math.floor(Date.now() / 1000)
+                        ).toString(),
+                        editedAt: null,
+                        parent: config.parent,
+                        post: config.post,
+                        body: variables.body,
+                        likes: "0",
+                        nonce: data[1],
+                        Children: [],
+                      },
+                    ];
+                  }
+                });
+                return [...comments];
+              }
+            }
+          );
+        }
+
         if (invalidateQueries) {
+          await sleep(2000);
           await queryClient.invalidateQueries(invalidateQueries);
         }
 
@@ -203,57 +213,3 @@ const SelectForum = React.forwardRef<HTMLSelectElement>(function SelectForum(
     </Select>
   );
 });
-
-async function fetchTokenAccounts(
-  connection: web3.Connection,
-  owner: web3.PublicKey,
-  collection: web3.PublicKey
-) {
-  const tokenAccounts = await connection.getTokenAccountsByOwner(owner, {
-    programId: TOKEN_PROGRAM_ID,
-  });
-  const decodedTokenAccounts = tokenAccounts.value.map((value) => ({
-    ...AccountLayout.decode(value.account.data),
-    pubkey: value.pubkey,
-  }));
-  const metadataPdas = decodedTokenAccounts.map((account) =>
-    findMetadataPda(account.mint)
-  );
-  const metadataAccounts = await fetchAllAccounts(connection, metadataPdas);
-  const metadata = metadataAccounts
-    .map((account) => {
-      try {
-        return Metadata.fromAccountInfo(account)[0];
-      } catch (err) {
-        console.log("err: ", err);
-        return null;
-      }
-    })
-    .filter((metadata): metadata is NonNullable<Metadata> => metadata !== null);
-
-  console.log("metadata: ", metadata);
-  const selectedMetadataAccount = metadata.find((metadata) =>
-    metadata.collection?.key.equals(collection)
-  );
-  const selectedMintAddress = selectedMetadataAccount?.mint;
-  console.log("selectedMetadataAccount: ", selectedMetadataAccount);
-
-  if (!selectedMintAddress) {
-    throw new Error("Unahthorized");
-  }
-
-  const selectedMetadataPda = findMetadataPda(selectedMetadataAccount.mint);
-  const selectedTokenAddress = decodedTokenAccounts.find((value) =>
-    value.mint.equals(selectedMetadataAccount.mint)
-  )?.pubkey;
-
-  if (!selectedTokenAddress) {
-    throw new Error("Token account not found");
-  }
-
-  return [
-    selectedMintAddress,
-    selectedMetadataPda,
-    selectedTokenAddress,
-  ] as const;
-}

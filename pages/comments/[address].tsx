@@ -23,7 +23,8 @@ const Comments: NextPage<PageProps> = () => {
   const router = useRouter();
   const id = router.query.address as string;
   const postQuery = useQuery(["post", id], () => fetchPost(id));
-  const commentsQuery = useQuery(["comments", id], () => fetchComments(id));
+  const commentsQueryKey = ["comments", id];
+  const commentsQuery = useQuery(commentsQueryKey, () => fetchComments(id));
 
   return (
     <Container maxW="container.md">
@@ -49,23 +50,28 @@ const Comments: NextPage<PageProps> = () => {
             </Box>
 
             <Box mb="6">
-              <PostButtons id={id} post={postQuery.data} />
+              <PostButtons post={postQuery.data} />
             </Box>
+
+            <Editor
+              buttonLabel="Comment"
+              placeholder="Got some thinky thoughts?"
+              config={{
+                type: "comment",
+                post: id,
+                forum: postQuery.data?.forum,
+                parent: null,
+              }}
+              invalidateQueries={commentsQueryKey}
+            />
           </>
         )}
       </>
 
-      <Editor
-        buttonLabel="Comment"
-        placeholder="Got some thinky thoughts?"
-        config={{ type: "comment", post: id, parent: null }}
-        invalidateQueries={["comments", id]}
-      />
-
       <Divider my="6" />
 
       <Box pb="12">
-        {commentsQuery.isLoading ? (
+        {commentsQuery.isLoading || !postQuery.data ? (
           <Box display="flex" alignItems="center" justifyContent="center">
             <Spinner />
           </Box>
@@ -73,8 +79,8 @@ const Comments: NextPage<PageProps> = () => {
           commentsQuery.data?.map((comment) => (
             <CommentListItem
               key={comment.id}
-              {...comment}
-              createdAt={String(comment.createdAt)}
+              forum={postQuery.data?.forum}
+              comment={comment}
             />
           ))
         )}

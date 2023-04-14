@@ -31,7 +31,6 @@ interface PostLikeButtonProps {
 }
 
 export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
-  console.log("Post: ", post);
   const anchorWallet = useAnchorWallet();
   const { connection } = useConnection();
   const queryClient = useQueryClient();

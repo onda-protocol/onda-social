@@ -17,6 +17,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useMemo } from "react";
 import { Toaster } from "react-hot-toast";
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -78,6 +79,7 @@ export default function App({ Component, pageProps }: AppProps) {
           </WalletProvider>
         </ConnectionProvider>
       </Hydrate>
+      <ReactQueryDevtools />
     </QueryClientProvider>
   );
 }

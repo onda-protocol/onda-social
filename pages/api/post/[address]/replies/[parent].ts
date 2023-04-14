@@ -7,15 +7,16 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { address } = req.query;
+  const { address, parent } = req.query;
 
   const result = await prisma.comment.findMany({
     where: {
       post: address as string,
-      parent: null,
+      parent: parent as string,
     },
     include: {
       Children: {
+        take: 10,
         orderBy: {
           createdAt: "desc",
         },
@@ -34,6 +35,8 @@ export default async function handler(
       },
     },
   });
+
+  console.log(result);
 
   res.json(parseBigInt(result));
 }
