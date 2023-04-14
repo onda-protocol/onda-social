@@ -17,6 +17,9 @@ export type PostWithCommentsCountAndForum = DeepReplaceBigInt<
   string
 >;
 
+export type SerializedForum = DeepReplaceBigInt<Forum, string>;
+export type SerializedComment = DeepReplaceBigInt<Comment, string>;
+
 export function fetchPost(id: string): Promise<PostWithCommentsCountAndForum> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/post/${id}`).then((res) =>
     res.json()
@@ -29,8 +32,14 @@ export function fetchPosts(): Promise<PostWithCommentsCountAndForum[]> {
   );
 }
 
-export function fetchComments(id: string): Promise<Comment[]> {
+export function fetchComments(id: string): Promise<SerializedComment[]> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/post/${id}/comments`).then(
     (res) => res.json()
+  );
+}
+
+export function fetchFora(): Promise<SerializedForum[]> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/fora`).then((res) =>
+    res.json()
   );
 }

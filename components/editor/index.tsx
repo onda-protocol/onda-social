@@ -1,7 +1,7 @@
 import { web3 } from "@project-serum/anchor";
 import { AccountLayout, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
@@ -15,22 +15,24 @@ import { findMetadataPda } from "utils/pda";
 import { fetchAllAccounts } from "utils/web3";
 import { getProgram } from "lib/anchor/provider";
 import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
-import { getProfiles } from "utils/profile";
+import { getNameFromAddress, getProfiles } from "utils/profile";
+import React from "react";
+import { SerializedForum, fetchFora } from "lib/api";
 
 interface EntryForm {
   title: string;
   body: string;
-  community: string;
+  forum: string;
 }
 
 type EntryConfig =
   | {
       type: "post";
-      // forum: string;
     }
   | {
       type: "comment";
       post: string;
+      forum: string;
       parent: string | null;
     };
 
@@ -64,7 +66,7 @@ export const Editor = ({
   });
 
   const mutation = useMutation<void, Error, EntryForm>(
-    async ({ title, body, community }) => {
+    async (data) => {
       if (!anchorWallet) {
         throw new Error("Wallet not connected");
       }
@@ -75,82 +77,53 @@ export const Editor = ({
         throw new Error("Provider not found");
       }
 
-      const collection = new web3.PublicKey();
-      const forumConfig = new web3.PublicKey(
-        "3feAsAELMWZ5QFQgCZriCuQSsTttUbypMj4y5TMtE27e"
-      );
-      const merkleTree = new web3.PublicKey(
-        "vP4yRKvMDAnVU2Zs5bJuYBJnYsQJgprDeiq9N2zWXMw"
-      );
-
-      let data = {};
-
-      const tokenAccounts = await connection.getTokenAccountsByOwner(
-        program.provider.publicKey,
-        {
-          programId: TOKEN_PROGRAM_ID,
-        }
-      );
-      const decodedTokenAccounts = tokenAccounts.value.map((value) => ({
-        ...AccountLayout.decode(value.account.data),
-        pubkey: value.pubkey,
-      }));
-      const metadataPdas = decodedTokenAccounts.map((account) =>
-        findMetadataPda(account.mint)
-      );
-      const metadataAccounts = await fetchAllAccounts(connection, metadataPdas);
-      const metadata = metadataAccounts
-        .map((account) => {
-          try {
-            return Metadata.fromAccountInfo(account)[0];
-          } catch (err) {
-            console.log("err: ", err);
-            return null;
-          }
-        })
-        .filter(
-          (metadata): metadata is NonNullable<Metadata> => metadata !== null
-        );
-
-      console.log("metadata: ", metadata);
-      const selectedMetadataAccount = metadata.find((metadata) =>
-        metadata.collection?.key.equals(collection)
-      );
-      console.log("selectedMetadataAccount: ", selectedMetadataAccount);
-
-      if (!selectedMetadataAccount) {
-        throw new Error("Unahthorized");
-      }
-
-      const selectedMetadataPda = findMetadataPda(selectedMetadataAccount.mint);
-      const selectedTokenAddress = decodedTokenAccounts.find((value) =>
-        value.mint.equals(selectedMetadataAccount.mint)
-      )?.pubkey;
-
-      if (!selectedTokenAddress) {
-        throw new Error("Token account not found");
-      }
+      let dataArgs = {};
 
       if (config.type === "post") {
-        data = { textPost: { title, body } };
+        dataArgs = { textPost: { title: data.title, body: data.body } };
       } else {
-        data = {
+        dataArgs = {
           comment: {
             post: new web3.PublicKey(config.post),
             parent: config.parent ? new web3.PublicKey(config.parent) : null,
-            body,
+            body: data.body,
           },
         };
       }
 
+      const forumId = config.type === "comment" ? config.forum : data.forum;
+      const forum = queryClient
+        .getQueryData<SerializedForum[]>(["fora"])
+        ?.find((forum) => forum.id === forumId);
+
+      if (!forum) {
+        throw new Error("Forum not found");
+      }
+
+      const merkleTree = new web3.PublicKey(forum.id);
+      const forumConfig = new web3.PublicKey(forum.config);
+      const collection = forum.collection
+        ? new web3.PublicKey(forum.collection)
+        : undefined;
+
+      let mint, metadata, tokenAccount;
+
+      if (collection) {
+        [mint, metadata, tokenAccount] = await fetchTokenAccounts(
+          connection,
+          anchorWallet.publicKey,
+          collection
+        );
+      }
+
       await program.methods
-        .addEntry(data)
+        .addEntry(dataArgs)
         .accounts({
           forumConfig,
           merkleTree,
-          mint: selectedMetadataAccount.mint,
-          tokenAccount: selectedTokenAddress,
-          metadata: selectedMetadataPda,
+          mint,
+          tokenAccount,
+          metadata,
           logWrapper: SPL_NOOP_PROGRAM_ID,
           compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
         })
@@ -185,17 +158,11 @@ export const Editor = ({
       onSubmit={methods.handleSubmit((data) => mutation.mutate(data))}
     >
       {config.type === "post" && (
-        <Select
-          mt="6"
-          placeholder="Choose a community"
-          {...methods.register("community", { required: true })}
-        >
-          {getProfiles().map((profile) => (
-            <option key={profile.id} value={profile.id}>
-              {profile.name}
-            </option>
-          ))}
-        </Select>
+        <SelectForum
+          {...methods.register("forum", {
+            required: true,
+          })}
+        />
       )}
       {config.type === "post" && (
         <Input
@@ -219,3 +186,74 @@ export const Editor = ({
     </Box>
   );
 };
+
+const SelectForum = React.forwardRef<HTMLSelectElement>(function SelectForum(
+  props,
+  ref
+) {
+  const query = useQuery(["fora"], fetchFora);
+
+  return (
+    <Select mt="6" placeholder="Choose a community" ref={ref} {...props}>
+      {query.data?.map((forum) => (
+        <option key={forum.id} value={forum.id}>
+          {getNameFromAddress(forum.id)}
+        </option>
+      ))}
+    </Select>
+  );
+});
+
+async function fetchTokenAccounts(
+  connection: web3.Connection,
+  owner: web3.PublicKey,
+  collection: web3.PublicKey
+) {
+  const tokenAccounts = await connection.getTokenAccountsByOwner(owner, {
+    programId: TOKEN_PROGRAM_ID,
+  });
+  const decodedTokenAccounts = tokenAccounts.value.map((value) => ({
+    ...AccountLayout.decode(value.account.data),
+    pubkey: value.pubkey,
+  }));
+  const metadataPdas = decodedTokenAccounts.map((account) =>
+    findMetadataPda(account.mint)
+  );
+  const metadataAccounts = await fetchAllAccounts(connection, metadataPdas);
+  const metadata = metadataAccounts
+    .map((account) => {
+      try {
+        return Metadata.fromAccountInfo(account)[0];
+      } catch (err) {
+        console.log("err: ", err);
+        return null;
+      }
+    })
+    .filter((metadata): metadata is NonNullable<Metadata> => metadata !== null);
+
+  console.log("metadata: ", metadata);
+  const selectedMetadataAccount = metadata.find((metadata) =>
+    metadata.collection?.key.equals(collection)
+  );
+  const selectedMintAddress = selectedMetadataAccount?.mint;
+  console.log("selectedMetadataAccount: ", selectedMetadataAccount);
+
+  if (!selectedMintAddress) {
+    throw new Error("Unahthorized");
+  }
+
+  const selectedMetadataPda = findMetadataPda(selectedMetadataAccount.mint);
+  const selectedTokenAddress = decodedTokenAccounts.find((value) =>
+    value.mint.equals(selectedMetadataAccount.mint)
+  )?.pubkey;
+
+  if (!selectedTokenAddress) {
+    throw new Error("Token account not found");
+  }
+
+  return [
+    selectedMintAddress,
+    selectedMetadataPda,
+    selectedTokenAddress,
+  ] as const;
+}

@@ -20,9 +20,8 @@ export const PostListItem = ({ post }: PostListItemProps) => {
       pl="6"
       pr="6"
       pb="4"
-      borderBottom="1px"
-      borderLeft="1px"
-      borderRight="1px"
+      mb="2"
+      borderWidth="1px"
       borderRadius="md"
       borderColor="gray.800"
       _hover={{
