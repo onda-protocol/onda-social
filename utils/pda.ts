@@ -29,3 +29,10 @@ export function findLikeRecordPda(
     PROGRAM_ID
   )[0];
 }
+
+export function findForumConfigPda(merkleTree: web3.PublicKey) {
+  return web3.PublicKey.findProgramAddressSync(
+    [merkleTree.toBuffer()],
+    PROGRAM_ID
+  )[0];
+}

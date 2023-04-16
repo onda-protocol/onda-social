@@ -3,7 +3,7 @@ import { AnchorWallet } from "@solana/wallet-adapter-react";
 import { OndaSocial, IDL } from "./idl";
 
 export const PROGRAM_ID = new anchor.web3.PublicKey(
-  "9JraSM3unmzqJ44RD8bmxmL4iu9tJfR7U7tv6EkcP63s"
+  "5KCUQVLFg1E7SuZbuLNG5n5UAA6Gzxshdp1wnq9pNtyD"
 );
 
 export function getProgram(

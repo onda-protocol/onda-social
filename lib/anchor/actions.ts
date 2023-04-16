@@ -3,15 +3,87 @@ import { AccountLayout, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
+  getConcurrentMerkleTreeAccountSize,
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
 import base58 from "bs58";
 
-import { findLikeRecordPda, findMetadataPda } from "utils/pda";
+import {
+  findForumConfigPda,
+  findLikeRecordPda,
+  findMetadataPda,
+} from "utils/pda";
 import { fetchAllAccounts } from "utils/web3";
 import { DataV1, LeafSchemaV1 } from "./types";
 import { getProgram } from "./provider";
+
+export async function initForum(
+  connection: web3.Connection,
+  wallet: AnchorWallet
+) {
+  const program = getProgram(connection, wallet);
+  const payer = program.provider.publicKey;
+
+  if (!payer || !program.provider.sendAndConfirm) {
+    throw new Error("Provider not found");
+  }
+
+  const maxDepth = 14;
+  const maxBufferSize = 64;
+  const merkleTreeKeypair = web3.Keypair.generate();
+  const merkleTree = merkleTreeKeypair.publicKey;
+  const forumConfig = findForumConfigPda(merkleTree);
+  const space = getConcurrentMerkleTreeAccountSize(maxDepth, maxBufferSize);
+  const lamports = await connection.getMinimumBalanceForRentExemption(space);
+  console.log("Allocating ", space, " bytes for merkle tree");
+  console.log(lamports, " lamports required for rent exemption");
+  console.log(
+    lamports / web3.LAMPORTS_PER_SOL,
+    " SOL required for rent exemption"
+  );
+  const allocTreeIx = web3.SystemProgram.createAccount({
+    lamports,
+    space,
+    fromPubkey: payer,
+    newAccountPubkey: merkleTree,
+    programId: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+  });
+
+  const initIx = await program.methods
+    .initForum(maxDepth, maxBufferSize, {
+      collection: {
+        address: new web3.PublicKey(
+          "EotJ4wYtYQUbx6E2Tn5aAbsr79KBFRcwj5usriv2Xj7i"
+        ),
+      },
+    })
+    .accounts({
+      payer,
+      forumConfig,
+      merkleTree,
+      logWrapper: SPL_NOOP_PROGRAM_ID,
+      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+    })
+    .instruction();
+
+  const tx = new web3.Transaction().add(allocTreeIx).add(initIx);
+  tx.feePayer = payer;
+
+  try {
+    await program.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
+      commitment: "confirmed",
+    });
+  } catch (err) {
+    // @ts-ignore
+    console.log(err.logs);
+    throw err;
+  }
+
+  console.log("Forum initialized");
+  console.log("forumConfig: ", forumConfig.toBase58());
+  console.log("merkleTree: ", merkleTree.toBase58());
+}
 
 export async function addEntry(
   connection: web3.Connection,
@@ -57,7 +129,7 @@ export async function addEntry(
     commitment: "confirmed",
     maxSupportedTransactionVersion: 2,
   });
-  console.log("logs: ", logs);
+
   const innerInstructions = logs?.meta?.innerInstructions?.[0];
   if (innerInstructions) {
     const noopIx = innerInstructions.instructions[0];
@@ -68,7 +140,7 @@ export async function addEntry(
       "LeafSchema",
       eventBuffer
     ).v1;
-    console.log("eventData: ", eventData);
+
     if (eventData) {
       return [eventData.id.toBase58(), eventData.nonce.toString()];
     }

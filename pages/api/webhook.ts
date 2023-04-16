@@ -6,6 +6,7 @@ import {
   Program,
   BN,
 } from "@project-serum/anchor";
+import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import base58 from "bs58";
 import { snakeCase } from "snake-case";
 import { sha256 } from "js-sha256";
@@ -143,7 +144,11 @@ export default async function handler(
                     url: dataV1.url,
                     createdAt: schemaV1.createdAt.toNumber(),
                     nonce: schemaV1.nonce.toNumber(),
-                    Forum: forumAddress,
+                    Forum: {
+                      connect: {
+                        id: forumAddress,
+                      },
+                    },
                     Author: {
                       connectOrCreate: {
                         where: {
@@ -167,11 +172,13 @@ export default async function handler(
                     body: dataV1.body!,
                     createdAt: schemaV1.createdAt.toNumber(),
                     nonce: schemaV1.nonce.toNumber(),
-                    Parent: {
-                      connect: {
-                        id: dataV1.parent?.toBase58(),
-                      },
-                    },
+                    Parent: dataV1.parent
+                      ? {
+                          connect: {
+                            id: dataV1.parent.toBase58(),
+                          },
+                        }
+                      : undefined,
                     Post: {
                       connect: {
                         id: dataV1.post!.toBase58(),
@@ -235,20 +242,36 @@ export default async function handler(
               (account) => account.name === "mint"
             );
             const mintAddress = new web3.PublicKey(ix.accounts[mintIndex]);
+            const metadataIndex = ixAccounts.findIndex(
+              (account) => account.name === "metadata"
+            );
+            const metadataAddress = new web3.PublicKey(
+              ix.accounts[metadataIndex]
+            );
             const userIndex = ixAccounts.findIndex(
               (account) => account.name === "author"
             );
             const userAddress = new web3.PublicKey(ix.accounts[userIndex]);
+
+            const metadata = await Metadata.fromAccountAddress(
+              connection,
+              metadataAddress
+            );
+            const avatar: string = await fetch(metadata.data.uri)
+              .then((res) => res.json())
+              .then((json) => json.image);
 
             await prisma.user.upsert({
               where: {
                 id: userAddress.toBase58(),
               },
               update: {
+                avatar,
                 name,
                 mint: mintAddress.toBase58(),
               },
               create: {
+                avatar,
                 name,
                 id: userAddress.toBase58(),
                 mint: mintAddress.toBase58(),

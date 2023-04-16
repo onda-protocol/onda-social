@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Box, Text } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { IoChatbox, IoHeart } from "react-icons/io5";
+import { IoChatbox, IoFish } from "react-icons/io5";
 import { MouseEventHandler } from "react";
 
 import { likeEntry } from "lib/anchor";
@@ -84,7 +84,7 @@ export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
 
   return (
     <PostButton
-      icon={<IoHeart />}
+      icon={<IoFish />}
       label={post.likes.toString()}
       onClick={(e) => {
         e.stopPropagation();

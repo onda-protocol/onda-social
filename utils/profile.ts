@@ -6,7 +6,7 @@ interface Profile {
 }
 
 const profiles = new Map<string, Profile>();
-profiles.set("FghMS8HrXVt9RsXwfLCVydQQKhz5Ce3StjQcvscSyWcy", {
+profiles.set("GNrgyGzetWJje63FX5cnBnnqThPqXBJnWopYEbQSo7cv", {
   name: "ChickenTribe",
   image: "https://chickentribe.s3.us-west-2.amazonaws.com/collection.png",
 });

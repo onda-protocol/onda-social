@@ -1,8 +1,11 @@
 import Link from "next/link";
-import { Box, Button, Heading, Text } from "@chakra-ui/react";
-
-import { Avatar } from "../avatar";
 import React from "react";
+import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
+import { Box, Button, Heading, Text } from "@chakra-ui/react";
+import { useMutation } from "@tanstack/react-query";
+
+import { initForum } from "lib/anchor/actions";
+import { Avatar } from "../avatar";
 
 export const Sidebar = () => {
   return (
@@ -95,6 +98,17 @@ const SidebarItem = ({ href, image, label }: SidebarItemProps) => {
 };
 
 export const SidebarButtons = () => {
+  const { connection } = useConnection();
+  const anchorWallet = useAnchorWallet();
+
+  const initForumMutation = useMutation(async () => {
+    if (!anchorWallet) {
+      throw new Error("Wallet not connected");
+    }
+
+    return initForum(connection, anchorWallet);
+  });
+
   return (
     <Box my="6" mx="4">
       <Button
@@ -107,7 +121,14 @@ export const SidebarButtons = () => {
       >
         Create Post
       </Button>
-      <Button disabled={true} width="100%" borderRadius="lg" variant="outline">
+      <Button
+        // isDisabled
+        width="100%"
+        borderRadius="lg"
+        variant="outline"
+        isLoading={initForumMutation.isLoading}
+        onClick={() => initForumMutation.mutate()}
+      >
         Create Community
       </Button>
     </Box>
