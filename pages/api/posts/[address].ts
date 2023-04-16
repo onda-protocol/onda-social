@@ -13,7 +13,11 @@ export default async function handler(
     where: {
       forum: address as string,
     },
+    orderBy: {
+      createdAt: "desc",
+    },
     include: {
+      Author: true,
       Forum: true,
       _count: {
         select: {

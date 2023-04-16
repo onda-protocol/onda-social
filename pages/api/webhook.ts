@@ -135,37 +135,59 @@ export default async function handler(
               case "TextPost":
               case "LinkPost":
               case "ImagePost": {
-                const data = {
-                  id: schemaV1.id.toBase58(),
-                  forum: forumAddress,
-                  author: schemaV1.author.toBase58(),
-                  title: dataV1.title!,
-                  body: dataV1.body,
-                  url: dataV1.url,
-                  createdAt: schemaV1.createdAt.toNumber(),
-                  nonce: schemaV1.nonce.toNumber(),
-                };
-                console.log(data);
                 await prisma.post.create({
-                  data,
+                  data: {
+                    id: schemaV1.id.toBase58(),
+                    title: dataV1.title!,
+                    body: dataV1.body,
+                    url: dataV1.url,
+                    createdAt: schemaV1.createdAt.toNumber(),
+                    nonce: schemaV1.nonce.toNumber(),
+                    Forum: forumAddress,
+                    Author: {
+                      connectOrCreate: {
+                        where: {
+                          id: schemaV1.author.toBase58(),
+                        },
+                        create: {
+                          id: schemaV1.author.toBase58(),
+                        },
+                      },
+                    },
+                  },
                 });
                 break;
               }
 
               case "Comment": {
-                const data = {
-                  id: schemaV1.id.toBase58(),
-                  author: schemaV1.author.toBase58(),
-                  createdAt: schemaV1.createdAt.toNumber(),
-                  parent: dataV1.parent?.toBase58(),
-                  post: dataV1.post!.toBase58(),
-                  body: dataV1.body!,
-                  nonce: schemaV1.nonce.toNumber(),
-                };
-                console.log(data);
                 // Decode entry data
                 await prisma.comment.create({
-                  data,
+                  data: {
+                    id: schemaV1.id.toBase58(),
+                    body: dataV1.body!,
+                    createdAt: schemaV1.createdAt.toNumber(),
+                    nonce: schemaV1.nonce.toNumber(),
+                    Parent: {
+                      connect: {
+                        id: dataV1.parent?.toBase58(),
+                      },
+                    },
+                    Post: {
+                      connect: {
+                        id: dataV1.post!.toBase58(),
+                      },
+                    },
+                    Author: {
+                      connectOrCreate: {
+                        where: {
+                          id: schemaV1.author.toBase58(),
+                        },
+                        create: {
+                          id: schemaV1.author.toBase58(),
+                        },
+                      },
+                    },
+                  },
                 });
                 break;
               }
@@ -204,6 +226,34 @@ export default async function handler(
             }
 
             break;
+          }
+
+          case "updateProfile": {
+            const buffer = Buffer.from(ixData.slice(8));
+            const name = new TextDecoder().decode(buffer);
+            const mintIndex = ixAccounts.findIndex(
+              (account) => account.name === "mint"
+            );
+            const mintAddress = new web3.PublicKey(ix.accounts[mintIndex]);
+            const userIndex = ixAccounts.findIndex(
+              (account) => account.name === "author"
+            );
+            const userAddress = new web3.PublicKey(ix.accounts[userIndex]);
+
+            await prisma.user.upsert({
+              where: {
+                id: userAddress.toBase58(),
+              },
+              update: {
+                name,
+                mint: mintAddress.toBase58(),
+              },
+              create: {
+                name,
+                id: userAddress.toBase58(),
+                mint: mintAddress.toBase58(),
+              },
+            });
           }
 
           default: {

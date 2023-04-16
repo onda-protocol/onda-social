@@ -19,6 +19,7 @@ model Forum {
 model Post {
   id String @id @unique
   author String
+  Author User @relation("UserToPost", fields: [author], references: [id])
   title String
   body String?
   url String?
@@ -34,6 +35,7 @@ model Post {
 model Comment {
   id String @id @unique
   author String
+  Author User @relation("UserToComment", fields: [author], references: [id])
   body String
   createdAt BigInt
   editedAt BigInt?
@@ -44,4 +46,13 @@ model Comment {
   parent String?
   Parent Comment? @relation("CommentToParent", fields: [parent], references: [id])
   Children Comment[] @relation("CommentToParent")
+}
+
+model User {
+  id String @id @unique
+  name String?
+  mint String?
+  avatar String?
+  Posts Post[] @relation("UserToPost")
+  Comments Comment[] @relation("UserToComment")
 }

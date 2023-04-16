@@ -14,7 +14,11 @@ export default async function handler(
       post: address as string,
       parent: null,
     },
+    orderBy: {
+      createdAt: "desc",
+    },
     include: {
+      Author: true,
       Children: {
         orderBy: {
           createdAt: "desc",

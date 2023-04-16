@@ -154,6 +154,83 @@ export type OndaSocial = {
           type: "publicKey";
         }
       ];
+    },
+    {
+      name: "updateProfile";
+      accounts: [
+        {
+          name: "author";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "profile";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "mint";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "metadata";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "tokenAccount";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "name";
+          type: "string";
+        }
+      ];
+    },
+    {
+      name: "verifyProfile";
+      accounts: [
+        {
+          name: "author";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "profile";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "mint";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "metadata";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "tokenAccount";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [];
     }
   ];
   accounts: [
@@ -174,6 +251,24 @@ export type OndaSocial = {
             name: "restriction";
             type: {
               defined: "RestrictionType";
+            };
+          }
+        ];
+      };
+    },
+    {
+      name: "profile";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "name";
+            type: "string";
+          },
+          {
+            name: "mint";
+            type: {
+              option: "publicKey";
             };
           }
         ];
@@ -235,6 +330,15 @@ export type OndaSocial = {
           },
           {
             name: "Collection";
+            fields: [
+              {
+                name: "address";
+                type: "publicKey";
+              }
+            ];
+          },
+          {
+            name: "Mint";
             fields: [
               {
                 name: "address";
@@ -549,6 +653,83 @@ export const IDL: OndaSocial = {
         },
       ],
     },
+    {
+      name: "updateProfile",
+      accounts: [
+        {
+          name: "author",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "profile",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "mint",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "metadata",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "tokenAccount",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "name",
+          type: "string",
+        },
+      ],
+    },
+    {
+      name: "verifyProfile",
+      accounts: [
+        {
+          name: "author",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "profile",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "mint",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "metadata",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "tokenAccount",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [],
+    },
   ],
   accounts: [
     {
@@ -568,6 +749,24 @@ export const IDL: OndaSocial = {
             name: "restriction",
             type: {
               defined: "RestrictionType",
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "profile",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "name",
+            type: "string",
+          },
+          {
+            name: "mint",
+            type: {
+              option: "publicKey",
             },
           },
         ],
@@ -629,6 +828,15 @@ export const IDL: OndaSocial = {
           },
           {
             name: "Collection",
+            fields: [
+              {
+                name: "address",
+                type: "publicKey",
+              },
+            ],
+          },
+          {
+            name: "Mint",
             fields: [
               {
                 name: "address",
