@@ -153,15 +153,11 @@ export async function likeEntry(
   options: {
     id: string;
     author: string;
-    forumId: string;
-    forumConfig: string;
   }
 ) {
   const program = getProgram(connection, wallet);
   const entryId = new web3.PublicKey(options.id);
   const author = new web3.PublicKey(options.author);
-  const merkleTree = new web3.PublicKey(options.forumId);
-  const forumConfigPda = new web3.PublicKey(options.forumConfig);
   const likeRecordPda = findLikeRecordPda(entryId, author);
 
   await program.methods
@@ -169,8 +165,6 @@ export async function likeEntry(
     .accounts({
       payer: wallet.publicKey,
       author: author,
-      merkleTree,
-      forumConfig: forumConfigPda,
       likeRecord: likeRecordPda,
     })
     .rpc();

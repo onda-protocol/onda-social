@@ -81,6 +81,7 @@ const Comments: NextPage<PageProps> = () => {
               key={comment.id}
               forum={postQuery.data?.forum}
               comment={comment}
+              queryKey={commentsQueryKey}
             />
           ))
         )}

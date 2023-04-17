@@ -128,17 +128,7 @@ export type OndaSocial = {
           isSigner: false;
         },
         {
-          name: "forumConfig";
-          isMut: false;
-          isSigner: false;
-        },
-        {
           name: "likeRecord";
-          isMut: true;
-          isSigner: false;
-        },
-        {
-          name: "merkleTree";
           isMut: true;
           isSigner: false;
         },
@@ -626,17 +616,7 @@ export const IDL: OndaSocial = {
           isSigner: false,
         },
         {
-          name: "forumConfig",
-          isMut: false,
-          isSigner: false,
-        },
-        {
           name: "likeRecord",
-          isMut: true,
-          isSigner: false,
-        },
-        {
-          name: "merkleTree",
           isMut: true,
           isSigner: false,
         },

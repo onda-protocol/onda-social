@@ -1,13 +1,15 @@
-import { Box, Button, Spinner } from "@chakra-ui/react";
-import { useQuery } from "@tanstack/react-query";
+import { Box, Button } from "@chakra-ui/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useCallback, useMemo, useState } from "react";
-import { IoChatbox, IoHeart } from "react-icons/io5";
+import { IoChatbox, IoFish } from "react-icons/io5";
 
 import {
   SerializedCommentNested,
   SerializedComment,
   fetchReplies,
 } from "lib/api";
+import { likeEntry } from "lib/anchor";
 import { Markdown } from "../markdown";
 import { Editor } from "../editor";
 import { PostMeta } from "../post/meta";
@@ -16,17 +18,17 @@ interface CommentListItemProps {
   forum: string;
   comment: SerializedCommentNested;
   depth?: number;
+  queryKey: string[];
 }
 
-export const CommentListItem = ({
+export const CommentListItem: React.FC<CommentListItemProps> = ({
   forum,
   comment,
   depth = 0,
-}: CommentListItemProps) => {
-  console.log(comment);
+  queryKey,
+}) => {
   const [reply, setReply] = useState(false);
   const toggleReply = useCallback(() => setReply((reply) => !reply), []);
-  const queryKey = useMemo(() => ["comments", comment.post], [comment.post]);
 
   return (
     <Box position="relative" ml={depth ? "12" : undefined}>
@@ -53,9 +55,7 @@ export const CommentListItem = ({
             >
               {comment._count.Children}
             </Button>
-            <Button size="xs" leftIcon={<IoHeart />} onClick={() => {}}>
-              {comment.likes}
-            </Button>
+            <CommentLikeButton comment={comment} queryKey={queryKey} />
           </Box>
         </Box>
         {reply && (
@@ -73,9 +73,60 @@ export const CommentListItem = ({
         )}
       </Box>
       {comment._count.Children ? (
-        <CommentReplies depth={depth + 1} forum={forum} comment={comment} />
+        <CommentReplies
+          depth={depth + 1}
+          forum={forum}
+          comment={comment}
+          queryKey={queryKey}
+        />
       ) : null}
     </Box>
+  );
+};
+
+interface CommentLikeButtonProps {
+  comment: SerializedComment | SerializedCommentNested;
+  queryKey: string[];
+}
+
+const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
+  comment,
+  queryKey,
+}) => {
+  const { connection } = useConnection();
+  const anchorWallet = useAnchorWallet();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation(
+    () => {
+      if (!anchorWallet) {
+        throw new Error("Wallet not connected");
+      }
+
+      return likeEntry(connection, anchorWallet, {
+        id: comment.id,
+        author: comment.author,
+      });
+    },
+    {
+      onSuccess() {
+        queryClient.setQueryData<Array<SerializedCommentNested>>(
+          queryKey,
+          nestedCommentsLikeReducer<SerializedCommentNested>(comment.id)
+        );
+      },
+    }
+  );
+
+  return (
+    <Button
+      size="xs"
+      leftIcon={<IoFish />}
+      isDisabled={mutation.isLoading}
+      onClick={() => mutation.mutate()}
+    >
+      {comment.likes}
+    </Button>
   );
 };
 
@@ -83,9 +134,15 @@ interface CommentRepliesProps {
   depth: number;
   forum: string;
   comment: SerializedCommentNested;
+  queryKey: string[];
 }
 
-const CommentReplies = ({ depth, forum, comment }: CommentRepliesProps) => {
+const CommentReplies: React.FC<CommentRepliesProps> = ({
+  depth,
+  forum,
+  comment,
+  queryKey,
+}) => {
   return (
     <Box>
       {comment.Children ? (
@@ -97,6 +154,7 @@ const CommentReplies = ({ depth, forum, comment }: CommentRepliesProps) => {
               depth={depth + 1}
               forum={forum}
               comment={comment}
+              queryKey={queryKey}
             />
           ))}
         </>
@@ -119,8 +177,9 @@ const CommentRepliesLazy = ({
   comment,
 }: CommentRepliesLazyProps) => {
   const [loadMore, setLoadMore] = useState(false);
+  const queryKey = useMemo(() => ["replies", comment.id], [comment.id]);
   const query = useQuery(
-    ["replies", comment.id],
+    queryKey,
     () => fetchReplies(comment.post, comment.id),
     { enabled: !loadMore }
   );
@@ -148,6 +207,7 @@ const CommentRepliesLazy = ({
           depth={depth + 1}
           forum={forum}
           comment={comment}
+          queryKey={queryKey}
         />
       ))}
     </>
@@ -169,3 +229,49 @@ const Branch = ({ dashed }: BranchProps) => (
     height={dashed ? "100%" : "calc(100% + var(--chakra-space-4))"}
   />
 );
+
+function increment(like: string) {
+  return Number(Number(like) + 1).toString();
+}
+
+function nestedCommentsLikeReducer<
+  T extends SerializedComment | SerializedCommentNested
+>(id: string): (input: T[] | undefined) => T[] | undefined {
+  return (comments) => {
+    if (!comments) {
+      return;
+    }
+
+    for (const index in comments) {
+      const comment = comments[index];
+
+      if (comment.id === id) {
+        return [
+          ...comments.slice(0, Number(index)),
+          {
+            ...comment,
+            likes: increment(comment.likes),
+          },
+          ...comments.slice(Number(index) + 1),
+        ];
+      } else if ("Children" in comment && comment.Children) {
+        const updatedChildren = nestedCommentsLikeReducer<SerializedComment>(
+          comment.id
+        )(comment.Children);
+
+        if (updatedChildren) {
+          return [
+            ...comments.slice(0, Number(index)),
+            {
+              ...comments[index],
+              Children: updatedChildren,
+            },
+            ...comments.slice(Number(index) + 1),
+          ];
+        }
+      }
+    }
+
+    return comments;
+  };
+}

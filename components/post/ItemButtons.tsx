@@ -44,8 +44,6 @@ export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
       return likeEntry(connection, anchorWallet, {
         id: post.id,
         author: post.author,
-        forumId: post.Forum.id,
-        forumConfig: post.Forum.config,
       });
     },
     {

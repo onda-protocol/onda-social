@@ -1,4 +1,4 @@
-import { Comment, Post, Forum } from "@prisma/client";
+import { Comment, Post, Forum, User } from "@prisma/client";
 
 type DeepReplaceBigInt<T, U> = {
   [K in keyof T]: T[K] extends bigint
@@ -18,6 +18,7 @@ export type PostWithCommentsCountAndForum = DeepReplaceBigInt<
 
 export type SerializedForum = DeepReplaceBigInt<Forum, string>;
 export type SerializedComment = DeepReplaceBigInt<Comment, string> & {
+  Author: User;
   _count: { Children: number };
 };
 export type SerializedCommentNested = SerializedComment & {
