@@ -36,3 +36,10 @@ export function findForumConfigPda(merkleTree: web3.PublicKey) {
     PROGRAM_ID
   )[0];
 }
+
+export function findProfilePda(author: web3.PublicKey) {
+  return web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("profile"), author.toBuffer()],
+    PROGRAM_ID
+  )[0];
+}

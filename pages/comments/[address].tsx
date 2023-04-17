@@ -26,52 +26,50 @@ const Comments: NextPage<PageProps> = () => {
   const commentsQueryKey = ["comments", id];
   const commentsQuery = useQuery(commentsQueryKey, () => fetchComments(id));
 
+  if (!postQuery.data) {
+    return (
+      <Box display="flex" alignItems="center" justifyContent="center">
+        <Spinner />
+      </Box>
+    );
+  }
+
   return (
     <Container maxW="container.md">
-      <>
-        {postQuery.isLoading || !postQuery.data ? (
-          <Box display="flex" alignItems="center" justifyContent="center">
-            <Spinner />
-          </Box>
-        ) : (
-          <>
-            <Box mt="12">
-              <PostMeta
-                author={postQuery.data?.author}
-                forum={postQuery.data?.forum}
-                createdAt={String(postQuery.data?.createdAt)}
-              />
-              <Heading my="6" as="h1">
-                {postQuery.data?.title}
-              </Heading>
-            </Box>
-            <Box mb="6">
-              <Markdown>{postQuery.data?.body ?? ""}</Markdown>
-            </Box>
+      <Box mt="12">
+        <PostMeta
+          author={postQuery.data.Author}
+          forum={postQuery.data.forum}
+          createdAt={String(postQuery.data.createdAt)}
+        />
+        <Heading my="6" as="h1">
+          {postQuery.data?.title}
+        </Heading>
+      </Box>
+      <Box mb="6">
+        <Markdown>{postQuery.data?.body ?? ""}</Markdown>
+      </Box>
 
-            <Box mb="6">
-              <PostButtons post={postQuery.data} />
-            </Box>
+      <Box mb="6">
+        <PostButtons post={postQuery.data} />
+      </Box>
 
-            <Editor
-              buttonLabel="Comment"
-              placeholder="Got some thinky thoughts?"
-              config={{
-                type: "comment",
-                post: id,
-                forum: postQuery.data?.forum,
-                parent: null,
-              }}
-              invalidateQueries={commentsQueryKey}
-            />
-          </>
-        )}
-      </>
+      <Editor
+        buttonLabel="Comment"
+        placeholder="Got some thinky thoughts?"
+        config={{
+          type: "comment",
+          post: id,
+          forum: postQuery.data?.forum,
+          parent: null,
+        }}
+        invalidateQueries={commentsQueryKey}
+      />
 
       <Divider my="6" />
 
       <Box pb="12">
-        {commentsQuery.isLoading || !postQuery.data ? (
+        {commentsQuery.isLoading ? (
           <Box display="flex" alignItems="center" justifyContent="center">
             <Spinner />
           </Box>
@@ -83,7 +81,7 @@ const Comments: NextPage<PageProps> = () => {
               comment={comment}
               queryKey={commentsQueryKey}
             />
-          ))
+          )) ?? null
         )}
       </Box>
     </Container>

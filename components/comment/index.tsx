@@ -41,7 +41,11 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
           mt="4"
         >
           <Box p="4">
-            <PostMeta author={comment.author} createdAt={comment.createdAt} />
+            <PostMeta
+              displayAvatar
+              author={comment.Author}
+              createdAt={comment.createdAt}
+            />
             <Box pt="2">
               <Markdown>{comment.body}</Markdown>
             </Box>

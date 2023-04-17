@@ -9,13 +9,16 @@ export default async function handler(
 ) {
   const { address } = req.query;
 
-  const result = await prisma.post.findUnique({
+  const result = await prisma.post.findMany({
     where: {
-      id: address as string,
+      author: address as string | undefined,
+    },
+    orderBy: {
+      createdAt: "desc",
     },
     include: {
-      Forum: true,
       Author: true,
+      Forum: true,
       _count: {
         select: {
           Comments: true,

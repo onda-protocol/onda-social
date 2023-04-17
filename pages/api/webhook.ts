@@ -236,8 +236,9 @@ export default async function handler(
           }
 
           case "updateProfile": {
-            const buffer = Buffer.from(ixData.slice(8));
+            const buffer = Buffer.from(ixData.slice(8 + 4));
             const name = new TextDecoder().decode(buffer);
+            console.log("name: ", name);
             const mintIndex = ixAccounts.findIndex(
               (account) => account.name === "mint"
             );
@@ -260,6 +261,25 @@ export default async function handler(
             const avatar: string = await fetch(metadata.data.uri)
               .then((res) => res.json())
               .then((json) => json.image);
+
+            console.log("avatar: ", avatar);
+
+            console.log({
+              where: {
+                id: userAddress.toBase58(),
+              },
+              update: {
+                avatar,
+                name,
+                mint: mintAddress.toBase58(),
+              },
+              create: {
+                avatar,
+                name,
+                id: userAddress.toBase58(),
+                mint: mintAddress.toBase58(),
+              },
+            });
 
             await prisma.user.upsert({
               where: {

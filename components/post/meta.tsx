@@ -2,18 +2,18 @@ import Link from "next/link";
 import Image from "next/image";
 import { Box, Text, chakra } from "@chakra-ui/react";
 import { useMemo } from "react";
+import { User } from "@prisma/client";
 
 import { getImageFromAddress, getNameFromAddress } from "utils/profile";
-import dayjs from "../../lib/dayjs";
 import { shortenAddress } from "utils/format";
+import dayjs from "lib/dayjs";
 
 interface PostMetaProps {
-  author?: string;
+  author: User;
   createdAt?: string;
   forum?: string;
+  displayAvatar?: boolean;
 }
-
-const ChakraImage = chakra(Image);
 
 const Dot = () => (
   <Box as="span" fontSize="xxs" color="gray.500">
@@ -21,9 +21,14 @@ const Dot = () => (
   </Box>
 );
 
-export const PostMeta = ({ author, forum, createdAt }: PostMetaProps) => {
+export const PostMeta: React.FC<PostMetaProps> = ({
+  author,
+  forum,
+  createdAt,
+  displayAvatar = false,
+}) => {
   const authorAddress = useMemo(
-    () => (author ? shortenAddress(author) : null),
+    () => (author?.id ? shortenAddress(author.id) : null),
     [author]
   );
   const forumName = useMemo(
@@ -78,15 +83,26 @@ export const PostMeta = ({ author, forum, createdAt }: PostMetaProps) => {
         </Link>
       )}
       <Text fontSize="xs" color="gray.500">
-        <a
-          href={`https://explorer.solana.com/address/${author}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {forum ? "Posted by " : ""} {authorAddress}
-          {forum ? " " : <Dot />}
-          {time}
-        </a>
+        <Link href={`/u/${author.id}`}>
+          <Box as="span" display="flex" flexDirection="row" alignItems="center">
+            {displayAvatar && author.avatar && author.name && (
+              <Box mr="2">
+                <Image
+                  height={28}
+                  width={28}
+                  alt={author.name}
+                  src={author.avatar}
+                  style={{
+                    borderRadius: "100%",
+                  }}
+                />
+              </Box>
+            )}
+            {forum ? "Posted by " : ""} {author.name ?? authorAddress}
+            {forum ? " " : <Dot />}
+            {time}
+          </Box>
+        </Link>
       </Text>
     </Box>
   );

@@ -120,7 +120,7 @@ export const Editor = ({
                 comments.forEach((c) => {
                   if (config.parent === c.id) {
                     c.Children = [
-                      ...c.Children,
+                      ...(c.Children ?? []),
                       {
                         id: data[0],
                         author: anchorWallet?.publicKey?.toBase58() || "",

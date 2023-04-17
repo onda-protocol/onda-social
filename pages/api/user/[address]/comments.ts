@@ -9,16 +9,19 @@ export default async function handler(
 ) {
   const { address } = req.query;
 
-  const result = await prisma.post.findUnique({
+  const result = await prisma.comment.findMany({
     where: {
-      id: address as string,
+      author: address as string,
+    },
+    orderBy: {
+      createdAt: "desc",
     },
     include: {
-      Forum: true,
       Author: true,
+      Post: true,
       _count: {
         select: {
-          Comments: true,
+          Children: true,
         },
       },
     },

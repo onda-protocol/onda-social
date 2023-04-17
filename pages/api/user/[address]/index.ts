@@ -9,16 +9,17 @@ export default async function handler(
 ) {
   const { address } = req.query;
 
-  const result = await prisma.post.findUnique({
+  const result = await prisma.user.findUnique({
     where: {
       id: address as string,
     },
     include: {
-      Forum: true,
-      Author: true,
+      Comments: true,
+      Posts: true,
       _count: {
         select: {
           Comments: true,
+          Posts: true,
         },
       },
     },

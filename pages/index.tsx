@@ -1,15 +1,12 @@
 import type { NextPage } from "next";
-import * as anchor from "@project-serum/anchor";
 import {
   QueryClient,
   DehydratedState,
   dehydrate,
   useQuery,
-  useMutation,
 } from "@tanstack/react-query";
 import { Box } from "@chakra-ui/react";
 
-import { getProgram, PROGRAM_ID } from "lib/anchor/provider";
 import { fetchPosts } from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import { Sidebar } from "components/layout/sidebar";
@@ -21,6 +18,7 @@ interface PageProps {
 
 const Home: NextPage<PageProps> = () => {
   const query = useQuery(["posts"], fetchPosts);
+  console.log("query: ", query);
 
   return (
     <GridLayout

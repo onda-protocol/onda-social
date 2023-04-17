@@ -30,7 +30,7 @@ export const PostListItem = ({ post }: PostListItemProps) => {
       onClick={() => router.push(`/comments/${post.id}`)}
     >
       <PostMeta
-        author={post.author}
+        author={post.Author}
         forum={post.forum}
         createdAt={String(post.createdAt)}
       />

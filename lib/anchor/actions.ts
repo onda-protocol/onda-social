@@ -13,6 +13,7 @@ import {
   findForumConfigPda,
   findLikeRecordPda,
   findMetadataPda,
+  findProfilePda,
 } from "utils/pda";
 import { fetchAllAccounts } from "utils/web3";
 import { DataV1, LeafSchemaV1 } from "./types";
@@ -166,6 +167,38 @@ export async function likeEntry(
       payer: wallet.publicKey,
       author: author,
       likeRecord: likeRecordPda,
+    })
+    .rpc();
+}
+
+export async function updateProfile(
+  connection: web3.Connection,
+  wallet: AnchorWallet,
+  options: {
+    name: string;
+    mint: string;
+  }
+) {
+  const program = getProgram(connection, wallet);
+  const mint = new web3.PublicKey(options.mint);
+  const metadataPda = findMetadataPda(mint);
+  const profilePda = findProfilePda(wallet.publicKey);
+
+  const tokenAccount = await connection
+    .getTokenLargestAccounts(mint)
+    .then(
+      (result) =>
+        result.value.find((account) => Number(account.amount) > 0)?.address
+    );
+
+  await program.methods
+    .updateProfile(options.name)
+    .accounts({
+      mint,
+      tokenAccount,
+      author: wallet.publicKey,
+      profile: profilePda,
+      metadata: metadataPda,
     })
     .rpc();
 }
