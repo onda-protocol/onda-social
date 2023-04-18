@@ -7,50 +7,47 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { Box, Container, Spinner } from "@chakra-ui/react";
-import { Post } from "@prisma/client";
 
+import { fetchPostsByForum } from "lib/api";
 import { PostListItem } from "components/post/listItem";
+import { Sidebar } from "components/layout/sidebar";
+import { GridLayout } from "components/layout";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
 }
 
-const Home: NextPage<PageProps> = () => {
+const Community: NextPage<PageProps> = () => {
   const router = useRouter();
   const id = router.query.address as string;
-  const query = useQuery(["posts", id], () => fetchPostsByForum(id));
+  const query = useQuery(["posts", "o", id], () => fetchPostsByForum(id));
 
   return (
-    <Container maxW="container.md">
-      <Box borderLeftWidth="1px" borderRightWidth="1px" borderColor="gray.800">
-        {query.isLoading ? (
-          <Box display="flex" alignItems="center" justifyContent="center">
-            <Spinner />
-          </Box>
-        ) : (
-          query.data?.map((post) => (
-            <PostListItem
-              key={post.id}
-              id={post.id}
-              author={post.author}
-              title={post.title!}
-              body={post.body!}
-              createdAt={String(post.createdAt)}
-              commentCount={post._count?.Comments}
-            />
-          ))
-        )}
-      </Box>
-    </Container>
+    <GridLayout
+      leftColumn={
+        <Box mt="6">
+          {query.isLoading ? (
+            <Box display="flex" alignItems="center" justifyContent="center">
+              <Spinner />
+            </Box>
+          ) : (
+            query.data?.map((post) => (
+              <PostListItem key={post.id} post={post} />
+            ))
+          )}
+        </Box>
+      }
+      rightColumn={<Sidebar />}
+    />
   );
 };
 
-Home.getInitialProps = async (ctx) => {
+Community.getInitialProps = async (ctx) => {
   if (typeof window === "undefined") {
     try {
       const address = ctx.query.address as string;
       const queryClient = new QueryClient();
-      await queryClient.prefetchQuery(["posts", address], () =>
+      await queryClient.prefetchQuery(["posts", "o", address], () =>
         fetchPostsByForum(address)
       );
 
@@ -67,12 +64,4 @@ Home.getInitialProps = async (ctx) => {
   };
 };
 
-export default Home;
-
-type PostWithCommentsCount = Post & { _count: { Comments: number } };
-
-function fetchPostsByForum(address: string): Promise<PostWithCommentsCount[]> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/posts/${address}`).then(
-    (res) => res.json()
-  );
-}
+export default Community;

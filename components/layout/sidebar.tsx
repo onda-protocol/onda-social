@@ -1,13 +1,17 @@
 import Link from "next/link";
 import React from "react";
+import { useRouter } from "next/router";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Box, Button, Heading, Text } from "@chakra-ui/react";
 import { useMutation } from "@tanstack/react-query";
 
 import { initForum } from "lib/anchor/actions";
 import { Avatar } from "../avatar";
+import { getProfiles } from "utils/profile";
 
 export const Sidebar = () => {
+  const router = useRouter();
+
   return (
     <Box my="6" pl="4" position="relative">
       <Box>
@@ -22,26 +26,15 @@ export const Sidebar = () => {
           <SidebarButtons />
         </Section>
         <Section title="Communities">
-          <SidebarItem
-            href="/o/7NDfZJ64xXtZqsLvGgxkJh48iZ7priEHp8MnCH5DCert"
-            label="ChickenTribe"
-            image="https://chickentribe.s3.us-west-2.amazonaws.com/collection.png"
-          />
-          <SidebarItem
-            href="/o/7NDfZJ64xXtZqsLvGgxkJh48iZ7priEHp8MnCH5DCert"
-            label="ChickenTribe"
-            image="https://chickentribe.s3.us-west-2.amazonaws.com/collection.png"
-          />
-          <SidebarItem
-            href="/o/7NDfZJ64xXtZqsLvGgxkJh48iZ7priEHp8MnCH5DCert"
-            label="ChickenTribe"
-            image="https://chickentribe.s3.us-west-2.amazonaws.com/collection.png"
-          />
-          <SidebarItem
-            href="/o/7NDfZJ64xXtZqsLvGgxkJh48iZ7priEHp8MnCH5DCert"
-            label="Breadheads"
-            image="https://chickentribe.s3.us-west-2.amazonaws.com/collection.png"
-          />
+          {getProfiles().map((profile) => (
+            <SidebarItem
+              key={profile.id}
+              href={`/o/${profile.id}`}
+              active={router.query.address === profile.id}
+              label={profile.name}
+              image={profile.image}
+            />
+          ))}
         </Section>
       </Box>
     </Box>
@@ -67,12 +60,13 @@ const Section: React.FC<SectionProps> = ({ title, children }) => {
 };
 
 interface SidebarItemProps {
+  active: boolean;
   href: string;
   image: string;
   label: string;
 }
 
-const SidebarItem = ({ href, image, label }: SidebarItemProps) => {
+const SidebarItem = ({ active, href, image, label }: SidebarItemProps) => {
   return (
     <Box my="2" w="100%">
       <Link href={href}>
@@ -81,8 +75,9 @@ const SidebarItem = ({ href, image, label }: SidebarItemProps) => {
           flexDirection="row"
           alignItems="center"
           p="4"
+          backgroundColor={active ? "whiteAlpha.100" : "transparent"}
           _hover={{
-            backgroundColor: "whiteAlpha.100",
+            backgroundColor: "whiteAlpha.200",
           }}
         >
           <Box minW="24px" mr="2">

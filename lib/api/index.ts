@@ -39,6 +39,14 @@ export function fetchPosts(): Promise<PostWithCommentsCountAndForum[]> {
   );
 }
 
+export function fetchPostsByForum(
+  address: string
+): Promise<PostWithCommentsCountAndForum[]> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/posts/${address}`).then(
+    (res) => res.json()
+  );
+}
+
 export function fetchComments(id: string): Promise<SerializedCommentNested[]> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/post/${id}/comments`).then(
     (res) => res.json()

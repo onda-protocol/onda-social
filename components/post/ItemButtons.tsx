@@ -52,7 +52,7 @@ export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
           ["post", post.id],
           {
             ...post,
-            likes: post.likes + 1,
+            likes: Number(Number(post.likes) + 1).toString(),
           }
         );
 
@@ -66,12 +66,20 @@ export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
               query.queryKey,
               (posts) => {
                 if (posts) {
-                  posts.forEach((post) => {
-                    if (post.id === post.id) {
-                      post.likes = Number(Number(post.likes) + 1).toString();
+                  for (const index in posts) {
+                    const p = posts[index];
+                    if (p.id === post.id) {
+                      const newPost = { ...p };
+                      newPost.likes = Number(
+                        Number(newPost.likes) + 1
+                      ).toString();
+                      return [
+                        ...posts.slice(0, Number(index)),
+                        newPost,
+                        ...posts.slice(Number(index) + 1),
+                      ];
                     }
-                  });
-                  return [...posts];
+                  }
                 }
               }
             );
@@ -102,6 +110,7 @@ interface PostButtonProps {
 const PostButton = ({ label, icon, onClick }: PostButtonProps) => {
   return (
     <Box
+      as="button"
       p="2"
       display="flex"
       alignItems="center"
@@ -109,8 +118,9 @@ const PostButton = ({ label, icon, onClick }: PostButtonProps) => {
       bgColor="whiteAlpha.50"
       width="fit-content"
       userSelect="none"
+      cursor="pointer"
       _hover={{
-        backgroundColor: "whiteAlpha.100",
+        backgroundColor: "whiteAlpha.300",
       }}
       _focus={{
         backgroundColor: "whiteAlpha.200",

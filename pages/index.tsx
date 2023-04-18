@@ -5,7 +5,7 @@ import {
   dehydrate,
   useQuery,
 } from "@tanstack/react-query";
-import { Box } from "@chakra-ui/react";
+import { Box, Spinner } from "@chakra-ui/react";
 
 import { fetchPosts } from "lib/api";
 import { PostListItem } from "components/post/listItem";
@@ -22,10 +22,16 @@ const Home: NextPage<PageProps> = () => {
   return (
     <GridLayout
       leftColumn={
-        <Box mt="6" borderTop="1px" borderColor="gray.800" borderRadius="md">
-          {query.data?.map((post) => (
-            <PostListItem key={post.id} post={post} />
-          ))}
+        <Box mt="6">
+          {query.isLoading ? (
+            <Box display="flex" alignItems="center" justifyContent="center">
+              <Spinner />
+            </Box>
+          ) : (
+            query.data?.map((post) => (
+              <PostListItem key={post.id} post={post} />
+            ))
+          )}
         </Box>
       }
       rightColumn={<Sidebar />}
