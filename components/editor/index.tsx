@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
 
 import { sleep } from "utils/async";
-import { SerializedCommentNested, fetchFora } from "lib/api";
+import { fetchFora } from "lib/api";
 import { addEntry } from "lib/anchor/actions";
 import { getProgram } from "lib/anchor/provider";
 import { getNameFromAddress } from "utils/profile";
@@ -22,6 +22,7 @@ interface EntryForm {
 type EntryConfig =
   | {
       type: "post";
+      forum: string;
     }
   | {
       type: "comment";
@@ -34,20 +35,22 @@ interface EditorProps {
   buttonLabel?: string;
   placeholder?: string;
   invalidateQueries?: string[];
-  queryKey?: string[];
   redirect?: string;
   successMessage?: string;
   config: EntryConfig;
+  onRequestClose?: () => void;
+  onUpdate?: (id: string, nonce: string, body: string) => void;
 }
 
 export const Editor = ({
   buttonLabel,
   invalidateQueries,
-  queryKey,
   placeholder,
   redirect,
   successMessage,
   config,
+  onRequestClose,
+  onUpdate,
 }: EditorProps) => {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
@@ -111,37 +114,12 @@ export const Editor = ({
           toast.success(successMessage);
         }
 
-        if (data && config.type === "comment" && config.parent && queryKey) {
-          queryClient.setQueryData<SerializedCommentNested[]>(
-            queryKey,
-            (comments) => {
-              console.log("comments: ", comments);
-              if (comments) {
-                comments.forEach((c) => {
-                  if (config.parent === c.id) {
-                    c.Children = [
-                      ...(c.Children ?? []),
-                      {
-                        id: data[0],
-                        author: anchorWallet?.publicKey?.toBase58() || "",
-                        createdAt: BigInt(
-                          Math.floor(Date.now() / 1000)
-                        ).toString(),
-                        editedAt: null,
-                        parent: config.parent,
-                        post: config.post,
-                        body: variables.body,
-                        likes: "0",
-                        nonce: data[1],
-                        Children: [],
-                      },
-                    ];
-                  }
-                });
-                return [...comments];
-              }
-            }
-          );
+        if (onRequestClose) {
+          onRequestClose();
+        }
+
+        if (data && onUpdate) {
+          onUpdate(...data, variables.body);
         }
 
         if (invalidateQueries) {
@@ -186,9 +164,20 @@ export const Editor = ({
       <Textarea
         mt="2"
         placeholder={placeholder}
+        backgroundColor="#090A20"
         {...methods.register("body", { required: true })}
       />
       <Box display="flex" mt="2" justifyContent="right">
+        {onRequestClose && (
+          <Button
+            isDisabled={mutation.isLoading}
+            variant="ghost"
+            onClick={onRequestClose}
+            mr="2"
+          >
+            Cancel
+          </Button>
+        )}
         <Button isLoading={mutation.isLoading} variant="solid" type="submit">
           {buttonLabel || "Submit"}
         </Button>

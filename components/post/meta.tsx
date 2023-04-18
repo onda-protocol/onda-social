@@ -82,11 +82,11 @@ export const PostMeta: React.FC<PostMetaProps> = ({
           </Box>
         </Link>
       )}
-      <Text fontSize="xs" color="gray.500">
+      <Text as="span" fontSize="xs" color="gray.500">
         <Link href={`/u/${author.id}`}>
           <Box as="span" display="flex" flexDirection="row" alignItems="center">
             {displayAvatar && author.avatar && author.name && (
-              <Box mr="2">
+              <Box as="span" mr="2">
                 <Image
                   height={28}
                   width={28}

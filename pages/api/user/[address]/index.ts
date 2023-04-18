@@ -13,16 +13,6 @@ export default async function handler(
     where: {
       id: address as string,
     },
-    include: {
-      Comments: true,
-      Posts: true,
-      _count: {
-        select: {
-          Comments: true,
-          Posts: true,
-        },
-      },
-    },
   });
 
   res.json(parseBigInt(result));

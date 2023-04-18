@@ -93,6 +93,7 @@ const CommentsTab: React.FC<CommentsTabProps> = ({ id }) => {
     <Box pb="12">
       {commentsQuery.data?.map((comment) => (
         <CommentListItem
+          disableReplies
           key={comment.id}
           forum={comment.Post.forum}
           comment={comment}

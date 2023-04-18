@@ -6,9 +6,17 @@ import {
   DehydratedState,
   dehydrate,
   useQuery,
+  useQueryClient,
 } from "@tanstack/react-query";
+import { useAnchorWallet } from "@solana/wallet-adapter-react";
+import { useCallback } from "react";
 
-import { fetchPost, fetchComments } from "lib/api";
+import {
+  SerializedCommentNested,
+  fetchPost,
+  fetchComments,
+  fetchUser,
+} from "lib/api";
 import { Editor } from "components/editor";
 import { Markdown } from "components/markdown";
 import { CommentListItem } from "components/comment";
@@ -25,6 +33,43 @@ const Comments: NextPage<PageProps> = () => {
   const postQuery = useQuery(["post", id], () => fetchPost(id));
   const commentsQueryKey = ["comments", id];
   const commentsQuery = useQuery(commentsQueryKey, () => fetchComments(id));
+
+  const anchorWallet = useAnchorWallet();
+  const queryClient = useQueryClient();
+
+  const onUpdateCache = useCallback(
+    async (entryId: string, nonce: string, body: string) => {
+      if (anchorWallet === undefined) return;
+
+      const userAddress = anchorWallet.publicKey.toBase58();
+      const author = await queryClient.fetchQuery(["user", userAddress], () =>
+        fetchUser(userAddress)
+      );
+
+      queryClient.setQueryData<SerializedCommentNested[]>(
+        ["comments", id],
+        (data) => {
+          const newComment = {
+            id: entryId,
+            createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
+            editedAt: null,
+            parent: null,
+            post: id,
+            body: body,
+            likes: "0",
+            nonce: nonce,
+            author: userAddress,
+            Author: author,
+            Children: [],
+            _count: { Children: 0 },
+          } as SerializedCommentNested;
+
+          return [newComment, ...(data ?? [])];
+        }
+      );
+    },
+    [anchorWallet, id, queryClient]
+  );
 
   if (!postQuery.data) {
     return (
@@ -63,7 +108,7 @@ const Comments: NextPage<PageProps> = () => {
           forum: postQuery.data?.forum,
           parent: null,
         }}
-        invalidateQueries={commentsQueryKey}
+        onUpdate={onUpdateCache}
       />
 
       <Divider my="6" />

@@ -24,6 +24,7 @@ export default async function handler(
           createdAt: "desc",
         },
         include: {
+          Author: true,
           _count: {
             select: {
               Children: true,

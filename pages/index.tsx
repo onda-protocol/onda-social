@@ -18,7 +18,6 @@ interface PageProps {
 
 const Home: NextPage<PageProps> = () => {
   const query = useQuery(["posts"], fetchPosts);
-  console.log("query: ", query);
 
   return (
     <GridLayout
