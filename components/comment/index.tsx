@@ -163,14 +163,16 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
             </Box>
           </Box>
           <Box pb="2" pl="2">
-            <Button
-              mr="2"
-              size="xs"
-              leftIcon={<IoChatbox />}
-              onClick={toggleReply}
-            >
-              {comment._count.Children}
-            </Button>
+            {!disableReplies && (
+              <Button
+                mr="2"
+                size="xs"
+                leftIcon={<IoChatbox />}
+                onClick={toggleReply}
+              >
+                {comment._count.Children}
+              </Button>
+            )}
             <CommentLikeButton comment={comment} queryKey={queryKey} />
           </Box>
         </Box>
