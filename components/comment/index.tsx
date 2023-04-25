@@ -1,7 +1,7 @@
 import { Box, Button } from "@chakra-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { IoChatbox, IoFish } from "react-icons/io5";
 
 import {
@@ -143,54 +143,54 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
   );
 
   return (
-    <Box position="relative" ml={depth ? "12" : undefined}>
-      <Box position="relative" zIndex={1}>
-        <Box
-          borderWidth="1px"
-          borderColor="gray.800"
-          borderRadius="md"
-          backgroundColor="onda.1000"
-          mt="4"
-        >
-          <Box p="4">
-            <PostMeta
-              displayAvatar
-              author={comment.Author}
-              createdAt={comment.createdAt}
-            />
-            <Box pt="2">
-              <Markdown>{comment.body}</Markdown>
+    <Box
+      position="relative"
+      ml={depth ? "12" : undefined}
+      _last={{ overflow: "hidden" }}
+    >
+      <Box borderRadius="md" mt="4">
+        <Box p="4">
+          <PostMeta
+            displayAvatar
+            author={comment.Author}
+            createdAt={comment.createdAt}
+          />
+          <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
+            <Markdown>{comment.body}</Markdown>
+            <Box pt="4" pb="2">
+              <CommentLikeButton comment={comment} queryKey={queryKey} />
+              {!disableReplies && (
+                <Button
+                  ml="2"
+                  size="sm"
+                  color="gray.300"
+                  leftIcon={<IoChatbox />}
+                  onClick={toggleReply}
+                >
+                  Reply
+                </Button>
+              )}
             </Box>
-          </Box>
-          <Box pb="2" pl="2">
-            {!disableReplies && (
-              <Button
-                mr="2"
-                size="xs"
-                leftIcon={<IoChatbox />}
-                onClick={toggleReply}
-              >
-                {comment._count.Children}
-              </Button>
+            {reply && disableReplies === false && (
+              <Editor
+                buttonLabel="Reply"
+                placeholder={`Reply to ${
+                  comment.Author.name ?? comment.author
+                }`}
+                config={{
+                  type: "comment",
+                  parent: comment.id,
+                  post: comment.post,
+                  forum,
+                }}
+                onRequestClose={() => setReply(false)}
+                onUpdate={onUpdateCache}
+              />
             )}
-            <CommentLikeButton comment={comment} queryKey={queryKey} />
           </Box>
         </Box>
-        {reply && disableReplies === false && (
-          <Editor
-            buttonLabel="Reply"
-            placeholder={`Reply to ${comment.Author.name ?? comment.author}`}
-            config={{
-              type: "comment",
-              parent: comment.id,
-              post: comment.post,
-              forum,
-            }}
-            onRequestClose={() => setReply(false)}
-            onUpdate={onUpdateCache}
-          />
-        )}
       </Box>
+
       {comment._count.Children ? (
         <CommentReplies
           depth={depth + 1}
@@ -198,7 +198,9 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
           comment={comment}
           queryKey={queryKey}
         />
-      ) : null}
+      ) : (
+        <Branch />
+      )}
     </Box>
   );
 };
@@ -239,7 +241,8 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
 
   return (
     <Button
-      size="xs"
+      size="sm"
+      color="gray.300"
       leftIcon={<IoFish />}
       isDisabled={mutation.isLoading}
       onClick={() => mutation.mutate()}
@@ -263,8 +266,7 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
   queryKey,
 }) => {
   return (
-    <Box>
-      <Branch />
+    <>
       {comment.Children ? (
         <>
           {comment.Children?.map((comment) => (
@@ -276,11 +278,12 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
               queryKey={queryKey}
             />
           ))}
+          <Branch />
         </>
       ) : (
         <CommentRepliesLazy depth={depth + 1} forum={forum} comment={comment} />
       )}
-    </Box>
+    </>
   );
 };
 
@@ -324,6 +327,7 @@ const CommentRepliesLazy = ({
 
   return (
     <>
+      <Branch />
       {query.data.map((comment) => (
         <CommentListItem
           key={comment.id}
@@ -343,13 +347,16 @@ interface BranchProps {
 
 const Branch = ({ dashed }: BranchProps) => (
   <Box
+    as="span"
     position="absolute"
-    top="0"
-    left="4"
-    borderLeftWidth="2px"
+    top="12"
+    left={"calc(var(--chakra-space-8) - 1px)"}
+    mr="1px"
+    bottom="-8"
+    borderWidth="1px"
     borderColor="gray.800"
     borderStyle={dashed ? "dashed" : "solid"}
-    height={dashed ? "100%" : "calc(100% + var(--chakra-space-4))"}
+    zIndex={-1}
   />
 );
 

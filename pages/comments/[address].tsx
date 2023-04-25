@@ -73,7 +73,7 @@ const Comments: NextPage<PageProps> = () => {
 
   if (!postQuery.data) {
     return (
-      <Box display="flex" alignItems="center" justifyContent="center">
+      <Box display="flex" alignItems="center" justifyContent="center" py="12">
         <Spinner />
       </Box>
     );
@@ -113,9 +113,14 @@ const Comments: NextPage<PageProps> = () => {
 
       <Divider my="6" />
 
-      <Box pb="12">
+      <Box pb="12" mx="-2">
         {commentsQuery.isLoading ? (
-          <Box display="flex" alignItems="center" justifyContent="center">
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            pt="12"
+          >
             <Spinner />
           </Box>
         ) : (
