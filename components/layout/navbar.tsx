@@ -64,45 +64,53 @@ export function Navbar() {
   }
 
   return (
-    <Box
-      display="flex"
-      backgroundColor="onda.900"
-      borderBottomWidth="1px"
-      borderColor="gray.800"
-    >
-      <Container maxW="container.xl">
-        <Box
-          as="nav"
-          display="flex"
-          h="16"
-          flexDirection="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <Box display="flex" flexDir="row" alignItems="center">
-            <Box position="relative">
-              <NextLink
-                href="/"
-                style={{ display: "inline-block", height: 25 }}
-              >
-                <Image
-                  src="/onda-logo.svg"
-                  width={100}
-                  height={25}
-                  alt="onda logo"
-                />
-              </NextLink>
-            </Box>
-            {/* <Box>
+    <>
+      <Box height="56px" />
+      <Box
+        position="fixed"
+        top="0"
+        left="0"
+        width="100%"
+        height="56px"
+        display="flex"
+        backgroundColor="onda.900"
+        borderBottomWidth="1px"
+        borderColor="gray.800"
+      >
+        <Container maxW="container.xl">
+          <Box
+            as="nav"
+            display="flex"
+            h="16"
+            flexDirection="row"
+            alignItems="center"
+            justifyContent="space-between"
+          >
+            <Box display="flex" flexDir="row" alignItems="center">
+              <Box position="relative" top="2px">
+                <NextLink
+                  href="/"
+                  style={{ display: "inline-block", height: 25 }}
+                >
+                  <Image
+                    src="/onda-logo.svg"
+                    width={100}
+                    height={25}
+                    alt="onda logo"
+                  />
+                </NextLink>
+              </Box>
+              {/* <Box>
               <PopoverMenu />
             </Box> */}
-          </Box>
+            </Box>
 
-          <Flex align="center">
-            <UserMenuButton />
-          </Flex>
-        </Box>
-      </Container>
-    </Box>
+            <Flex align="center">
+              <UserMenuButton />
+            </Flex>
+          </Box>
+        </Container>
+      </Box>
+    </>
   );
 }
