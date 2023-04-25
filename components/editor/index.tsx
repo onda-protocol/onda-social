@@ -17,12 +17,14 @@ interface EntryForm {
   title: string;
   body: string;
   forum: string;
+  url: string;
+  postType: "linkPost" | "textPost";
 }
 
 type EntryConfig =
   | {
       type: "post";
-      forum: string;
+      forum?: string;
     }
   | {
       type: "comment";
@@ -61,6 +63,7 @@ export const Editor = ({
     defaultValues: {
       title: "",
       body: "",
+      postType: "textPost",
     },
   });
 
@@ -88,7 +91,26 @@ export const Editor = ({
       let dataArgs = {};
 
       if (config.type === "post") {
-        dataArgs = { textPost: { title: data.title, body: data.body } };
+        switch (data.postType) {
+          case "linkPost": {
+            dataArgs = {
+              linkPost: {
+                title: data.title,
+                url: data.url,
+              },
+            };
+            break;
+          }
+
+          case "textPost": {
+            dataArgs = { textPost: { title: data.title, body: data.body } };
+            break;
+          }
+
+          default: {
+            throw new Error("Invalid post type");
+          }
+        }
       } else {
         dataArgs = {
           comment: {
@@ -151,6 +173,16 @@ export const Editor = ({
             required: true,
           })}
         />
+      )}
+      {config.type === "post" && (
+        <Select
+          {...methods.register("postType", {
+            required: true,
+          })}
+        >
+          <option value="textPost">Text Post</option>
+          <option value="linkPost">Link Post</option>
+        </Select>
       )}
       {config.type === "post" && (
         <Input

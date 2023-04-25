@@ -1,10 +1,10 @@
-import Link from "next/link";
-import { Box, Heading, Text } from "@chakra-ui/react";
+import { Box, Heading } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 
 import { PostWithCommentsCountAndForum } from "lib/api";
 import { Markdown } from "../markdown";
 import { PostMeta } from "../post/meta";
+import { Panel } from "../panel";
 import { PostButtons } from "./ItemButtons";
 
 interface PostListItemProps {
@@ -15,17 +15,10 @@ export const PostListItem = ({ post }: PostListItemProps) => {
   const router = useRouter();
 
   return (
-    <Box
-      pt="6"
-      pl="6"
-      pr="6"
-      pb="4"
-      mb="2"
-      borderWidth="1px"
-      borderRadius="md"
-      borderColor="gray.800"
+    <Panel
       _hover={{
         cursor: "pointer",
+        borderColor: "gray.600",
       }}
       onClick={() => router.push(`/comments/${post.id}`)}
     >
@@ -35,7 +28,7 @@ export const PostListItem = ({ post }: PostListItemProps) => {
         createdAt={String(post.createdAt)}
       />
       <Box overflow="hidden">
-        <Heading my="4" fontSize="xl" fontWeight="semibold">
+        <Heading my="4" fontSize="2xl" fontWeight="semibold">
           {post.title}
         </Heading>
         <Box position="relative" maxHeight="250px">
@@ -43,11 +36,11 @@ export const PostListItem = ({ post }: PostListItemProps) => {
           <Box
             position="absolute"
             inset={0}
-            background="linear-gradient(to bottom, transparent 100px, #090A20)"
+            background="linear-gradient(to bottom, transparent 100px, var(--chakra-colors-onda-950))"
           />
         </Box>
       </Box>
       <PostButtons post={post} />
-    </Box>
+    </Panel>
   );
 };

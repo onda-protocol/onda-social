@@ -57,7 +57,7 @@ const theme = extendTheme({
     Modal: {
       baseStyle: {
         dialog: {
-          bg: "#090A20",
+          bg: "onda.1050",
         },
         header: {
           color: "gray.100",
@@ -144,7 +144,7 @@ const theme = extendTheme({
       700: "#1A1C5A",
       800: "#131441",
       900: "#0C0D29",
-      950: "#050510",
+      950: "#090A20",
     },
   },
   fonts: {
@@ -153,14 +153,17 @@ const theme = extendTheme({
   },
   styles: {
     global: () => ({
+      "html, body": {
+        fontSize: "14px",
+        WebkitFontSmoothing: "antialiased",
+        MozOsxFontSmoothing: "grayscale",
+      },
       html: {
         minHeight: "100%",
         display: "flex",
       },
       body: {
-        WebkitFontSmoothing: "antialiased",
-        MozOsxFontSmoothing: "grayscale",
-        bg: "#090A20",
+        bg: "onda.950",
         flex: 1,
       },
     }),

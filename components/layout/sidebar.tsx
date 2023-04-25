@@ -5,9 +5,10 @@ import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Box, Button, Heading, Text } from "@chakra-ui/react";
 import { useMutation } from "@tanstack/react-query";
 
+import { getProfiles } from "utils/profile";
 import { initForum } from "lib/anchor/actions";
 import { Avatar } from "../avatar";
-import { getProfiles } from "utils/profile";
+import { Panel } from "../panel";
 
 export const Sidebar = () => {
   const router = useRouter();
@@ -17,7 +18,7 @@ export const Sidebar = () => {
       <Box>
         <Section title="Home">
           <Box px="4">
-            <Text fontSize="sm">
+            <Text>
               Welcome to Onda Alpha. The place to discover and engage with web3
               Communities, powered by the Solana blockchain, where every post,
               comment and like lives on-chain.
@@ -48,14 +49,20 @@ interface SectionProps {
 
 const Section: React.FC<SectionProps> = ({ title, children }) => {
   return (
-    <Box as="section" bgColor="whiteAlpha.50" borderRadius="md" pb="1" mb="6">
+    <Panel as="aside" p="0" pb="1" mb="6">
       {title && (
-        <Heading size="md" p="4">
+        <Heading
+          fontSize="lg"
+          letterSpacing="1%"
+          fontWeight="semibold"
+          p="4"
+          color="gray.300"
+        >
           {title}
         </Heading>
       )}
       {children}
-    </Box>
+    </Panel>
   );
 };
 

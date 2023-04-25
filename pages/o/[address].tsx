@@ -11,7 +11,7 @@ import { Box, Container, Spinner } from "@chakra-ui/react";
 import { fetchPostsByForum } from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import { Sidebar } from "components/layout/sidebar";
-import { GridLayout } from "components/layout";
+import { GridLayout } from "components/layout/navbar";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;

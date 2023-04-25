@@ -149,7 +149,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
           borderWidth="1px"
           borderColor="gray.800"
           borderRadius="md"
-          backgroundColor="#090A20"
+          backgroundColor="onda.1000"
           mt="4"
         >
           <Box p="4">

@@ -64,7 +64,12 @@ export function Navbar() {
   }
 
   return (
-    <Box display="flex" borderBottomWidth="1px" borderColor="gray.800">
+    <Box
+      display="flex"
+      backgroundColor="onda.900"
+      borderBottomWidth="1px"
+      borderColor="gray.800"
+    >
       <Container maxW="container.xl">
         <Box
           as="nav"

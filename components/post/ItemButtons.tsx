@@ -115,7 +115,7 @@ const PostButton = ({ label, icon, onClick }: PostButtonProps) => {
       display="flex"
       alignItems="center"
       borderRadius="md"
-      bgColor="whiteAlpha.50"
+      bgColor="whiteAlpha.100"
       width="fit-content"
       userSelect="none"
       cursor="pointer"
@@ -128,7 +128,7 @@ const PostButton = ({ label, icon, onClick }: PostButtonProps) => {
       onClick={onClick}
     >
       {icon ?? null}
-      <Text as="span" fontSize="xs" color="gray.600" ml={icon ? "2" : "0"}>
+      <Text as="span" fontSize="sm" color="gray.600" ml={icon ? "2" : "0"}>
         {label}
       </Text>
     </Box>

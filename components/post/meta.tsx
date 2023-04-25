@@ -52,37 +52,49 @@ export const PostMeta: React.FC<PostMetaProps> = ({
   return (
     <Box display="flex" alignItems="center">
       {forum && (
-        <Link href={`/o/${forum}`} onClick={handleClick}>
-          <Box as="span" display="flex" alignItems="center">
-            {forumName && forumImage && (
-              <Box mr="2">
-                <Image
-                  height={24}
-                  width={24}
-                  alt={forumName}
-                  src={forumImage}
-                  style={{
-                    borderRadius: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              </Box>
-            )}
-            <Text
-              fontSize="xs"
-              fontWeight="medium"
-              color="gray.300"
-              _hover={{
-                cursor: "pointer",
-              }}
-            >
-              <Text as="span">o/{forumName}</Text>
-              <Dot />
-            </Text>
-          </Box>
-        </Link>
+        <Text
+          as="span"
+          fontSize="sm"
+          fontWeight="medium"
+          color="gray.100"
+          _hover={{
+            color: "gray.300",
+          }}
+        >
+          <Link href={`/o/${forum}`} onClick={handleClick}>
+            <Box as="span" display="flex" alignItems="center" color="inherit">
+              {forumName && forumImage && (
+                <Box mr="2">
+                  <Image
+                    height={24}
+                    width={24}
+                    alt={forumName}
+                    src={forumImage}
+                    style={{
+                      borderRadius: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </Box>
+              )}
+              <Text as="span" color="inherit">
+                <Text as="span" color="inherit">
+                  o/{forumName}
+                </Text>
+                <Dot />
+              </Text>
+            </Box>
+          </Link>
+        </Text>
       )}
-      <Text as="span" fontSize="xs" color="gray.500">
+      <Text
+        as="span"
+        fontSize="sm"
+        color="gray.500"
+        _hover={{
+          color: "gray.400",
+        }}
+      >
         <Link href={`/u/${author.id}`}>
           <Box as="span" display="flex" flexDirection="row" alignItems="center">
             {displayAvatar && author.avatar && author.name && (

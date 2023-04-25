@@ -23,7 +23,7 @@ import { Toaster } from "react-hot-toast";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 import theme from "../theme";
-import { Navbar } from "../components/navbar";
+import { Navbar } from "../components/layout/navbar";
 import { DocumentHead } from "../components/document";
 
 export default function App({ Component, pageProps }: AppProps) {
