@@ -110,7 +110,9 @@ export const PostMeta: React.FC<PostMetaProps> = ({
                 />
               </Box>
             )}
-            {forum ? "Posted by " : ""} {author.name ?? authorAddress}
+            <Text as="span" color="gray.300">
+              {forum ? "Posted by " : ""} {author.name ?? authorAddress}
+            </Text>
             {forum ? " " : <Dot />}
             {time}
           </Box>

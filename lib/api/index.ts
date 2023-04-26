@@ -24,7 +24,7 @@ export type SerializedComment = DeepReplaceBigInt<Comment, string> & {
   _count: { Children: number };
 };
 export type SerializedCommentNested = SerializedComment & {
-  Children?: SerializedComment[];
+  Children: SerializedCommentNested[] | SerializedComment[];
 };
 
 export function fetchPost(id: string): Promise<PostWithCommentsCountAndForum> {

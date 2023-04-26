@@ -18,7 +18,7 @@ import { PostButton, LikeButton } from "components/post/buttons";
 
 interface CommentListItemProps {
   forum: string;
-  comment: SerializedCommentNested;
+  comment: SerializedCommentNested | SerializedComment;
   depth?: number;
   queryKey: string[];
   disableReplies?: boolean;
@@ -46,7 +46,8 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
         fetchUser(userAddress)
       );
 
-      const hasNestedChildren = comment.Children !== undefined;
+      const hasNestedChildren = "Children" in comment;
+
       queryClient.setQueryData<SerializedCommentNested[]>(queryKey, (data) => {
         // If the comment has a nested comment i.e. SerializedCommentNested
         // then we need to update the comment's children
@@ -144,60 +145,51 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
   );
 
   return (
-    <Box
-      position="relative"
-      ml={depth ? "12" : undefined}
-      _last={{ overflow: "hidden" }}
-    >
-      <Box borderRadius="md" mt="4">
-        <Box p="4">
-          <PostMeta
-            displayAvatar
-            author={comment.Author}
-            createdAt={comment.createdAt}
-          />
-          <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
-            <Markdown>{comment.body}</Markdown>
-            <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
-              <CommentLikeButton comment={comment} queryKey={queryKey} />
-              {!disableReplies && (
-                <PostButton
-                  label="Reply"
-                  icon={<IoChatbox />}
-                  onClick={toggleReply}
-                />
-              )}
-            </Box>
-            {reply && disableReplies === false && (
-              <Editor
-                buttonLabel="Reply"
-                placeholder={`Reply to ${
-                  comment.Author.name ?? comment.author
-                }`}
-                config={{
-                  type: "comment",
-                  parent: comment.id,
-                  post: comment.post,
-                  forum,
-                }}
-                onRequestClose={() => setReply(false)}
-                onUpdate={onUpdateCache}
+    <Box position="relative" ml={depth ? "12" : undefined} mt="4">
+      <Box p="4">
+        <PostMeta
+          displayAvatar
+          author={comment.Author}
+          createdAt={comment.createdAt}
+        />
+        <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
+          <Markdown>{comment.body}</Markdown>
+          <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
+            <CommentLikeButton comment={comment} queryKey={queryKey} />
+            {!disableReplies && (
+              <PostButton
+                label="Reply"
+                icon={<IoChatbox />}
+                onClick={toggleReply}
               />
             )}
           </Box>
+          {reply && disableReplies === false && (
+            <Editor
+              buttonLabel="Reply"
+              placeholder={`Reply to ${comment.Author.name ?? comment.author}`}
+              config={{
+                type: "comment",
+                parent: comment.id,
+                post: comment.post,
+                forum,
+              }}
+              onRequestClose={() => setReply(false)}
+              onUpdate={onUpdateCache}
+            />
+          )}
         </Box>
       </Box>
 
-      {comment._count.Children ? (
+      {comment._count.Children > 0 ? (
         <CommentReplies
           depth={depth + 1}
           forum={forum}
           comment={comment}
           queryKey={queryKey}
         />
-      ) : (
-        <Branch />
-      )}
+      ) : null}
+      <Branch />
     </Box>
   );
 };
@@ -248,7 +240,7 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
 interface CommentRepliesProps {
   depth: number;
   forum: string;
-  comment: SerializedCommentNested;
+  comment: SerializedCommentNested | SerializedComment;
   queryKey: string[];
 }
 
@@ -260,18 +252,30 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
 }) => {
   return (
     <>
-      {comment.Children ? (
+      {"Children" in comment ? (
         <>
-          {comment.Children?.map((comment) => (
-            <CommentListItem
-              key={comment.id}
-              depth={depth + 1}
-              forum={forum}
-              comment={comment}
-              queryKey={queryKey}
-            />
-          ))}
-          <Branch />
+          <>
+            {comment.Children.map((comment) => (
+              <CommentListItem
+                key={comment.id}
+                depth={depth + 1}
+                forum={forum}
+                comment={comment}
+                queryKey={queryKey}
+              />
+            ))}
+          </>
+          <>
+            {comment._count.Children > comment.Children.length && (
+              <Box ml="12">
+                <MoreRepliesButton
+                  count={comment._count.Children - comment.Children.length}
+                  loading={false}
+                  onClick={() => {}}
+                />
+              </Box>
+            )}
+          </>
         </>
       ) : (
         <CommentRepliesLazy depth={depth + 1} forum={forum} comment={comment} />
@@ -301,26 +305,16 @@ const CommentRepliesLazy = ({
 
   if (query.data === undefined || query.data.length === 0) {
     return (
-      <>
-        <Branch dashed />
-        <Box pl={(depth * 2).toString()} pt="4" mb="2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => (loadMore ? query.refetch() : setLoadMore(true))}
-          >
-            {query.isFetching
-              ? "Loading..."
-              : `${comment._count.Children} more replies`}
-          </Button>
-        </Box>
-      </>
+      <MoreRepliesButton
+        count={comment._count.Children}
+        loading={query.isFetching}
+        onClick={() => (loadMore ? query.refetch() : setLoadMore(true))}
+      />
     );
   }
 
   return (
     <>
-      <Branch />
       {query.data.map((comment) => (
         <CommentListItem
           key={comment.id}
@@ -334,6 +328,25 @@ const CommentRepliesLazy = ({
   );
 };
 
+interface MoreRepliesButton {
+  count: number;
+  loading: boolean;
+  onClick: () => void;
+}
+
+const MoreRepliesButton: React.FC<MoreRepliesButton> = ({
+  count,
+  loading,
+  onClick,
+}) => (
+  <Box position="relative" pl="12" pt="2" pb="2" bgColor="onda.950">
+    <Button size="sm" variant="ghost" fontWeight="semibold" onClick={onClick}>
+      {loading ? "Loading..." : `${count} more repl${count > 1 ? "ies" : "y"}`}
+    </Button>
+    <Branch dashed />
+  </Box>
+);
+
 interface BranchProps {
   dashed?: boolean;
 }
@@ -342,14 +355,14 @@ const Branch = ({ dashed }: BranchProps) => (
   <Box
     as="span"
     position="absolute"
-    top="12"
+    top={dashed ? "0" : "12"}
     left={"calc(var(--chakra-space-8) - 1px)"}
     mr="1px"
-    bottom="-8"
+    bottom={dashed ? "0" : "-8"}
     borderWidth="1px"
     borderColor="gray.800"
     borderStyle={dashed ? "dashed" : "solid"}
-    zIndex={-1}
+    zIndex={1}
   />
 );
 
