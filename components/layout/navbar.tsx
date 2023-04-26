@@ -76,6 +76,7 @@ export function Navbar() {
         backgroundColor="onda.900"
         borderBottomWidth="1px"
         borderColor="gray.800"
+        zIndex="docked"
       >
         <Container maxW="container.xl">
           <Box

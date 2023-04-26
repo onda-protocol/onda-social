@@ -5,7 +5,7 @@ import { PostWithCommentsCountAndForum } from "lib/api";
 import { Markdown } from "../markdown";
 import { PostMeta } from "../post/meta";
 import { Panel } from "../panel";
-import { PostButtons } from "./ItemButtons";
+import { PostButtons } from "./buttons";
 
 interface PostListItemProps {
   post: PostWithCommentsCountAndForum;

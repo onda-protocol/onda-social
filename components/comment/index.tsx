@@ -2,7 +2,7 @@ import { Box, Button } from "@chakra-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useCallback, useMemo, useState } from "react";
-import { IoChatbox, IoFish } from "react-icons/io5";
+import { IoChatbox } from "react-icons/io5";
 
 import {
   SerializedCommentNested,
@@ -14,6 +14,7 @@ import { likeEntry } from "lib/anchor";
 import { Markdown } from "../markdown";
 import { Editor } from "../editor";
 import { PostMeta } from "../post/meta";
+import { PostButton, LikeButton } from "components/post/buttons";
 
 interface CommentListItemProps {
   forum: string;
@@ -157,18 +158,14 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
           />
           <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
             <Markdown>{comment.body}</Markdown>
-            <Box pt="4" pb="2">
+            <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
               <CommentLikeButton comment={comment} queryKey={queryKey} />
               {!disableReplies && (
-                <Button
-                  ml="2"
-                  size="sm"
-                  color="gray.300"
-                  leftIcon={<IoChatbox />}
+                <PostButton
+                  label="Reply"
+                  icon={<IoChatbox />}
                   onClick={toggleReply}
-                >
-                  Reply
-                </Button>
+                />
               )}
             </Box>
             {reply && disableReplies === false && (
@@ -240,15 +237,11 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
   );
 
   return (
-    <Button
-      size="sm"
-      color="gray.300"
-      leftIcon={<IoFish />}
-      isDisabled={mutation.isLoading}
+    <LikeButton
+      label={comment.likes}
+      disabled={mutation.isLoading}
       onClick={() => mutation.mutate()}
-    >
-      {comment.likes}
-    </Button>
+    />
   );
 };
 

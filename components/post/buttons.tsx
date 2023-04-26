@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Text, Tooltip } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { IoChatbox, IoFish } from "react-icons/io5";
-import { MouseEventHandler } from "react";
+import { IoChatbox } from "react-icons/io5";
+import { GiJellyfish } from "react-icons/gi";
+import { MouseEventHandler, forwardRef } from "react";
 
 import { likeEntry } from "lib/anchor";
 import { PostWithCommentsCountAndForum } from "lib/api";
@@ -89,9 +90,9 @@ export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
   );
 
   return (
-    <PostButton
-      icon={<IoFish />}
+    <LikeButton
       label={post.likes.toString()}
+      disabled={mutation.isLoading}
       onClick={(e) => {
         e.stopPropagation();
         mutation.mutate();
@@ -104,33 +105,42 @@ export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
 interface PostButtonProps {
   label: string;
   icon?: JSX.Element;
+  disabled?: boolean;
   onClick?: MouseEventHandler<HTMLDivElement>;
 }
 
-const PostButton = ({ label, icon, onClick }: PostButtonProps) => {
-  return (
-    <Box
-      as="button"
-      p="2"
-      display="flex"
-      alignItems="center"
-      borderRadius="md"
-      bgColor="whiteAlpha.100"
-      width="fit-content"
-      userSelect="none"
-      cursor="pointer"
-      _hover={{
-        backgroundColor: "whiteAlpha.300",
-      }}
-      _focus={{
-        backgroundColor: "whiteAlpha.200",
-      }}
-      onClick={onClick}
-    >
-      {icon ?? null}
-      <Text as="span" fontSize="sm" color="gray.600" ml={icon ? "2" : "0"}>
-        {label}
-      </Text>
-    </Box>
-  );
-};
+export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
+  function PostButton({ label, icon, disabled, onClick }, ref) {
+    return (
+      <Box
+        ref={ref}
+        p="2"
+        display="flex"
+        alignItems="center"
+        borderRadius="md"
+        bgColor={disabled ? "whiteAlpha.50" : "whiteAlpha.100"}
+        width="fit-content"
+        userSelect="none"
+        cursor={disabled ? "not-allowed" : "pointer"}
+        _hover={{
+          backgroundColor: disabled ? undefined : "whiteAlpha.300",
+        }}
+        _focus={{
+          backgroundColor: disabled ? undefined : "whiteAlpha.200",
+        }}
+        onClick={onClick}
+      >
+        {icon ?? null}
+        <Text as="span" fontSize="sm" color="gray.600" ml={icon ? "2" : "0"}>
+          {label}
+        </Text>
+      </Box>
+    );
+  }
+);
+
+export const LikeButton: React.FC<Omit<PostButtonProps, "icon">> = (props) => (
+  <Tooltip label="Feed 1 $PLNK" shouldWrapChildren>
+    <PostButton icon={<GiJellyfish />} {...props} />
+  </Tooltip>
+);
