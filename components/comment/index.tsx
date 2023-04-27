@@ -1,7 +1,7 @@
 import { Box, Button } from "@chakra-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
 
@@ -26,192 +26,199 @@ interface CommentListItemProps {
   disableReplies?: boolean;
 }
 
-export const CommentListItem: React.FC<CommentListItemProps> = ({
-  forum,
-  comment,
-  queryKey,
-  isRoot = false,
-  disableReplies = false,
-}) => {
-  const [reply, setReply] = useState(false);
-  const toggleReply = useCallback(() => setReply((reply) => !reply), []);
-  const [collapsed, setCollapsed] = useState(false);
+export const CommentListItem: React.FC<CommentListItemProps> = memo(
+  function CommentListItem({
+    forum,
+    comment,
+    queryKey,
+    isRoot = false,
+    disableReplies = false,
+  }) {
+    const [reply, setReply] = useState(false);
+    const toggleReply = useCallback(() => setReply((reply) => !reply), []);
+    const [collapsed, setCollapsed] = useState(false);
 
-  const anchorWallet = useAnchorWallet();
-  const queryClient = useQueryClient();
+    const anchorWallet = useAnchorWallet();
+    const queryClient = useQueryClient();
 
-  const onUpdateCache = useCallback(
-    async (entryId: string, nonce: string, body: string) => {
-      if (anchorWallet === undefined) return;
+    const onUpdateCache = useCallback(
+      async (entryId: string, nonce: string, body: string) => {
+        if (anchorWallet === undefined) return;
 
-      const userAddress = anchorWallet.publicKey.toBase58();
-      const author = await queryClient.fetchQuery(["user", userAddress], () =>
-        fetchUser(userAddress)
-      );
+        const userAddress = anchorWallet.publicKey.toBase58();
+        const author = await queryClient.fetchQuery(["user", userAddress], () =>
+          fetchUser(userAddress)
+        );
 
-      const hasNestedChildren = "Children" in comment;
+        const hasNestedChildren = "Children" in comment;
 
-      queryClient.setQueryData<SerializedCommentNested[]>(queryKey, (data) => {
-        // If the comment has a nested comment i.e. SerializedCommentNested
-        // then we need to update the comment's children
-        for (const index in data) {
-          const c = data[parseInt(index)];
-          if (comment.id === c.id) {
-            const updatedComment = {
-              ...c,
-              _count: {
-                ...c._count,
-                Children: c._count.Children + 1,
-              },
-            };
-
-            if (c.Children !== undefined) {
-              updatedComment.Children = [
-                {
-                  id: entryId,
-                  createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
-                  editedAt: null,
-                  parent: comment.id,
-                  post: comment.post,
-                  body: body,
-                  likes: "0",
-                  nonce: nonce,
-                  author: userAddress,
-                  Author: author,
-                  _count: { Children: 0 },
-                } as SerializedComment,
-                ...(c.Children ?? []),
-              ];
-            }
-            return [
-              ...data.slice(0, parseInt(index)),
-              updatedComment,
-              ...data.slice(parseInt(index) + 1),
-            ];
-          } else if (c.Children !== undefined) {
-            for (const index in c.Children) {
-              const child = c.Children[parseInt(index)];
-              if (child.id === comment.id) {
+        queryClient.setQueryData<SerializedCommentNested[]>(
+          queryKey,
+          (data) => {
+            // If the comment has a nested comment i.e. SerializedCommentNested
+            // then we need to update the comment's children
+            for (const index in data) {
+              const c = data[parseInt(index)];
+              if (comment.id === c.id) {
                 const updatedComment = {
                   ...c,
-                };
-                const updatedChild = {
-                  ...child,
                   _count: {
-                    ...child._count,
-                    Children: child._count.Children + 1,
+                    ...c._count,
+                    Children: c._count.Children + 1,
                   },
                 };
 
-                updatedComment.Children = [
-                  ...c.Children.slice(0, parseInt(index)),
-                  updatedChild,
-                  ...c.Children.slice(parseInt(index) + 1),
-                ];
-
+                if (c.Children !== undefined) {
+                  updatedComment.Children = [
+                    {
+                      id: entryId,
+                      createdAt: BigInt(
+                        Math.floor(Date.now() / 1000)
+                      ).toString(),
+                      editedAt: null,
+                      parent: comment.id,
+                      post: comment.post,
+                      body: body,
+                      likes: "0",
+                      nonce: nonce,
+                      author: userAddress,
+                      Author: author,
+                      _count: { Children: 0 },
+                    } as SerializedComment,
+                    ...(c.Children ?? []),
+                  ];
+                }
                 return [
                   ...data.slice(0, parseInt(index)),
                   updatedComment,
                   ...data.slice(parseInt(index) + 1),
                 ];
+              } else if (c.Children !== undefined) {
+                for (const index in c.Children) {
+                  const child = c.Children[parseInt(index)];
+                  if (child.id === comment.id) {
+                    const updatedComment = {
+                      ...c,
+                    };
+                    const updatedChild = {
+                      ...child,
+                      _count: {
+                        ...child._count,
+                        Children: child._count.Children + 1,
+                      },
+                    };
+
+                    updatedComment.Children = [
+                      ...c.Children.slice(0, parseInt(index)),
+                      updatedChild,
+                      ...c.Children.slice(parseInt(index) + 1),
+                    ];
+
+                    return [
+                      ...data.slice(0, parseInt(index)),
+                      updatedComment,
+                      ...data.slice(parseInt(index) + 1),
+                    ];
+                  }
+                }
               }
             }
           }
-        }
-      });
-
-      if (!hasNestedChildren) {
-        queryClient.setQueryData<SerializedCommentNested[]>(
-          ["replies", comment.id],
-          (data) => {
-            const newComment = {
-              id: entryId,
-              createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
-              editedAt: null,
-              parent: comment.parent,
-              post: comment.post,
-              body: body,
-              likes: "0",
-              nonce: nonce,
-              author: userAddress,
-              Author: author,
-              Children: [],
-              _count: { Children: 0 },
-            } as SerializedCommentNested;
-
-            return [newComment, ...(data ?? [])];
-          }
         );
-      }
-    },
-    [comment, queryKey, anchorWallet, queryClient]
-  );
 
-  return (
-    <Box position="relative" ml={isRoot ? "0" : "8"} mt="0">
-      <Box p="4" pb="2">
-        <PostMeta
-          displayAvatar
-          author={comment.Author}
-          createdAt={comment.createdAt}
-        />
+        if (!hasNestedChildren) {
+          queryClient.setQueryData<SerializedCommentNested[]>(
+            ["replies", comment.id],
+            (data) => {
+              const newComment = {
+                id: entryId,
+                createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
+                editedAt: null,
+                parent: comment.parent,
+                post: comment.post,
+                body: body,
+                likes: "0",
+                nonce: nonce,
+                author: userAddress,
+                Author: author,
+                Children: [],
+                _count: { Children: 0 },
+              } as SerializedCommentNested;
 
-        {!collapsed && (
-          <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
-            <Markdown>{comment.body}</Markdown>
-            <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
-              <CommentLikeButton comment={comment} queryKey={queryKey} />
-              {!disableReplies && (
-                <PostButton
-                  label="Reply"
-                  icon={<IoChatbox />}
-                  onClick={toggleReply}
+              return [newComment, ...(data ?? [])];
+            }
+          );
+        }
+      },
+      [comment, queryKey, anchorWallet, queryClient]
+    );
+
+    return (
+      <Box position="relative" ml={isRoot ? "0" : "8"} mt="0">
+        <Box p="4" pb="2">
+          <PostMeta
+            displayAvatar
+            author={comment.Author}
+            createdAt={comment.createdAt}
+          />
+
+          {!collapsed && (
+            <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
+              <Markdown>{comment.body}</Markdown>
+              <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
+                <CommentLikeButton comment={comment} queryKey={queryKey} />
+                {!disableReplies && (
+                  <PostButton
+                    label="Reply"
+                    icon={<IoChatbox />}
+                    onClick={toggleReply}
+                  />
+                )}
+              </Box>
+              {reply && disableReplies === false && (
+                <Editor
+                  buttonLabel="Reply"
+                  placeholder={`Reply to ${
+                    comment.Author.name ?? comment.author
+                  }`}
+                  config={{
+                    type: "comment",
+                    parent: comment.id,
+                    post: comment.post,
+                    forum,
+                  }}
+                  onRequestClose={() => setReply(false)}
+                  onUpdate={onUpdateCache}
                 />
               )}
             </Box>
-            {reply && disableReplies === false && (
-              <Editor
-                buttonLabel="Reply"
-                placeholder={`Reply to ${
-                  comment.Author.name ?? comment.author
-                }`}
-                config={{
-                  type: "comment",
-                  parent: comment.id,
-                  post: comment.post,
-                  forum,
-                }}
-                onRequestClose={() => setReply(false)}
-                onUpdate={onUpdateCache}
-              />
-            )}
+          )}
+        </Box>
+
+        {comment._count.Children > 0 && !collapsed ? (
+          <CommentReplies forum={forum} comment={comment} queryKey={queryKey} />
+        ) : null}
+
+        {collapsed ? (
+          <Box
+            ml="6"
+            mt="1"
+            color="gray.600"
+            cursor="pointer"
+            _hover={{
+              color: "gray.500",
+            }}
+            onClick={() => setCollapsed(false)}
+          >
+            <BsArrowsExpand />
           </Box>
+        ) : (
+          <Branch onClick={() => setCollapsed(true)} />
         )}
       </Box>
-
-      {comment._count.Children > 0 && !collapsed ? (
-        <CommentReplies forum={forum} comment={comment} queryKey={queryKey} />
-      ) : null}
-
-      {collapsed ? (
-        <Box
-          ml="6"
-          mt="1"
-          color="gray.600"
-          cursor="pointer"
-          _hover={{
-            color: "gray.500",
-          }}
-          onClick={() => setCollapsed(false)}
-        >
-          <BsArrowsExpand />
-        </Box>
-      ) : (
-        <Branch onClick={() => setCollapsed(true)} />
-      )}
-    </Box>
-  );
-};
+    );
+  }
+);
 
 interface CommentLikeButtonProps {
   comment: SerializedComment | SerializedCommentNested;

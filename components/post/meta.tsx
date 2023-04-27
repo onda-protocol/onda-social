@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Box, Text, chakra } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { User } from "@prisma/client";
 
@@ -113,7 +113,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
             <Text as="span" color="gray.300">
               {forum ? "Posted by " : ""} {author.name ?? authorAddress}
             </Text>
-            {forum ? " " : <Dot />}
+            {forum ? <>&nbsp;</> : <Dot />}
             {time}
           </Box>
         </Link>
