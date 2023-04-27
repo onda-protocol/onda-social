@@ -475,7 +475,7 @@ function nestedCommentsLikeReducer<
         ];
       } else if ("Children" in comment && comment.Children) {
         const updatedChildren = nestedCommentsLikeReducer<SerializedComment>(
-          comment.id
+          id
         )(comment.Children);
 
         if (updatedChildren) {
