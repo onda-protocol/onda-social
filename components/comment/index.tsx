@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useCallback, useMemo, useState } from "react";
 import { IoChatbox } from "react-icons/io5";
+import { BsArrowsExpand } from "react-icons/bs";
 
 import {
   SerializedCommentNested,
@@ -20,19 +21,21 @@ interface CommentListItemProps {
   forum: string;
   comment: SerializedCommentNested | SerializedComment;
   depth?: number;
-  queryKey: string[];
+  queryKey: (string | { offset: number })[];
+  isRoot?: boolean;
   disableReplies?: boolean;
 }
 
 export const CommentListItem: React.FC<CommentListItemProps> = ({
   forum,
   comment,
-  depth = 0,
   queryKey,
+  isRoot = false,
   disableReplies = false,
 }) => {
   const [reply, setReply] = useState(false);
   const toggleReply = useCallback(() => setReply((reply) => !reply), []);
+  const [collapsed, setCollapsed] = useState(false);
 
   const anchorWallet = useAnchorWallet();
   const queryClient = useQueryClient();
@@ -145,58 +148,74 @@ export const CommentListItem: React.FC<CommentListItemProps> = ({
   );
 
   return (
-    <Box position="relative" ml={depth ? "12" : undefined} mt="4">
-      <Box p="4">
+    <Box position="relative" ml={isRoot ? "0" : "8"} mt="0">
+      <Box p="4" pb="2">
         <PostMeta
           displayAvatar
           author={comment.Author}
           createdAt={comment.createdAt}
         />
-        <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
-          <Markdown>{comment.body}</Markdown>
-          <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
-            <CommentLikeButton comment={comment} queryKey={queryKey} />
-            {!disableReplies && (
-              <PostButton
-                label="Reply"
-                icon={<IoChatbox />}
-                onClick={toggleReply}
+
+        {!collapsed && (
+          <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
+            <Markdown>{comment.body}</Markdown>
+            <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
+              <CommentLikeButton comment={comment} queryKey={queryKey} />
+              {!disableReplies && (
+                <PostButton
+                  label="Reply"
+                  icon={<IoChatbox />}
+                  onClick={toggleReply}
+                />
+              )}
+            </Box>
+            {reply && disableReplies === false && (
+              <Editor
+                buttonLabel="Reply"
+                placeholder={`Reply to ${
+                  comment.Author.name ?? comment.author
+                }`}
+                config={{
+                  type: "comment",
+                  parent: comment.id,
+                  post: comment.post,
+                  forum,
+                }}
+                onRequestClose={() => setReply(false)}
+                onUpdate={onUpdateCache}
               />
             )}
           </Box>
-          {reply && disableReplies === false && (
-            <Editor
-              buttonLabel="Reply"
-              placeholder={`Reply to ${comment.Author.name ?? comment.author}`}
-              config={{
-                type: "comment",
-                parent: comment.id,
-                post: comment.post,
-                forum,
-              }}
-              onRequestClose={() => setReply(false)}
-              onUpdate={onUpdateCache}
-            />
-          )}
-        </Box>
+        )}
       </Box>
 
-      {comment._count.Children > 0 ? (
-        <CommentReplies
-          depth={depth + 1}
-          forum={forum}
-          comment={comment}
-          queryKey={queryKey}
-        />
+      {comment._count.Children > 0 && !collapsed ? (
+        <CommentReplies forum={forum} comment={comment} queryKey={queryKey} />
       ) : null}
-      <Branch />
+
+      {collapsed ? (
+        <Box
+          ml="6"
+          mt="1"
+          color="gray.600"
+          cursor="pointer"
+          _hover={{
+            color: "gray.500",
+          }}
+          onClick={() => setCollapsed(false)}
+        >
+          <BsArrowsExpand />
+        </Box>
+      ) : (
+        <Branch onClick={() => setCollapsed(true)} />
+      )}
     </Box>
   );
 };
 
 interface CommentLikeButtonProps {
   comment: SerializedComment | SerializedCommentNested;
-  queryKey: string[];
+  queryKey: (string | { offset: number })[];
 }
 
 const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
@@ -238,14 +257,12 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
 };
 
 interface CommentRepliesProps {
-  depth: number;
   forum: string;
   comment: SerializedCommentNested | SerializedComment;
-  queryKey: string[];
+  queryKey: (string | { offset: number })[];
 }
 
 const CommentReplies: React.FC<CommentRepliesProps> = ({
-  depth,
   forum,
   comment,
   queryKey,
@@ -254,52 +271,87 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
     <>
       {"Children" in comment ? (
         <>
-          <>
-            {comment.Children.map((comment) => (
-              <CommentListItem
-                key={comment.id}
-                depth={depth + 1}
-                forum={forum}
-                comment={comment}
-                queryKey={queryKey}
-              />
-            ))}
-          </>
-          <>
-            {comment._count.Children > comment.Children.length && (
-              <Box ml="12">
-                <MoreRepliesButton
-                  count={comment._count.Children - comment.Children.length}
-                  loading={false}
-                  onClick={() => {}}
-                />
-              </Box>
-            )}
-          </>
+          {comment.Children.map((comment) => (
+            <CommentListItem
+              key={comment.id}
+              forum={forum}
+              comment={comment}
+              queryKey={queryKey}
+            />
+          ))}
+          {comment._count.Children > comment.Children.length && (
+            <CommentSiblingsLazy
+              comment={comment}
+              forum={forum}
+              offset={comment.Children.length}
+            />
+          )}
         </>
       ) : (
-        <CommentRepliesLazy depth={depth + 1} forum={forum} comment={comment} />
+        <CommentChildrenLazy forum={forum} comment={comment} />
       )}
     </>
   );
 };
 
-interface CommentRepliesLazyProps {
-  depth: number;
+interface CommentChildrenLazyProps {
   forum: string;
   comment: SerializedComment;
 }
 
-const CommentRepliesLazy = ({
-  depth,
-  forum,
-  comment,
-}: CommentRepliesLazyProps) => {
+const CommentChildrenLazy = ({ forum, comment }: CommentChildrenLazyProps) => {
   const [loadMore, setLoadMore] = useState(false);
   const queryKey = useMemo(() => ["replies", comment.id], [comment.id]);
   const query = useQuery(
     queryKey,
     () => fetchReplies(comment.post, comment.id),
+    { enabled: loadMore }
+  );
+
+  if (query.data === undefined || query.data.length === 0) {
+    return (
+      <MoreRepliesButton
+        nested
+        count={comment._count.Children}
+        loading={query.isFetching}
+        onClick={() => (loadMore ? query.refetch() : setLoadMore(true))}
+      />
+    );
+  }
+
+  return (
+    <>
+      {query.data.map((comment) => (
+        <CommentListItem
+          key={comment.id}
+          forum={forum}
+          comment={comment}
+          queryKey={queryKey}
+        />
+      ))}
+    </>
+  );
+};
+
+interface CommentSiblingsLazyProps {
+  comment: SerializedCommentNested;
+  forum: string;
+  offset: number;
+}
+
+const CommentSiblingsLazy = ({
+  comment,
+  forum,
+  offset,
+}: CommentSiblingsLazyProps) => {
+  const [loadMore, setLoadMore] = useState(false);
+  const queryKey = useMemo(
+    () => ["replies", comment.parent as string, { offset }],
+    [comment.parent, offset]
+  );
+  const query = useQuery(
+    queryKey,
+    () => fetchReplies(comment.post, comment.id, offset),
     { enabled: loadMore }
   );
 
@@ -318,7 +370,6 @@ const CommentRepliesLazy = ({
       {query.data.map((comment) => (
         <CommentListItem
           key={comment.id}
-          depth={depth + 1}
           forum={forum}
           comment={comment}
           queryKey={queryKey}
@@ -329,41 +380,66 @@ const CommentRepliesLazy = ({
 };
 
 interface MoreRepliesButton {
+  nested?: boolean;
   count: number;
   loading: boolean;
   onClick: () => void;
 }
 
 const MoreRepliesButton: React.FC<MoreRepliesButton> = ({
+  nested = false,
   count,
   loading,
   onClick,
 }) => (
-  <Box position="relative" pl="12" pt="2" pb="2" bgColor="onda.950">
-    <Button size="sm" variant="ghost" fontWeight="semibold" onClick={onClick}>
-      {loading ? "Loading..." : `${count} more repl${count > 1 ? "ies" : "y"}`}
-    </Button>
-    <Branch dashed />
+  <Box position="relative" ml="8" pt="2" pb="2" bgColor="onda.950" zIndex={1}>
+    <Box ml={nested ? "4" : "12"}>
+      <Button size="sm" variant="ghost" fontWeight="semibold" onClick={onClick}>
+        {loading
+          ? "Loading..."
+          : `${count} more repl${count > 1 ? "ies" : "y"}`}
+      </Button>
+    </Box>
+    {nested ? null : <Branch dashed />}
   </Box>
 );
 
 interface BranchProps {
   dashed?: boolean;
+  onClick?: () => void;
 }
 
-const Branch = ({ dashed }: BranchProps) => (
+const Branch = ({ dashed, onClick }: BranchProps) => (
   <Box
     as="span"
     position="absolute"
-    top={dashed ? "0" : "12"}
-    left={"calc(var(--chakra-space-8) - 1px)"}
-    mr="1px"
-    bottom={dashed ? "0" : "-8"}
-    borderWidth="1px"
-    borderColor="gray.800"
-    borderStyle={dashed ? "dashed" : "solid"}
+    top={dashed ? "0" : "14"}
+    left={"calc(var(--chakra-space-8) - 5px)"}
+    bottom={dashed ? "-2" : "-2"}
+    width="10px"
+    px="4px"
     zIndex={1}
-  />
+    cursor={onClick ? "pointer" : "default"}
+    borderColor="gray.800"
+    _hover={
+      onClick
+        ? {
+            borderColor: "gray.600",
+          }
+        : undefined
+    }
+    onClick={onClick}
+  >
+    <Box
+      as="span"
+      display="block"
+      height="100%"
+      width="2px"
+      borderLeftWidth="2px"
+      borderColor="inherit"
+      borderStyle={dashed ? "dashed" : "solid"}
+    />
+  </Box>
 );
 
 function increment(like: string) {

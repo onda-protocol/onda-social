@@ -71,10 +71,11 @@ export function fetchUserComments(
 
 export function fetchReplies(
   postId: string,
-  commentId: string
+  commentId: string,
+  skip: number = 0
 ): Promise<SerializedCommentNested[]> {
   return fetch(
-    `${process.env.NEXT_PUBLIC_HOST}/api/post/${postId}/replies/${commentId}`
+    `${process.env.NEXT_PUBLIC_HOST}/api/post/${postId}/replies/${commentId}?skip=${skip}`
   ).then((res) => res.json());
 }
 

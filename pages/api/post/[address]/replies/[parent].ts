@@ -7,9 +7,10 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { address, parent } = req.query;
+  const { address, parent, skip = "0" } = req.query;
 
   const result = await prisma.comment.findMany({
+    skip: parseInt(skip as string),
     where: {
       post: address as string,
       parent: parent as string,
@@ -25,6 +26,7 @@ export default async function handler(
           createdAt: "desc",
         },
         include: {
+          Author: true,
           _count: {
             select: {
               Children: true,

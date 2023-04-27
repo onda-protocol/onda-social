@@ -126,9 +126,10 @@ const Comments: NextPage<PageProps> = () => {
         ) : (
           commentsQuery.data?.map((comment) => (
             <CommentListItem
+              isRoot
               key={comment.id}
-              forum={postQuery.data?.forum}
               comment={comment}
+              forum={postQuery.data?.forum}
               queryKey={commentsQueryKey}
             />
           )) ?? null
