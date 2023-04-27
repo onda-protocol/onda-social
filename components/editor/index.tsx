@@ -176,6 +176,7 @@ export const Editor = ({
       )}
       {config.type === "post" && (
         <Select
+          mt="6"
           {...methods.register("postType", {
             required: true,
           })}
@@ -210,7 +211,12 @@ export const Editor = ({
             Cancel
           </Button>
         )}
-        <Button isLoading={mutation.isLoading} variant="solid" type="submit">
+        <Button
+          isLoading={mutation.isLoading}
+          variant="solid"
+          type="submit"
+          cursor="pointer"
+        >
           {buttonLabel || "Submit"}
         </Button>
       </Box>
