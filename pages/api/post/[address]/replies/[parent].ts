@@ -8,7 +8,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { address, parent, skip = "0" } = req.query;
-
+  console.log("SKIP: ", skip);
   const result = await prisma.comment.findMany({
     skip: parseInt(skip as string),
     where: {
@@ -16,14 +16,14 @@ export default async function handler(
       parent: parent as string,
     },
     orderBy: {
-      createdAt: "desc",
+      likes: "desc",
     },
     include: {
       Author: true,
       Children: {
         take: 10,
         orderBy: {
-          createdAt: "desc",
+          likes: "desc",
         },
         include: {
           Author: true,

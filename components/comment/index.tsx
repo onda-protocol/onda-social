@@ -51,6 +51,20 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
         );
 
         const hasNestedChildren = "Children" in comment;
+        const newComment = {
+          id: entryId,
+          createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
+          editedAt: null,
+          parent: comment.id,
+          post: comment.post,
+          body: body,
+          likes: "0",
+          nonce: nonce,
+          author: userAddress,
+          Author: author,
+          _count: { Children: 0 },
+          Children: [],
+        };
 
         queryClient.setQueryData<SerializedCommentNested[]>(
           queryKey,
@@ -59,6 +73,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
             // then we need to update the comment's children
             for (const index in data) {
               const c = data[parseInt(index)];
+
               if (comment.id === c.id) {
                 const updatedComment = {
                   ...c,
@@ -70,21 +85,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
 
                 if (c.Children !== undefined) {
                   updatedComment.Children = [
-                    {
-                      id: entryId,
-                      createdAt: BigInt(
-                        Math.floor(Date.now() / 1000)
-                      ).toString(),
-                      editedAt: null,
-                      parent: comment.id,
-                      post: comment.post,
-                      body: body,
-                      likes: "0",
-                      nonce: nonce,
-                      author: userAddress,
-                      Author: author,
-                      _count: { Children: 0 },
-                    } as SerializedComment,
+                    newComment as SerializedComment,
                     ...(c.Children ?? []),
                   ];
                 }
@@ -94,8 +95,9 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                   ...data.slice(parseInt(index) + 1),
                 ];
               } else if (c.Children !== undefined) {
-                for (const index in c.Children) {
-                  const child = c.Children[parseInt(index)];
+                for (const i in c.Children) {
+                  const child = c.Children[parseInt(i)];
+
                   if (child.id === comment.id) {
                     const updatedComment = {
                       ...c,
@@ -108,10 +110,17 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                       },
                     };
 
+                    if ("Children" in updatedChild) {
+                      updatedChild.Children = [
+                        newComment as SerializedComment,
+                        ...updatedChild.Children,
+                      ];
+                    }
+
                     updatedComment.Children = [
-                      ...c.Children.slice(0, parseInt(index)),
+                      ...c.Children.slice(0, parseInt(i)),
                       updatedChild,
-                      ...c.Children.slice(parseInt(index) + 1),
+                      ...c.Children.slice(parseInt(i) + 1),
                     ];
 
                     return [
@@ -130,21 +139,6 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           queryClient.setQueryData<SerializedCommentNested[]>(
             ["replies", comment.id],
             (data) => {
-              const newComment = {
-                id: entryId,
-                createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
-                editedAt: null,
-                parent: comment.parent,
-                post: comment.post,
-                body: body,
-                likes: "0",
-                nonce: nonce,
-                author: userAddress,
-                Author: author,
-                Children: [],
-                _count: { Children: 0 },
-              } as SerializedCommentNested;
-
               return [newComment, ...(data ?? [])];
             }
           );
@@ -351,6 +345,8 @@ const CommentSiblingsLazy = ({
   forum,
   offset,
 }: CommentSiblingsLazyProps) => {
+  console.log("CommentSiblingsLazy", comment, offset);
+
   const [loadMore, setLoadMore] = useState(false);
   const queryKey = useMemo(
     () => ["replies", comment.parent as string, { offset }],
@@ -365,7 +361,7 @@ const CommentSiblingsLazy = ({
   if (query.data === undefined || query.data.length === 0) {
     return (
       <MoreRepliesButton
-        count={comment._count.Children}
+        count={comment._count.Children - offset}
         loading={query.isFetching}
         onClick={() => (loadMore ? query.refetch() : setLoadMore(true))}
       />
