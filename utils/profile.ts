@@ -3,12 +3,27 @@ import { shortenAddress } from "./format";
 interface Profile {
   name: string;
   image: string;
+  description: string;
+  links: {
+    twitter?: string;
+    discord?: string;
+    website?: string;
+    magicEden?: string;
+  };
 }
 
 const profiles = new Map<string, Profile>();
 profiles.set("GNrgyGzetWJje63FX5cnBnnqThPqXBJnWopYEbQSo7cv", {
   name: "ChickenTribe",
+  description:
+    "ChickenTribe is a collection of 3000 unique chickens. Home of the Combinator and SugarUI, we are a community of artists, devs and builders.",
   image: "https://chickentribe.s3.us-west-2.amazonaws.com/collection.png",
+  links: {
+    twitter: "https://twitter.com/ChickenTribe",
+    discord: "https://discord.gg/H3DbQRSjUa",
+    website: "https://www.chickentribe.com/",
+    magicEden: "https://magiceden.io/marketplace/chicken_tribe",
+  },
 });
 
 export function getProfiles(): (Profile & { id: string })[] {
@@ -24,4 +39,12 @@ export function getImageFromAddress(address: string): string | null {
 
 export function getNameFromAddress(address: string): string {
   return profiles.get(address)?.name ?? shortenAddress(address);
+}
+
+export function getDescriptionFromAddress(address: string): string | null {
+  return profiles.get(address)?.description ?? null;
+}
+
+export function getLinksFromAddress(address: string): Profile["links"] | null {
+  return profiles.get(address)?.links ?? null;
 }

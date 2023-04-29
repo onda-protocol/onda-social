@@ -1,4 +1,4 @@
-import { Container, Box, Grid, GridItem } from "@chakra-ui/layout";
+import { Container, Grid, GridItem } from "@chakra-ui/layout";
 
 interface GridLayoutProps {
   leftColumn: JSX.Element;
@@ -11,9 +11,9 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
 }) => {
   return (
     <Container maxW="container.lg">
-      <Grid templateColumns="1fr 360px" gap="2">
+      <Grid templateColumns={{ base: "1fr", lg: "1fr 320px" }} gap="2">
         <GridItem>{leftColumn}</GridItem>
-        <GridItem>{rightColumn}</GridItem>
+        <GridItem hideBelow="lg">{rightColumn}</GridItem>
       </Grid>
     </Container>
   );

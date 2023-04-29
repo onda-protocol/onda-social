@@ -5,11 +5,17 @@ import {
   dehydrate,
   useQuery,
 } from "@tanstack/react-query";
-import { Box, Spinner } from "@chakra-ui/react";
+import { Box, Spinner, Text } from "@chakra-ui/react";
 
+import { getProfiles } from "utils/profile";
 import { fetchPosts } from "lib/api";
 import { PostListItem } from "components/post/listItem";
-import { Sidebar } from "components/layout/sidebar";
+import {
+  Sidebar,
+  SidebarSection,
+  SidebarButtons,
+  SidebarItem,
+} from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
 
 interface PageProps {
@@ -34,7 +40,32 @@ const Home: NextPage<PageProps> = () => {
           )}
         </Box>
       }
-      rightColumn={<Sidebar />}
+      rightColumn={
+        <Sidebar>
+          <Box>
+            <SidebarSection title="Home">
+              <Box px="4">
+                <Text>
+                  Welcome to Onda. The place to discover and engage with web3
+                  Communities, powered by the Solana blockchain.
+                </Text>
+              </Box>
+              <SidebarButtons />
+            </SidebarSection>
+            <SidebarSection title="Communities">
+              {getProfiles().map((profile) => (
+                <SidebarItem
+                  key={profile.id}
+                  active={false}
+                  href={`/o/${profile.id}`}
+                  label={profile.name}
+                  image={profile.image}
+                />
+              ))}
+            </SidebarSection>
+          </Box>
+        </Sidebar>
+      }
     />
   );
 };

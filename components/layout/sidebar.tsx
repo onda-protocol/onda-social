@@ -5,39 +5,20 @@ import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Box, Button, Heading, Text } from "@chakra-ui/react";
 import { useMutation } from "@tanstack/react-query";
 
-import { getProfiles } from "utils/profile";
 import { initForum } from "lib/anchor/actions";
 import { Avatar } from "../avatar";
 import { Panel } from "../panel";
 
-export const Sidebar = () => {
+interface SidebarProps {
+  children: React.ReactNode;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
   const router = useRouter();
 
   return (
-    <Box my="6" pl="4" position="relative">
-      <Box>
-        <Section title="Home">
-          <Box px="4">
-            <Text>
-              Welcome to Onda Alpha. The place to discover and engage with web3
-              Communities, powered by the Solana blockchain, where every post,
-              comment and like lives on-chain.
-            </Text>
-          </Box>
-          <SidebarButtons />
-        </Section>
-        <Section title="Communities">
-          {getProfiles().map((profile) => (
-            <SidebarItem
-              key={profile.id}
-              href={`/o/${profile.id}`}
-              active={router.query.address === profile.id}
-              label={profile.name}
-              image={profile.image}
-            />
-          ))}
-        </Section>
-      </Box>
+    <Box my="2" pl="4" position="relative">
+      {children}
     </Box>
   );
 };
@@ -47,7 +28,7 @@ interface SectionProps {
   children: React.ReactNode;
 }
 
-const Section: React.FC<SectionProps> = ({ title, children }) => {
+export const SidebarSection: React.FC<SectionProps> = ({ title, children }) => {
   return (
     <Panel as="aside" p="0" pb="1" mb="6">
       {title && (
@@ -73,7 +54,12 @@ interface SidebarItemProps {
   label: string;
 }
 
-const SidebarItem = ({ active, href, image, label }: SidebarItemProps) => {
+export const SidebarItem = ({
+  active,
+  href,
+  image,
+  label,
+}: SidebarItemProps) => {
   return (
     <Box my="2" w="100%">
       <Link href={href}>
