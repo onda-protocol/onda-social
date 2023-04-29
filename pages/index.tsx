@@ -26,47 +26,49 @@ const Home: NextPage<PageProps> = () => {
   const query = useQuery(["posts"], fetchPosts);
 
   return (
-    <GridLayout
-      leftColumn={
-        <Box mt="6">
-          {query.isLoading ? (
-            <Box display="flex" alignItems="center" justifyContent="center">
-              <Spinner />
-            </Box>
-          ) : (
-            query.data?.map((post) => (
-              <PostListItem key={post.id} post={post} />
-            ))
-          )}
-        </Box>
-      }
-      rightColumn={
-        <Sidebar>
-          <Box>
-            <SidebarSection title="Home">
-              <Box px="4">
-                <Text>
-                  Welcome to Onda. The place to discover and engage with web3
-                  Communities, powered by the Solana blockchain.
-                </Text>
+    <Box mt="4">
+      <GridLayout
+        leftColumn={
+          <Box mt="2">
+            {query.isLoading ? (
+              <Box display="flex" alignItems="center" justifyContent="center">
+                <Spinner />
               </Box>
-              <SidebarButtons />
-            </SidebarSection>
-            <SidebarSection title="Communities">
-              {getProfiles().map((profile) => (
-                <SidebarItem
-                  key={profile.id}
-                  active={false}
-                  href={`/o/${profile.id}`}
-                  label={profile.name}
-                  image={profile.image}
-                />
-              ))}
-            </SidebarSection>
+            ) : (
+              query.data?.map((post) => (
+                <PostListItem key={post.id} post={post} />
+              ))
+            )}
           </Box>
-        </Sidebar>
-      }
-    />
+        }
+        rightColumn={
+          <Sidebar>
+            <Box>
+              <SidebarSection title="Home">
+                <Box px="4">
+                  <Text>
+                    Welcome to Onda. The place to discover and engage with web3
+                    Communities, powered by the Solana blockchain.
+                  </Text>
+                </Box>
+                <SidebarButtons />
+              </SidebarSection>
+              <SidebarSection title="Communities">
+                {getProfiles().map((profile) => (
+                  <SidebarItem
+                    key={profile.id}
+                    active={false}
+                    href={`/o/${profile.id}`}
+                    label={profile.name}
+                    image={profile.image}
+                  />
+                ))}
+              </SidebarSection>
+            </Box>
+          </Sidebar>
+        }
+      />
+    </Box>
   );
 };
 

@@ -1,8 +1,16 @@
 import Link from "next/link";
 import React from "react";
-import { useRouter } from "next/router";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { Box, Button, Heading, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Heading,
+  Text,
+  List,
+  ListItem,
+  Link as ChakraLink,
+} from "@chakra-ui/react";
+import { ExternalLinkIcon } from "@chakra-ui/icons";
 import { useMutation } from "@tanstack/react-query";
 
 import { initForum } from "lib/anchor/actions";
@@ -14,8 +22,6 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
-  const router = useRouter();
-
   return (
     <Box my="2" pl="4" position="relative">
       {children}
@@ -120,5 +126,33 @@ export const SidebarButtons = () => {
         Create Community
       </Button>
     </Box>
+  );
+};
+
+interface SidebarListProps {
+  children: React.ReactNode;
+}
+
+export const SidebarList: React.FC<SidebarListProps> = ({ children }) => {
+  return (
+    <List px="4" pb="4">
+      {children}
+    </List>
+  );
+};
+
+interface SidebarLinkProps {
+  href: string;
+  label: string;
+}
+
+export const SidebarLink: React.FC<SidebarLinkProps> = ({ href, label }) => {
+  return (
+    <ListItem mb="2">
+      <ChakraLink href={href} isExternal>
+        {label}
+        <ExternalLinkIcon mx="2px" />
+      </ChakraLink>
+    </ListItem>
   );
 };

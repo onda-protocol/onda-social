@@ -22,6 +22,7 @@ import {
 import {
   getDescriptionFromAddress,
   getImageFromAddress,
+  getLinksFromAddress,
   getNameFromAddress,
 } from "utils/profile";
 import { fetchPostsByForum } from "lib/api";
@@ -30,6 +31,8 @@ import {
   Sidebar,
   SidebarSection,
   SidebarButtons,
+  SidebarList,
+  SidebarLink,
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
 import Image from "next/image";
@@ -45,7 +48,7 @@ const Community: NextPage<PageProps> = () => {
 
   const image = getImageFromAddress(id);
   const name = getNameFromAddress(id);
-  const description = getDescriptionFromAddress(id);
+  const links = getLinksFromAddress(id);
 
   return (
     <>
@@ -75,7 +78,7 @@ const Community: NextPage<PageProps> = () => {
                 <Heading mb="2" size="md">
                   {name}
                 </Heading>
-                <Heading color="gray.400" fontWeight="medium" size="xs">
+                <Heading color="gray.500" fontWeight="medium" size="xs">
                   o/{id}
                 </Heading>
               </Box>
@@ -111,14 +114,25 @@ const Community: NextPage<PageProps> = () => {
               }
               rightColumn={
                 <Sidebar>
-                  <Box>
-                    <SidebarSection title="About">
-                      <Box px="4">
-                        <Text>{getDescriptionFromAddress(id)}</Text>
-                      </Box>
-                      <SidebarButtons />
-                    </SidebarSection>
-                  </Box>
+                  <SidebarSection title="About">
+                    <Box px="4">
+                      <Text>{getDescriptionFromAddress(id)}</Text>
+                    </Box>
+                    <SidebarButtons />
+                  </SidebarSection>
+                  <SidebarSection title="Links">
+                    <SidebarList>
+                      {links?.twitter && (
+                        <SidebarLink href={links.twitter} label="Twitter" />
+                      )}
+                      {links?.discord && (
+                        <SidebarLink href={links.discord} label="Discord" />
+                      )}
+                      {links?.website && (
+                        <SidebarLink href={links.website} label="Website" />
+                      )}
+                    </SidebarList>
+                  </SidebarSection>
                 </Sidebar>
               }
             />
