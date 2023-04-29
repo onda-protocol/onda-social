@@ -5,12 +5,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
 
-import {
-  SerializedCommentNested,
-  SerializedComment,
-  fetchReplies,
-  fetchUser,
-} from "lib/api";
+import { SerializedCommentNested, fetchReplies, fetchUser } from "lib/api";
 import { likeEntry } from "lib/anchor";
 import { Markdown } from "../markdown";
 import { Editor } from "../editor";
@@ -19,7 +14,7 @@ import { PostButton, LikeButton } from "components/post/buttons";
 
 interface CommentListItemProps {
   forum: string;
-  comment: SerializedCommentNested | SerializedComment;
+  comment: SerializedCommentNested;
   depth?: number;
   queryKey: (string | { offset: number })[];
   isRoot?: boolean;
@@ -84,10 +79,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                 };
 
                 if (c.Children !== undefined) {
-                  updatedComment.Children = [
-                    newComment as SerializedComment,
-                    ...(c.Children ?? []),
-                  ];
+                  updatedComment.Children = [newComment, ...(c.Children ?? [])];
                 }
                 return [
                   ...data.slice(0, parseInt(index)),
@@ -112,8 +104,8 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
 
                     if ("Children" in updatedChild) {
                       updatedChild.Children = [
-                        newComment as SerializedComment,
-                        ...updatedChild.Children,
+                        newComment,
+                        ...(updatedChild.Children ?? []),
                       ];
                     }
 
@@ -215,7 +207,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
 );
 
 interface CommentLikeButtonProps {
-  comment: SerializedComment | SerializedCommentNested;
+  comment: SerializedCommentNested;
   queryKey: (string | { offset: number })[];
 }
 
@@ -242,7 +234,7 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
       onSuccess() {
         queryClient.setQueryData<Array<SerializedCommentNested>>(
           queryKey,
-          nestedCommentsLikeReducer<SerializedCommentNested>(comment.id)
+          nestedCommentsLikeReducer(comment.id)
         );
       },
     }
@@ -259,7 +251,7 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
 
 interface CommentRepliesProps {
   forum: string;
-  comment: SerializedCommentNested | SerializedComment;
+  comment: SerializedCommentNested;
   queryKey: (string | { offset: number })[];
 }
 
@@ -270,18 +262,16 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
 }) => {
   return (
     <>
-      {"Children" in comment ? (
+      {comment.Children ? (
         <>
-          {comment.Children.map(
-            (comment: SerializedCommentNested | SerializedComment) => (
-              <CommentListItem
-                key={comment.id}
-                forum={forum}
-                comment={comment}
-                queryKey={queryKey}
-              />
-            )
-          )}
+          {comment.Children.map((comment: SerializedCommentNested) => (
+            <CommentListItem
+              key={comment.id}
+              forum={forum}
+              comment={comment}
+              queryKey={queryKey}
+            />
+          ))}
           {comment._count.Children > comment.Children.length && (
             <CommentSiblingsLazy
               comment={comment}
@@ -299,7 +289,7 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
 
 interface CommentChildrenLazyProps {
   forum: string;
-  comment: SerializedComment;
+  comment: SerializedCommentNested;
 }
 
 const CommentChildrenLazy = ({ forum, comment }: CommentChildrenLazyProps) => {
@@ -451,16 +441,18 @@ function increment(like: string) {
   return Number(Number(like) + 1).toString();
 }
 
-function nestedCommentsLikeReducer<
-  T extends SerializedComment | SerializedCommentNested
->(id: string): (input: T[] | undefined) => T[] | undefined {
+function nestedCommentsLikeReducer(
+  id: string
+): (
+  input: SerializedCommentNested[] | undefined
+) => SerializedCommentNested[] | undefined {
   return (comments) => {
     if (!comments) {
       return;
     }
 
     for (const index in comments) {
-      const comment = comments[index];
+      const comment: SerializedCommentNested = comments[index];
 
       if (comment.id === id) {
         return [
@@ -471,10 +463,8 @@ function nestedCommentsLikeReducer<
           },
           ...comments.slice(Number(index) + 1),
         ];
-      } else if ("Children" in comment && comment.Children) {
-        const updatedChildren = nestedCommentsLikeReducer<SerializedComment>(
-          id
-        )(comment.Children);
+      } else if (comment.Children) {
+        const updatedChildren = nestedCommentsLikeReducer(id)(comment.Children);
 
         if (updatedChildren) {
           return [
