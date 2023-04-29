@@ -272,14 +272,16 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
     <>
       {"Children" in comment ? (
         <>
-          {comment.Children.map((comment) => (
-            <CommentListItem
-              key={comment.id}
-              forum={forum}
-              comment={comment}
-              queryKey={queryKey}
-            />
-          ))}
+          {comment.Children.map(
+            (comment: SerializedCommentNested | SerializedComment) => (
+              <CommentListItem
+                key={comment.id}
+                forum={forum}
+                comment={comment}
+                queryKey={queryKey}
+              />
+            )
+          )}
           {comment._count.Children > comment.Children.length && (
             <CommentSiblingsLazy
               comment={comment}
