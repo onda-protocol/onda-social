@@ -91,7 +91,11 @@ export const SidebarItem = ({
   );
 };
 
-export const SidebarButtons = () => {
+interface SidebarButtonsProps {
+  forum?: string;
+}
+
+export const SidebarButtons: React.FC<SidebarButtonsProps> = ({ forum }) => {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
 
@@ -107,7 +111,7 @@ export const SidebarButtons = () => {
     <Box my="6" mx="4">
       <Button
         as={Link}
-        href="/submit"
+        href={`/submit${forum ? `?o=${forum}` : ""}`}
         width="100%"
         borderRadius="lg"
         variant="solid"

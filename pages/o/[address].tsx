@@ -118,7 +118,7 @@ const Community: NextPage<PageProps> = () => {
                     <Box px="4">
                       <Text>{getDescriptionFromAddress(id)}</Text>
                     </Box>
-                    <SidebarButtons />
+                    <SidebarButtons forum={id} />
                   </SidebarSection>
                   <SidebarSection title="Links">
                     <SidebarList>

@@ -11,7 +11,7 @@
     "postinstall": "npm run generate"
   },
   "dependencies": {
-    "@chakra-ui/icons": "^2.0.19",
+    "@chakra-ui/icons": "^2.0.24",
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
     "@metaplex-foundation/mpl-token-metadata": "^2.9.1",

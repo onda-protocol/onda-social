@@ -1,6 +1,7 @@
+import React, { useEffect } from "react";
 import { web3 } from "@project-serum/anchor";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
@@ -10,8 +11,7 @@ import { sleep } from "utils/async";
 import { fetchFora } from "lib/api";
 import { addEntry } from "lib/anchor/actions";
 import { getProgram } from "lib/anchor/provider";
-import { getNameFromAddress } from "utils/profile";
-import React from "react";
+import { getNameFromAddress, getProfiles } from "utils/profile";
 
 interface EntryForm {
   title: string;
@@ -63,9 +63,21 @@ export const Editor = ({
     defaultValues: {
       title: "",
       body: "",
+      forum: "",
       postType: "textPost",
     },
   });
+
+  // Async set forum value because next router is not available on mount
+  useEffect(() => {
+    const setValue = methods.setValue;
+
+    if (config.forum) {
+      setValue("forum", config.forum);
+    }
+  }, [methods.setValue, config.forum]);
+
+  console.log(methods.getValues());
 
   const mutation = useMutation<[string, string] | void, Error, EntryForm>(
     async (data) => {
@@ -169,6 +181,7 @@ export const Editor = ({
     >
       {config.type === "post" && (
         <SelectForum
+          defaultValue={config.forum}
           {...methods.register("forum", {
             required: true,
           })}
@@ -224,15 +237,13 @@ export const Editor = ({
   );
 };
 
-const SelectForum = React.forwardRef<HTMLSelectElement>(function SelectForum(
-  props,
-  ref
-) {
-  const query = useQuery(["fora"], fetchFora);
-
+const SelectForum = React.forwardRef<
+  HTMLSelectElement,
+  React.ComponentPropsWithoutRef<typeof Select>
+>(function SelectForum(props, ref) {
   return (
     <Select mt="6" placeholder="Choose a community" ref={ref} {...props}>
-      {query.data?.map((forum) => (
+      {getProfiles().map((forum) => (
         <option key={forum.id} value={forum.id}>
           {getNameFromAddress(forum.id)}
         </option>
