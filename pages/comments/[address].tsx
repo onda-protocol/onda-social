@@ -30,10 +30,17 @@ interface PageProps {
 const Comments: NextPage<PageProps> = () => {
   const router = useRouter();
   const id = router.query.address as string;
-  const postQuery = useQuery(["post", id], () => fetchPost(id));
+  const postQuery = useQuery({
+    queryKey: ["post", id],
+    queryFn: () => fetchPost(id),
+    enabled: true,
+  });
   const commentsQueryKey = ["comments", id];
-  const commentsQuery = useQuery(commentsQueryKey, () => fetchComments(id));
-
+  const commentsQuery = useQuery({
+    queryKey: commentsQueryKey,
+    queryFn: () => fetchComments(id),
+    enabled: true,
+  });
   const anchorWallet = useAnchorWallet();
   const queryClient = useQueryClient();
 
@@ -139,24 +146,24 @@ const Comments: NextPage<PageProps> = () => {
   );
 };
 
-Comments.getInitialProps = async (ctx) => {
-  if (typeof window === "undefined") {
-    try {
-      const queryClient = new QueryClient();
-      const id = ctx.query.address as string;
-      await queryClient.prefetchQuery(["post", id], () => fetchPost(id));
+// Comments.getInitialProps = async (ctx) => {
+//   if (typeof window === "undefined") {
+//     try {
+//       const queryClient = new QueryClient();
+//       const id = ctx.query.address as string;
+//       await queryClient.prefetchQuery(["post", id], () => fetchPost(id));
 
-      return {
-        dehydratedState: dehydrate(queryClient),
-      };
-    } catch (err) {
-      console.log(err);
-    }
-  }
+//       return {
+//         dehydratedState: dehydrate(queryClient),
+//       };
+//     } catch (err) {
+//       console.log(err);
+//     }
+//   }
 
-  return {
-    dehydratedState: undefined,
-  };
-};
+//   return {
+//     dehydratedState: undefined,
+//   };
+// };
 
 export default Comments;

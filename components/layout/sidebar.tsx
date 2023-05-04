@@ -116,7 +116,7 @@ export const SidebarButtons = () => {
         Create Post
       </Button>
       <Button
-        // isDisabled
+        isDisabled
         width="100%"
         borderRadius="lg"
         variant="outline"

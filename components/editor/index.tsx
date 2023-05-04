@@ -174,7 +174,7 @@ export const Editor = ({
           })}
         />
       )}
-      {config.type === "post" && (
+      {/* {config.type === "post" && (
         <Select
           mt="6"
           {...methods.register("postType", {
@@ -184,7 +184,7 @@ export const Editor = ({
           <option value="textPost">Text Post</option>
           <option value="linkPost">Link Post</option>
         </Select>
-      )}
+      )} */}
       {config.type === "post" && (
         <Input
           mt="6"

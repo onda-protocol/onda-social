@@ -9,6 +9,21 @@ const theme = extendTheme({
     useSystemColorMode: false,
   },
   components: {
+    Tabs: {
+      defaultProps: {
+        colorScheme: "gray",
+      },
+    },
+    TabList: {
+      baseStyle: {
+        borderColor: "gray.800",
+      },
+    },
+    Tab: {
+      baseStyle: {
+        pb: "1",
+      },
+    },
     Tag: {
       parts: ["container"],
       baseStyle: {

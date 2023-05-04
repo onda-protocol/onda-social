@@ -95,7 +95,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
           color: "gray.400",
         }}
       >
-        <Link href={`/u/${author.id}`}>
+        <Link href={`/u/${author.id}`} onClick={handleClick}>
           <Box as="span" display="flex" flexDirection="row" alignItems="center">
             {displayAvatar && author.avatar && author.name && (
               <Box as="span" mr="2">

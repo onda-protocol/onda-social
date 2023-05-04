@@ -8,6 +8,7 @@ import {
   TabList,
   TabPanels,
   Tab,
+  Text,
   TabPanel,
   Heading,
   Spinner,
@@ -48,29 +49,36 @@ const User: NextPage = () => {
           src={query.data?.avatar ?? undefined}
         />
         <Box mt="6">
-          <Heading size="md">{query.data?.name ?? authorAddress}</Heading>
+          <Heading size="md" textAlign="center">
+            {query.data?.name ?? authorAddress}
+          </Heading>
+          {query.data?.name && (
+            <Text size="xs" textAlign="center" color="gray.500">
+              {authorAddress}
+            </Text>
+          )}
         </Box>
-        <Box mt="6">
-          {isCurrentUser && (
+        {isCurrentUser && (
+          <Box mt="6">
             <Link href={`/u/${address}/edit`}>
               <Button size="sm">Edit Profile</Button>
             </Link>
-          )}
-        </Box>
+          </Box>
+        )}
       </Box>
       <Tabs>
         <TabList>
           <Tab>Posts</Tab>
-          <Tab>Comments</Tab>
+          {/* <Tab>Comments</Tab> */}
         </TabList>
 
         <TabPanels>
-          <TabPanel>
+          <TabPanel px="0">
             <PostsTab id={address} />
           </TabPanel>
-          <TabPanel>
+          {/* <TabPanel>
             <CommentsTab id={address} />
-          </TabPanel>
+          </TabPanel> */}
         </TabPanels>
       </Tabs>
     </Container>
