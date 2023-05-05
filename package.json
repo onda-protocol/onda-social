@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "generate": "npx prisma generate --schema ./lib/prisma/schema.prisma",
-    "postinstall": "npm run generate"
+    "postinstall": "npm run generate",
+    "mint": "ts-node ./scripts/mint.ts"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.0.19",
@@ -47,6 +48,8 @@
     "typescript": "5.0.4"
   },
   "devDependencies": {
-    "@tanstack/react-query-devtools": "^4.29.1"
+    "@metaplex-foundation/js": "^0.19.1",
+    "@tanstack/react-query-devtools": "^4.29.1",
+    "ts-node": "^10.9.1"
   }
 }
