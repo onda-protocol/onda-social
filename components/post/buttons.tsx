@@ -3,7 +3,7 @@ import { Box, Text, Tooltip } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { IoChatbox } from "react-icons/io5";
-import { GiJellyfish } from "react-icons/gi";
+import { GiSadCrab } from "react-icons/gi";
 import { MouseEventHandler, forwardRef } from "react";
 
 import { likeEntry } from "lib/anchor";
@@ -140,7 +140,7 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
 );
 
 export const LikeButton: React.FC<Omit<PostButtonProps, "icon">> = (props) => (
-  <Tooltip label="Feed 1 $PLNK" shouldWrapChildren>
-    <PostButton icon={<GiJellyfish />} {...props} />
+  <Tooltip label="Feed post with 1 $PLANK" shouldWrapChildren>
+    <PostButton icon={<GiSadCrab />} {...props} />
   </Tooltip>
 );
