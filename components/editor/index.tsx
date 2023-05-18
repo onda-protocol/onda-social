@@ -10,7 +10,6 @@ import { useRouter } from "next/router";
 import { sleep } from "utils/async";
 import { fetchFora } from "lib/api";
 import { addEntry } from "lib/anchor/actions";
-import { getProgram } from "lib/anchor/provider";
 import { getNameFromAddress, getProfiles } from "utils/profile";
 
 interface EntryForm {
@@ -83,12 +82,6 @@ export const Editor = ({
     async (data) => {
       if (!anchorWallet) {
         throw new Error("Wallet not connected");
-      }
-
-      const program = getProgram(connection, anchorWallet);
-
-      if (!program.provider.publicKey || !program.provider.sendAndConfirm) {
-        throw new Error("Provider not found");
       }
 
       const forumId = config.type === "comment" ? config.forum : data.forum;
