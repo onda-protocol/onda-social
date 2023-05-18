@@ -1,11 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import {
-  web3,
-  Wallet,
-  AnchorProvider,
-  Program,
-  BN,
-} from "@project-serum/anchor";
+import { web3, BN } from "@project-serum/anchor";
 import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import base58 from "bs58";
 import { snakeCase } from "snake-case";
@@ -16,17 +10,10 @@ import {
   BLOOM_PROGRAM_ID,
   PROFILE_PROGRAM_ID,
 } from "lib/anchor/constants";
-import { OndaBloom, IDL as BloomIDL } from "lib/anchor/idl/onda_bloom";
-import {
-  OndaCompression,
-  IDL as CompressionIDL,
-} from "lib/anchor/idl/onda_compression";
-import { OndaProfile, IDL as ProfileIDL } from "lib/anchor/idl/onda_profile";
-import {
-  getCompressionProgram,
-  getBloomProgram,
-  getProfileProgram,
-} from "lib/anchor/provider";
+import { IDL as BloomIDL } from "lib/anchor/idl/onda_bloom";
+import { IDL as CompressionIDL } from "lib/anchor/idl/onda_compression";
+import { IDL as ProfileIDL } from "lib/anchor/idl/onda_profile";
+import { getCompressionProgram } from "lib/anchor/provider";
 import { DataV1, LeafSchemaV1, RestrictionType } from "lib/anchor/types";
 import prisma from "lib/prisma";
 
@@ -61,9 +48,7 @@ function genIxIdentifier(ixName: string) {
 const connection = new web3.Connection(
   process.env.NEXT_PUBLIC_RPC_ENDPOINT as string
 );
-const bloomProgram = getBloomProgram(connection);
 const compressionProgram = getCompressionProgram(connection);
-const profileProgram = getProfileProgram(connection);
 
 export default async function handler(
   req: NextApiRequest,

@@ -39,8 +39,8 @@ export async function initForum(
     throw new Error("Provider not found");
   }
 
-  const maxDepth = 14;
-  const maxBufferSize = 64;
+  const maxDepth = 20;
+  const maxBufferSize = 256;
   const merkleTreeKeypair = web3.Keypair.generate();
   const merkleTree = merkleTreeKeypair.publicKey;
   const forumConfig = findForumConfigPda(merkleTree);
@@ -63,8 +63,9 @@ export async function initForum(
   const initIx = await program.methods
     .initForum(maxDepth, maxBufferSize, {
       collection: {
+        /// Chicken Tribe Collection
         address: new web3.PublicKey(
-          "EotJ4wYtYQUbx6E2Tn5aAbsr79KBFRcwj5usriv2Xj7i"
+          "FcAQivai8rtj48MbuEvRf94Yqymz6N9bkxcudpgRqgcJ"
         ),
       },
     })
