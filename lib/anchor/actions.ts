@@ -1,5 +1,9 @@
-import { web3 } from "@project-serum/anchor";
-import { AccountLayout, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { web3, BN } from "@project-serum/anchor";
+import {
+  AccountLayout,
+  getAssociatedTokenAddress,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
@@ -11,19 +15,24 @@ import base58 from "bs58";
 
 import {
   findForumConfigPda,
-  findLikeRecordPda,
+  findBloomPda,
   findMetadataPda,
   findProfilePda,
 } from "utils/pda";
 import { fetchAllAccounts } from "utils/web3";
 import { DataV1, LeafSchemaV1 } from "./types";
-import { getProgram } from "./provider";
+import {
+  getCompressionProgram,
+  getBloomProgram,
+  getProfileProgram,
+} from "./provider";
+import { PLANKTON_MINT, PROTOCOL_FEE_PLANKTON_ATA } from "./constants";
 
 export async function initForum(
   connection: web3.Connection,
   wallet: AnchorWallet
 ) {
-  const program = getProgram(connection, wallet);
+  const program = getCompressionProgram(connection, wallet);
   const payer = program.provider.publicKey;
 
   if (!payer || !program.provider.sendAndConfirm) {
@@ -96,7 +105,7 @@ export async function addEntry(
     data: DataV1;
   }
 ): Promise<[string, string] | void> {
-  const program = getProgram(connection, wallet);
+  const program = getCompressionProgram(connection, wallet);
   const merkleTree = new web3.PublicKey(options.forumId);
   const forumConfig = new web3.PublicKey(options.forumConfig);
   const collection = options.collection
@@ -156,17 +165,30 @@ export async function likeEntry(
     author: string;
   }
 ) {
-  const program = getProgram(connection, wallet);
+  const program = getBloomProgram(connection, wallet);
   const entryId = new web3.PublicKey(options.id);
   const author = new web3.PublicKey(options.author);
-  const likeRecordPda = findLikeRecordPda(entryId, author);
+  const bloomPda = findBloomPda(entryId, author);
+  const authorTokenAccount = await getAssociatedTokenAddress(
+    PLANKTON_MINT,
+    author
+  );
+  const depositTokenAccount = await getAssociatedTokenAddress(
+    PLANKTON_MINT,
+    wallet.publicKey
+  );
 
   await program.methods
-    .likeEntry(entryId)
+    .feedPlankton(entryId, new BN(10_000))
     .accounts({
+      author,
+      authorTokenAccount,
+      depositTokenAccount,
       payer: wallet.publicKey,
-      author: author,
-      likeRecord: likeRecordPda,
+      bloom: bloomPda,
+      mint: PLANKTON_MINT,
+      protocolFeeTokenAccount: PROTOCOL_FEE_PLANKTON_ATA,
+      tokenProgram: TOKEN_PROGRAM_ID,
     })
     .rpc();
 }
@@ -179,7 +201,7 @@ export async function updateProfile(
     mint: string;
   }
 ) {
-  const program = getProgram(connection, wallet);
+  const program = getProfileProgram(connection, wallet);
   const mint = new web3.PublicKey(options.mint);
   const metadataPda = findMetadataPda(mint);
   const profilePda = findProfilePda(wallet.publicKey);

@@ -1,18 +1,43 @@
 import * as anchor from "@project-serum/anchor";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
-import { OndaSocial, IDL } from "./idl";
+import { OndaBloom, IDL as BloomIDL } from "./idl/onda_bloom";
+import { OndaCompression, IDL as CompressionIDL } from "./idl/onda_compression";
+import { OndaProfile, IDL as ProfileIDL } from "./idl/onda_profile";
+import {
+  BLOOM_PROGRAM_ID,
+  COMPRESSION_PROGRAM_ID,
+  PROFILE_PROGRAM_ID,
+} from "./constants";
 
-export const PROGRAM_ID = new anchor.web3.PublicKey(
-  "5KCUQVLFg1E7SuZbuLNG5n5UAA6Gzxshdp1wnq9pNtyD"
-);
-
-export function getProgram(
+export function getBloomProgram(
   connection: anchor.web3.Connection,
   wallet?: AnchorWallet
-): anchor.Program<OndaSocial> {
-  return new anchor.Program<OndaSocial>(
-    IDL,
-    PROGRAM_ID,
+): anchor.Program<OndaBloom> {
+  return new anchor.Program<OndaBloom>(
+    BloomIDL,
+    BLOOM_PROGRAM_ID,
+    wallet ? getProvider(connection, wallet) : undefined
+  );
+}
+
+export function getCompressionProgram(
+  connection: anchor.web3.Connection,
+  wallet?: AnchorWallet
+): anchor.Program<OndaCompression> {
+  return new anchor.Program<OndaCompression>(
+    CompressionIDL,
+    COMPRESSION_PROGRAM_ID,
+    wallet ? getProvider(connection, wallet) : undefined
+  );
+}
+
+export function getProfileProgram(
+  connection: anchor.web3.Connection,
+  wallet?: AnchorWallet
+): anchor.Program<OndaProfile> {
+  return new anchor.Program<OndaProfile>(
+    ProfileIDL,
+    PROFILE_PROGRAM_ID,
     wallet ? getProvider(connection, wallet) : undefined
   );
 }
