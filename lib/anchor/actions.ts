@@ -129,11 +129,17 @@ export async function addEntry(
     );
   }
   // TODO! Properly handle different post types
-  // @ts-expect-error
-  const encodedTitle = Buffer.from(options.data.textPost.title, "utf-8");
-  // @ts-expect-error
-  const encodedBody = Buffer.from(options.data.textPost.body, "utf-8");
-  const totalSize = encodedTitle.byteLength + encodedBody.byteLength;
+  let totalSize = 0;
+
+  if (options.data.textPost) {
+    const encodedTitle = Buffer.from(options.data.textPost.title, "utf-8");
+    const encodedBody = Buffer.from(options.data.textPost.body, "utf-8");
+    totalSize = encodedTitle.byteLength + encodedBody.byteLength;
+  } else if (options.data.comment) {
+    const encodedBody = Buffer.from(options.data.comment.body, "utf-8");
+    totalSize = encodedBody.byteLength;
+  }
+
   if (totalSize > 1000) {
     throw new Error("Post too long - max length is 1000 bytes (for now)");
   }
