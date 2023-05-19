@@ -29,7 +29,6 @@ import { DocumentHead } from "../components/document";
 export default function App({ Component, pageProps }: AppProps) {
   const wallets = useMemo(
     () => [
-      new PhantomWalletAdapter(),
       new SlopeWalletAdapter(),
       new SolflareWalletAdapter(),
       new TorusWalletAdapter(),
