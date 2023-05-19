@@ -9,8 +9,7 @@
     "lint": "next lint",
     "generate": "npx prisma generate --schema ./lib/prisma/schema.prisma",
     "postinstall": "npm run generate",
-    "mint": "ts-node ./scripts/mint.ts",
-    "convert": "ts-node ./scripts/convert.ts"
+    "replay": "ts-node ./scripts/replay.ts"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.0.19",
@@ -51,6 +50,8 @@
   "devDependencies": {
     "@metaplex-foundation/js": "^0.19.1",
     "@tanstack/react-query-devtools": "^4.29.1",
+    "axios": "^1.4.0",
+    "dotenv": "^16.0.3",
     "ts-node": "^10.9.1"
   }
 }

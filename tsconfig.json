@@ -22,7 +22,11 @@
   },
   "ts-node": {
     "compilerOptions": {
-      "module": "commonjs"
+      "module": "commonjs",
+      "paths": {
+        "lib/*": ["./lib/*"],
+        "utils/*": ["./utils/*"]
+      }
     },
     "include": ["scripts"]
   },
