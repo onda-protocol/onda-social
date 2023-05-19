@@ -76,8 +76,6 @@ export const Editor = ({
     }
   }, [methods.setValue, config.forum]);
 
-  console.log(methods.getValues());
-
   const mutation = useMutation<[string, string] | void, Error, EntryForm>(
     async (data) => {
       if (!anchorWallet) {

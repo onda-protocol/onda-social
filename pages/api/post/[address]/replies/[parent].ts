@@ -8,7 +8,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { address, parent, skip = "0" } = req.query;
-  console.log("SKIP: ", skip);
+
   const result = await prisma.comment.findMany({
     skip: parseInt(skip as string),
     where: {

@@ -6,7 +6,7 @@ import { Editor } from "../components/editor";
 const Submit: NextPage = () => {
   const router = useRouter();
   const forum = router.query.o as string | undefined;
-  console.log("router", forum, router.query.o);
+
   return (
     <Container maxW="2xl">
       <Heading size="md" my="9">

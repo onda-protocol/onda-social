@@ -73,6 +73,6 @@ export default async function handler(
       },
     },
   });
-  console.log("result: ", result);
+
   res.json(parseBigInt(result));
 }

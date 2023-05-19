@@ -337,8 +337,6 @@ const CommentSiblingsLazy = ({
   forum,
   offset,
 }: CommentSiblingsLazyProps) => {
-  console.log("CommentSiblingsLazy", comment, offset);
-
   const [loadMore, setLoadMore] = useState(false);
   const queryKey = useMemo(
     () => ["replies", comment.parent as string, { offset }],

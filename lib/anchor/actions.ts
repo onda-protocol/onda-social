@@ -107,6 +107,12 @@ export async function addEntry(
   }
 ): Promise<[string, string] | void> {
   const program = getCompressionProgram(connection, wallet);
+  const payer = program.provider.publicKey;
+
+  if (!payer || !program.provider.sendAndConfirm) {
+    throw new Error("Provider not found");
+  }
+
   const merkleTree = new web3.PublicKey(options.forumId);
   const forumConfig = new web3.PublicKey(options.forumConfig);
   const collection = options.collection
@@ -122,6 +128,15 @@ export async function addEntry(
       collection
     );
   }
+  // TODO! Properly handle different post types
+  // @ts-expect-error
+  const encodedTitle = Buffer.from(options.data.textPost.title, "utf-8");
+  // @ts-expect-error
+  const encodedBody = Buffer.from(options.data.textPost.body, "utf-8");
+  const totalSize = encodedTitle.byteLength + encodedBody.byteLength;
+  if (totalSize > 1000) {
+    throw new Error("Post too long - max length is 1000 bytes (for now)");
+  }
 
   const signature = await program.methods
     .addEntry(options.data)
@@ -134,7 +149,9 @@ export async function addEntry(
       logWrapper: SPL_NOOP_PROGRAM_ID,
       compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
     })
-    .rpc({ commitment: "confirmed" });
+    .rpc({
+      commitment: "confirmed",
+    });
 
   const logs = await connection.getTransaction(signature, {
     commitment: "confirmed",
@@ -226,6 +243,27 @@ export async function updateProfile(
     .rpc();
 }
 
+async function submitInstructions(
+  connection: web3.Connection,
+  instructions: web3.TransactionInstruction[],
+  payer: web3.PublicKey,
+  signers: web3.Signer[]
+) {
+  const latestBlockhash = await connection.getLatestBlockhash();
+  const message = new web3.TransactionMessage({
+    instructions,
+    payerKey: payer,
+    recentBlockhash: latestBlockhash.blockhash,
+  }).compileToV0Message();
+  const transaction = new web3.VersionedTransaction(message);
+  transaction.sign(signers);
+  const signature = await connection.sendTransaction(transaction);
+  await connection.confirmTransaction({
+    signature,
+    ...latestBlockhash,
+  });
+}
+
 async function fetchTokenAccounts(
   connection: web3.Connection,
   owner: web3.PublicKey,
@@ -238,27 +276,18 @@ async function fetchTokenAccounts(
     ...AccountLayout.decode(value.account.data),
     pubkey: value.pubkey,
   }));
-  const metadataPdas = decodedTokenAccounts.map((account) =>
-    findMetadataPda(account.mint)
+  const metadata = await fetchMetadataAccounts(
+    connection,
+    decodedTokenAccounts.map((value) => value.mint)
   );
-  const metadataAccounts = await fetchAllAccounts(connection, metadataPdas);
-  const metadata = metadataAccounts
-    .map((account) => {
-      try {
-        return Metadata.fromAccountInfo(account)[0];
-      } catch (err) {
-        console.log("err: ", err);
-        return null;
-      }
-    })
-    .filter((metadata): metadata is NonNullable<Metadata> => metadata !== null);
+
   const selectedMetadataAccount = metadata.find((metadata) =>
     metadata.collection?.key.equals(collection)
   );
   const selectedMintAddress = selectedMetadataAccount?.mint;
 
   if (!selectedMintAddress) {
-    throw new Error("Unahthorized");
+    throw new Error("Unauthorized");
   }
 
   const selectedMetadataPda = findMetadataPda(selectedMetadataAccount.mint);
@@ -275,4 +304,19 @@ async function fetchTokenAccounts(
     selectedMetadataPda,
     selectedTokenAddress,
   ] as const;
+}
+
+async function fetchMetadataAccounts(
+  connection: web3.Connection,
+  mints: web3.PublicKey[]
+) {
+  const metadataAddresses = mints.map((mint) => findMetadataPda(mint));
+  const rawMetadataAccounts = await fetchAllAccounts(
+    connection,
+    metadataAddresses
+  );
+
+  return rawMetadataAccounts
+    .map((account) => (account ? Metadata.fromAccountInfo(account)[0] : null))
+    .filter((metadata): metadata is NonNullable<Metadata> => metadata !== null);
 }
