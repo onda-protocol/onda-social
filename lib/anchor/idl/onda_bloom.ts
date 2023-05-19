@@ -23,7 +23,7 @@ export type OndaBloom = {
         {
           name: "authorTokenAccount";
           isMut: true;
-          isSigner: true;
+          isSigner: false;
         },
         {
           name: "bloom";
@@ -47,6 +47,11 @@ export type OndaBloom = {
         },
         {
           name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "associatedTokenProgram";
           isMut: false;
           isSigner: false;
         }
@@ -121,7 +126,7 @@ export const IDL: OndaBloom = {
         {
           name: "authorTokenAccount",
           isMut: true,
-          isSigner: true,
+          isSigner: false,
         },
         {
           name: "bloom",
@@ -145,6 +150,11 @@ export const IDL: OndaBloom = {
         },
         {
           name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "associatedTokenProgram",
           isMut: false,
           isSigner: false,
         },
