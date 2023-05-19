@@ -72,23 +72,4 @@ const Home: NextPage<PageProps> = () => {
   );
 };
 
-Home.getInitialProps = async (ctx) => {
-  if (typeof window === "undefined") {
-    try {
-      const queryClient = new QueryClient();
-      await queryClient.prefetchQuery(["posts"], fetchPosts);
-
-      return {
-        dehydratedState: dehydrate(queryClient),
-      };
-    } catch (err) {
-      console.log(err);
-    }
-  }
-
-  return {
-    dehydratedState: undefined,
-  };
-};
-
 export default Home;
