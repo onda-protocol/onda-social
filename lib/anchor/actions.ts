@@ -203,7 +203,7 @@ export async function likeEntry(
   );
 
   await program.methods
-    .feedPlankton(entryId, new BN(10_000))
+    .feedPlankton(entryId, new BN(100_000))
     .accounts({
       author,
       authorTokenAccount,
@@ -214,7 +214,9 @@ export async function likeEntry(
       protocolFeeTokenAccount: PROTOCOL_FEE_PLANKTON_ATA,
       tokenProgram: TOKEN_PROGRAM_ID,
     })
-    .rpc();
+    .rpc({
+      commitment: "confirmed",
+    });
 }
 
 export async function updateProfile(
