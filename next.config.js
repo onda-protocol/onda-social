@@ -5,7 +5,7 @@ const nextConfig = {
     domains: [
       "chickentribe.s3.us-west-2.amazonaws.com",
       "arweave.net",
-      "*.arweave.net",
+      "www.arweave.net",
     ],
   },
 };
