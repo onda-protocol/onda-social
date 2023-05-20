@@ -140,7 +140,7 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
 );
 
 export const LikeButton: React.FC<Omit<PostButtonProps, "icon">> = (props) => (
-  <Tooltip label="Feed post with 1 $PLANK" shouldWrapChildren>
+  <Tooltip label="Boost post with PLANK" shouldWrapChildren>
     <PostButton icon={<GiSadCrab />} {...props} />
   </Tooltip>
 );
