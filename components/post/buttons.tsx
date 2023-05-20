@@ -5,6 +5,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { IoChatbox } from "react-icons/io5";
 import { GiSadCrab } from "react-icons/gi";
 import { MouseEventHandler, forwardRef } from "react";
+import toast from "react-hot-toast";
 
 import { likeEntry } from "lib/anchor";
 import { PostWithCommentsCountAndForum } from "lib/api";
@@ -85,6 +86,10 @@ export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
               }
             );
           });
+      },
+      onError(err) {
+        console.error(err);
+        toast.error("Failed to send PLANK");
       },
     }
   );

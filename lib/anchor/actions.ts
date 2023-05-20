@@ -202,7 +202,7 @@ export async function likeEntry(
     wallet.publicKey
   );
 
-  await program.methods
+  const signature = await program.methods
     .feedPlankton(entryId, new BN(100_000))
     .accounts({
       author,
@@ -217,6 +217,8 @@ export async function likeEntry(
     .rpc({
       commitment: "confirmed",
     });
+
+  console.log("signature: ", signature);
 }
 
 export async function updateProfile(
