@@ -4,10 +4,8 @@ const nextConfig = {
   images: {
     domains: [
       "chickentribe.s3.us-west-2.amazonaws.com",
-      "arweave.net",
-      "www.arweave.net",
-      "dweb.link",
-      "ipfs.dweb.link",
+      "**.arweave.net",
+      "**.dweb.link",
     ],
   },
 };
