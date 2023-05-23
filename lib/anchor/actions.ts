@@ -202,21 +202,21 @@ export async function likeEntry(
     wallet.publicKey
   );
 
-  await program.methods
+  const tx = await program.methods
     .feedPlankton(entryId, new BN(100_000))
     .accounts({
+      payer: wallet.publicKey,
       author,
       authorTokenAccount,
       depositTokenAccount,
-      payer: wallet.publicKey,
       bloom: bloomPda,
       mint: PLANKTON_MINT,
       protocolFeeTokenAccount: PROTOCOL_FEE_PLANKTON_ATA,
       tokenProgram: TOKEN_PROGRAM_ID,
     })
-    .rpc({
-      commitment: "confirmed",
-    });
+    .transaction();
+
+  console.log("Submitting transaction...", tx);
 }
 
 export async function updateProfile(
