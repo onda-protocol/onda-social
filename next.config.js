@@ -6,6 +6,7 @@ const nextConfig = {
       "chickentribe.s3.us-west-2.amazonaws.com",
       "**.arweave.net",
       "**.dweb.link",
+      "**.ipfs.dweb.link",
     ],
   },
 };
