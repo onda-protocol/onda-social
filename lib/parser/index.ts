@@ -107,9 +107,8 @@ export default async function enhancedTransactionParser(body: any) {
 
           switch (ixName) {
             case "feedPlankton": {
-              const buffer = Buffer.from(ixData.slice(8));
+              const buffer = Buffer.from(ixData.slice(8, 40));
               const entryId = new web3.PublicKey(buffer);
-
               // expect one of these to fail
               try {
                 await prisma.post.update({

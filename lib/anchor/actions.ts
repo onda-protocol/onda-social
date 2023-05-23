@@ -202,7 +202,7 @@ export async function likeEntry(
     wallet.publicKey
   );
 
-  const tx = await program.methods
+  await program.methods
     .feedPlankton(entryId, new BN(100_000))
     .accounts({
       payer: wallet.publicKey,
@@ -214,9 +214,9 @@ export async function likeEntry(
       protocolFeeTokenAccount: PROTOCOL_FEE_PLANKTON_ATA,
       tokenProgram: TOKEN_PROGRAM_ID,
     })
-    .transaction();
-
-  console.log("Submitting transaction...", tx);
+    .rpc({
+      commitment: "confirmed",
+    });
 }
 
 export async function updateProfile(
