@@ -12,6 +12,7 @@
     "replay": "ts-node ./scripts/replay.ts"
   },
   "dependencies": {
+    "@bundlr-network/client": "^0.11.2",
     "@chakra-ui/icons": "^2.0.19",
     "@chakra-ui/react": "^2.6.1",
     "@emotion/react": "^11.10.8",

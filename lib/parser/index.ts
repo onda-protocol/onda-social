@@ -209,7 +209,6 @@ export default async function enhancedTransactionParser(body: any) {
                 buffer
               );
               const dataV1 = getDataV1Fields(dataDecoded);
-              console.log(dataV1);
               // Decode schema event data
               const noopIx = ix.innerInstructions[0];
               const serializedSchemaEvent = noopIx.data;
@@ -225,14 +224,23 @@ export default async function enhancedTransactionParser(body: any) {
               }
 
               switch (dataV1.type) {
-                case "TextPost":
                 case "LinkPost":
-                case "ImagePost": {
+                case "ImagePost":
+                case "TextPost": {
+                  let body: string | null = null;
+
+                  if (dataV1.type === "TextPost") {
+                    if (dataV1.body === undefined) {
+                      throw new Error("Post body is undefined");
+                    }
+                    body = await fetch(dataV1.body).then((res) => res.json());
+                  }
+
                   await prisma.post.create({
                     data: {
+                      body,
                       id: schemaV1.id.toBase58(),
                       title: dataV1.title!,
-                      body: dataV1.body,
                       url: dataV1.url,
                       createdAt: schemaV1.createdAt.toNumber(),
                       nonce: schemaV1.nonce.toNumber(),
@@ -257,11 +265,17 @@ export default async function enhancedTransactionParser(body: any) {
                 }
 
                 case "Comment": {
-                  // Decode entry data
+                  if (dataV1.body === undefined) {
+                    throw new Error("Comment body is undefined");
+                  }
+
+                  const body = await fetch(dataV1.body).then((res) =>
+                    res.json()
+                  );
                   await prisma.comment.create({
                     data: {
+                      body,
                       id: schemaV1.id.toBase58(),
-                      body: dataV1.body!,
                       createdAt: schemaV1.createdAt.toNumber(),
                       nonce: schemaV1.nonce.toNumber(),
                       Parent: dataV1.parent

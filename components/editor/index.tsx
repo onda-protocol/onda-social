@@ -1,6 +1,10 @@
 import React, { useEffect } from "react";
 import { web3 } from "@project-serum/anchor";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
+import {
+  useAnchorWallet,
+  useConnection,
+  useWallet,
+} from "@solana/wallet-adapter-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
@@ -11,6 +15,7 @@ import { sleep } from "utils/async";
 import { fetchFora } from "lib/api";
 import { addEntry } from "lib/anchor/actions";
 import { getNameFromAddress, getProfiles } from "utils/profile";
+import { upload } from "lib/bundlr";
 
 interface EntryForm {
   title: string;
@@ -54,6 +59,7 @@ export const Editor = ({
   onUpdate,
 }: EditorProps) => {
   const { connection } = useConnection();
+  const wallet = useWallet();
   const anchorWallet = useAnchorWallet();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -78,7 +84,7 @@ export const Editor = ({
 
   const mutation = useMutation<[string, string] | void, Error, EntryForm>(
     async (data) => {
-      if (!anchorWallet) {
+      if (!anchorWallet || !wallet) {
         throw new Error("Wallet not connected");
       }
 
@@ -95,18 +101,19 @@ export const Editor = ({
 
       if (config.type === "post") {
         switch (data.postType) {
-          case "linkPost": {
-            dataArgs = {
-              linkPost: {
-                title: data.title,
-                url: data.url,
-              },
-            };
-            break;
-          }
+          // case "linkPost": {
+          //   dataArgs = {
+          //     linkPost: {
+          //       title: data.title,
+          //       url: data.url,
+          //     },
+          //   };
+          //   break;
+          // }
 
           case "textPost": {
-            dataArgs = { textPost: { title: data.title, body: data.body } };
+            const url = await upload(wallet, data.body);
+            dataArgs = { textPost: { title: data.title, body: url } };
             break;
           }
 
