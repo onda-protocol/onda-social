@@ -227,21 +227,16 @@ export default async function enhancedTransactionParser(body: any) {
                 case "LinkPost":
                 case "ImagePost":
                 case "TextPost": {
-                  let body: string | null = null;
-
-                  if (dataV1.type === "TextPost") {
-                    if (dataV1.body === undefined) {
-                      throw new Error("Post body is undefined");
-                    }
-                    body = await fetch(dataV1.body).then((res) => res.json());
-                  }
+                  const body = await fetch(dataV1.uri).then((res) =>
+                    res.json()
+                  );
 
                   await prisma.post.create({
                     data: {
                       body,
                       id: schemaV1.id.toBase58(),
                       title: dataV1.title!,
-                      url: dataV1.url,
+                      uri: dataV1.uri,
                       createdAt: schemaV1.createdAt.toNumber(),
                       nonce: schemaV1.nonce.toNumber(),
                       Forum: {
@@ -265,17 +260,18 @@ export default async function enhancedTransactionParser(body: any) {
                 }
 
                 case "Comment": {
-                  if (dataV1.body === undefined) {
+                  if (dataV1.uri === undefined) {
                     throw new Error("Comment body is undefined");
                   }
 
-                  const body = await fetch(dataV1.body).then((res) =>
+                  const body = await fetch(dataV1.uri).then((res) =>
                     res.json()
                   );
                   await prisma.comment.create({
                     data: {
                       body,
                       id: schemaV1.id.toBase58(),
+                      uri: dataV1.uri,
                       createdAt: schemaV1.createdAt.toNumber(),
                       nonce: schemaV1.nonce.toNumber(),
                       Parent: dataV1.parent
@@ -414,7 +410,7 @@ function getDataV1Fields(entryData: DataV1) {
     return {
       type: "TextPost",
       title: entryData.textPost.title,
-      body: entryData.textPost.body,
+      uri: entryData.textPost.uri,
     };
   }
 
@@ -422,7 +418,7 @@ function getDataV1Fields(entryData: DataV1) {
     return {
       type: "LinkPost",
       title: entryData.linkPost.title,
-      url: entryData.linkPost.url,
+      uri: entryData.linkPost.uri,
     };
   }
 
@@ -430,7 +426,7 @@ function getDataV1Fields(entryData: DataV1) {
     return {
       type: "ImagePost",
       title: entryData.imagePost.title,
-      src: entryData.imagePost.src,
+      uri: entryData.imagePost.uri,
     };
   }
 
@@ -439,7 +435,7 @@ function getDataV1Fields(entryData: DataV1) {
       type: "Comment",
       post: entryData.comment.post,
       parent: entryData.comment.parent,
-      body: entryData.comment.body,
+      uri: entryData.comment.uri,
     };
   }
 

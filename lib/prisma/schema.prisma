@@ -22,7 +22,7 @@ model Post {
   Author User @relation("UserToPost", fields: [author], references: [id])
   title String
   body String?
-  url String?
+  uri String
   createdAt BigInt
   editedAt BigInt?
   nonce BigInt
@@ -37,6 +37,7 @@ model Comment {
   author String
   Author User @relation("UserToComment", fields: [author], references: [id])
   body String
+  uri String
   createdAt BigInt
   editedAt BigInt?
   nonce BigInt

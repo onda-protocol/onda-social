@@ -98,6 +98,7 @@ export const Editor = ({
       }
 
       let dataArgs = {};
+      const uri = await upload(wallet, data.body);
 
       if (config.type === "post") {
         switch (data.postType) {
@@ -112,8 +113,7 @@ export const Editor = ({
           // }
 
           case "textPost": {
-            const url = await upload(wallet, data.body);
-            dataArgs = { textPost: { title: data.title, body: url } };
+            dataArgs = { textPost: { title: data.title, uri } };
             break;
           }
 
@@ -124,9 +124,9 @@ export const Editor = ({
       } else {
         dataArgs = {
           comment: {
+            uri,
             post: new web3.PublicKey(config.post),
             parent: config.parent ? new web3.PublicKey(config.parent) : null,
-            body: data.body,
           },
         };
       }

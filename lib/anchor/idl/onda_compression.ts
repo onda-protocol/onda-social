@@ -306,7 +306,7 @@ export type OndaCompression = {
                 type: "string";
               },
               {
-                name: "body";
+                name: "uri";
                 type: "string";
               }
             ];
@@ -319,7 +319,7 @@ export type OndaCompression = {
                 type: "string";
               },
               {
-                name: "src";
+                name: "uri";
                 type: "string";
               }
             ];
@@ -332,7 +332,20 @@ export type OndaCompression = {
                 type: "string";
               },
               {
-                name: "url";
+                name: "uri";
+                type: "string";
+              }
+            ];
+          },
+          {
+            name: "VideoPost";
+            fields: [
+              {
+                name: "title";
+                type: "string";
+              },
+              {
+                name: "uri";
                 type: "string";
               }
             ];
@@ -351,7 +364,7 @@ export type OndaCompression = {
                 };
               },
               {
-                name: "body";
+                name: "uri";
                 type: "string";
               }
             ];
@@ -404,11 +417,16 @@ export type OndaCompression = {
   errors: [
     {
       code: 6000;
+      name: "InvalidUri";
+      msg: "Invalid uri.";
+    },
+    {
+      code: 6001;
       name: "InsufficientPostCapacity";
       msg: "Insufficient post capacity.";
     },
     {
-      code: 6001;
+      code: 6002;
       name: "Unauthorized";
       msg: "Unauthorized.";
     }
@@ -723,7 +741,7 @@ export const IDL: OndaCompression = {
                 type: "string",
               },
               {
-                name: "body",
+                name: "uri",
                 type: "string",
               },
             ],
@@ -736,7 +754,7 @@ export const IDL: OndaCompression = {
                 type: "string",
               },
               {
-                name: "src",
+                name: "uri",
                 type: "string",
               },
             ],
@@ -749,7 +767,20 @@ export const IDL: OndaCompression = {
                 type: "string",
               },
               {
-                name: "url",
+                name: "uri",
+                type: "string",
+              },
+            ],
+          },
+          {
+            name: "VideoPost",
+            fields: [
+              {
+                name: "title",
+                type: "string",
+              },
+              {
+                name: "uri",
                 type: "string",
               },
             ],
@@ -768,7 +799,7 @@ export const IDL: OndaCompression = {
                 },
               },
               {
-                name: "body",
+                name: "uri",
                 type: "string",
               },
             ],
@@ -821,11 +852,16 @@ export const IDL: OndaCompression = {
   errors: [
     {
       code: 6000,
+      name: "InvalidUri",
+      msg: "Invalid uri.",
+    },
+    {
+      code: 6001,
       name: "InsufficientPostCapacity",
       msg: "Insufficient post capacity.",
     },
     {
-      code: 6001,
+      code: 6002,
       name: "Unauthorized",
       msg: "Unauthorized.",
     },

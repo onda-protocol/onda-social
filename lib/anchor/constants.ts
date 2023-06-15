@@ -5,7 +5,7 @@ export const BLOOM_PROGRAM_ID = new web3.PublicKey(
 );
 
 export const COMPRESSION_PROGRAM_ID = new web3.PublicKey(
-  "ondac1bD7BYSbqf2jifdthJYADkGuN4NkMZNYjuopn3"
+  "ondaV4qqTUGbPR3m4XGi3YXf1NAXYCJEtuMKzVWBbSy"
 );
 
 export const PROFILE_PROGRAM_ID = new web3.PublicKey(
