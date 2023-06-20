@@ -94,6 +94,7 @@ export function Navbar() {
                   style={{ display: "inline-block", height: 25 }}
                 >
                   <Image
+                    priority
                     src="/onda-logo.svg"
                     width={100}
                     height={25}
