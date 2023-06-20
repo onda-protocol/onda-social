@@ -6,7 +6,6 @@ export default async function handler(
   res: NextApiResponse
 ) {
   // IMPORTANT! Uncomment this line to enable webhook auth
-  console.log("Authorization: ", req.headers.authorization);
   if (req.headers.authorization !== process.env.WEBHOOK_AUTH_TOKEN) {
     res.status(401).end();
     return;

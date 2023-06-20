@@ -123,7 +123,6 @@ export default async function enhancedTransactionParser(body: any) {
                   },
                 });
               } catch (err) {
-                console.log(err);
                 await prisma.comment.update({
                   where: {
                     id: entryId.toBase58(),
