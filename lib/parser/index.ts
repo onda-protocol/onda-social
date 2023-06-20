@@ -111,30 +111,30 @@ export default async function enhancedTransactionParser(body: any) {
               const buffer = Buffer.from(ixData.slice(8, 40));
               const entryId = new web3.PublicKey(buffer);
               // expect one of these to fail
-              try {
-                await prisma.post.update({
-                  where: {
-                    id: entryId.toBase58(),
+              // try {
+              await prisma.post.update({
+                where: {
+                  id: entryId.toBase58(),
+                },
+                data: {
+                  likes: {
+                    increment: 1,
                   },
-                  data: {
-                    likes: {
-                      increment: 1,
-                    },
-                  },
-                });
-              } catch (err) {
-                console.log(err);
-                await prisma.comment.update({
-                  where: {
-                    id: entryId.toBase58(),
-                  },
-                  data: {
-                    likes: {
-                      increment: 1,
-                    },
-                  },
-                });
-              }
+                },
+              });
+              // } catch (err) {
+              //   console.log(err);
+              //   await prisma.comment.update({
+              //     where: {
+              //       id: entryId.toBase58(),
+              //     },
+              //     data: {
+              //       likes: {
+              //         increment: 1,
+              //       },
+              //     },
+              //   });
+              // }
 
               break;
             }
