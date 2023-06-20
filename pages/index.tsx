@@ -1,10 +1,5 @@
 import type { NextPage } from "next";
-import {
-  QueryClient,
-  DehydratedState,
-  dehydrate,
-  useQuery,
-} from "@tanstack/react-query";
+import { DehydratedState, useQuery } from "@tanstack/react-query";
 import { Box, Spinner, Text } from "@chakra-ui/react";
 
 import { getProfiles } from "utils/profile";
@@ -37,7 +32,7 @@ const Home: NextPage<PageProps> = () => {
             ) : (
               query.data?.map((post) => (
                 <PostListItem key={post.id} post={post} />
-              ))
+              )) ?? null
             )}
           </Box>
         }

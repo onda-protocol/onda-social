@@ -6,6 +6,7 @@ import {
   AnchorProvider,
 } from "@project-serum/anchor";
 import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
+import axios from "axios";
 import base58 from "bs58";
 import { snakeCase } from "snake-case";
 import { sha256 } from "js-sha256";
@@ -227,9 +228,9 @@ export default async function enhancedTransactionParser(body: any) {
                 case "LinkPost":
                 case "ImagePost":
                 case "TextPost": {
-                  const body = await fetch(dataV1.uri).then((res) =>
-                    res.json()
-                  );
+                  const body = await axios
+                    .get(dataV1.uri)
+                    .then((res) => res.data);
 
                   await prisma.post.create({
                     data: {
@@ -264,9 +265,9 @@ export default async function enhancedTransactionParser(body: any) {
                     throw new Error("Comment body is undefined");
                   }
 
-                  const body = await fetch(dataV1.uri).then((res) =>
-                    res.json()
-                  );
+                  const body = await axios
+                    .get(dataV1.uri)
+                    .then((res) => res.data);
                   await prisma.comment.create({
                     data: {
                       body,
@@ -303,6 +304,9 @@ export default async function enhancedTransactionParser(body: any) {
               }
 
               break;
+            }
+
+            case "deleteEntry": {
             }
 
             default: {
@@ -349,9 +353,9 @@ export default async function enhancedTransactionParser(body: any) {
                 connection,
                 metadataAddress
               );
-              const avatar: string = await fetch(metadata.data.uri)
-                .then((res) => res.json())
-                .then((json) => json.image);
+              const avatar: string = await axios
+                .get(metadata.data.uri)
+                .then((res) => res.data.image);
 
               console.log("avatar: ", avatar);
 

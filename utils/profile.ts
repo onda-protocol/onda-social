@@ -13,7 +13,7 @@ interface Profile {
 }
 
 const profiles = new Map<string, Profile>();
-profiles.set("Fr2XAm5kKe6DQE3QXsnu9sRGSqRGegNZJjN3MKNXsu5d", {
+profiles.set("5geVF3sNA4Pvyx5FDdrzRppjBdviowRk6mU1qC2K9Bte", {
   name: "ChickenTribe",
   description:
     "ChickenTribe is a collection of 3000 unique chickens. Home of the Combinator and SugarUI, we are a community of artists, devs and builders.",

@@ -54,5 +54,8 @@
     "axios": "^1.4.0",
     "dotenv": "^16.0.3",
     "ts-node": "^10.9.1"
+  },
+  "prisma": {
+    "schema": "lib/prisma/schema.prisma"
   }
 }
