@@ -53,6 +53,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           parent: comment.id,
           post: comment.post,
           body: body,
+          uri: comment.uri,
           likes: "0",
           nonce: nonce,
           author: userAddress,

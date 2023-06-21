@@ -45,7 +45,7 @@ const Comments: NextPage<PageProps> = () => {
   const queryClient = useQueryClient();
 
   const onUpdateCache = useCallback(
-    async (entryId: string, nonce: string, body: string) => {
+    async (entryId: string, nonce: string, body: string, uri: string) => {
       if (anchorWallet === undefined) return;
 
       const userAddress = anchorWallet.publicKey.toBase58();
@@ -63,6 +63,7 @@ const Comments: NextPage<PageProps> = () => {
             parent: null,
             post: id,
             body: body,
+            uri: uri,
             likes: "0",
             nonce: nonce,
             author: userAddress,

@@ -45,7 +45,7 @@ interface EditorProps {
   successMessage?: string;
   config: EntryConfig;
   onRequestClose?: () => void;
-  onUpdate?: (id: string, nonce: string, body: string) => void;
+  onUpdate?: (id: string, nonce: string, body: string, uri: string) => void;
 }
 
 export const Editor = ({
@@ -82,7 +82,11 @@ export const Editor = ({
     }
   }, [methods.setValue, config.forum]);
 
-  const mutation = useMutation<[string, string] | void, Error, EntryForm>(
+  const mutation = useMutation<
+    { uri: string; entryId: string; nonce: string } | void,
+    Error,
+    EntryForm
+  >(
     async (data) => {
       if (!anchorWallet || !wallet) {
         throw new Error("Wallet not connected");
@@ -131,12 +135,20 @@ export const Editor = ({
         };
       }
 
-      return addEntry(connection, anchorWallet, {
+      const result = await addEntry(connection, anchorWallet, {
         data: dataArgs,
         forumId: forum.id,
         forumConfig: forum.config,
         collection: forum.collection,
       });
+
+      if (result) {
+        return {
+          uri,
+          entryId: result[0],
+          nonce: result[1],
+        };
+      }
     },
     {
       async onSuccess(data, variables) {
@@ -151,7 +163,7 @@ export const Editor = ({
         }
 
         if (data && onUpdate) {
-          onUpdate(...data, variables.body);
+          onUpdate(data.entryId, data.nonce, variables.body, data.uri);
         }
 
         if (invalidateQueries) {
