@@ -20,7 +20,18 @@ export const PostListItem = ({ post }: PostListItemProps) => {
     switch (post.postType) {
       case PostType.IMAGE: {
         return (
-          <Box position="relative" width="100%" paddingBottom="75%">
+          <Box
+            position="relative"
+            width="100%"
+            maxHeight="512px"
+            sx={{
+              "&:before": {
+                content: '""',
+                display: "block",
+                paddingBottom: "100%",
+              },
+            }}
+          >
             <Image
               fill
               src={post.uri}
