@@ -226,36 +226,23 @@ export default async function enhancedTransactionParser(body: any) {
 
               switch (dataV1.type) {
                 case "LinkPost":
-                case "ImagePost":
+                case "ImagePost": {
+                  await createPostV1({
+                    forumId: forumAddress,
+                    schemaV1,
+                    dataV1,
+                  });
+                }
                 case "TextPost": {
                   const body = await axios
                     .get(dataV1.uri)
                     .then((res) => res.data);
 
-                  await prisma.post.create({
-                    data: {
-                      body,
-                      id: schemaV1.id.toBase58(),
-                      title: dataV1.title!,
-                      uri: dataV1.uri,
-                      createdAt: schemaV1.createdAt.toNumber(),
-                      nonce: schemaV1.nonce.toNumber(),
-                      Forum: {
-                        connect: {
-                          id: forumAddress,
-                        },
-                      },
-                      Author: {
-                        connectOrCreate: {
-                          where: {
-                            id: schemaV1.author.toBase58(),
-                          },
-                          create: {
-                            id: schemaV1.author.toBase58(),
-                          },
-                        },
-                      },
-                    },
+                  await createPostV1({
+                    forumId: forumAddress,
+                    schemaV1,
+                    dataV1,
+                    body,
                   });
                   break;
                 }
@@ -268,6 +255,7 @@ export default async function enhancedTransactionParser(body: any) {
                   const body = await axios
                     .get(dataV1.uri)
                     .then((res) => res.data);
+
                   await prisma.comment.create({
                     data: {
                       body,
@@ -407,6 +395,45 @@ export default async function enhancedTransactionParser(body: any) {
       }
     }
   }
+}
+
+interface CreatePostV1Args {
+  forumId: string;
+  schemaV1: LeafSchemaV1;
+  dataV1: ReturnType<typeof getDataV1Fields>;
+  body?: string;
+}
+
+function createPostV1({ forumId, schemaV1, dataV1, body }: CreatePostV1Args) {
+  if (schemaV1 === undefined) {
+    throw new Error("Schema is undefined");
+  }
+
+  return prisma.post.create({
+    data: {
+      body,
+      id: schemaV1.id.toBase58(),
+      title: dataV1.title!,
+      uri: dataV1.uri,
+      createdAt: schemaV1.createdAt.toNumber(),
+      nonce: schemaV1.nonce.toNumber(),
+      Forum: {
+        connect: {
+          id: forumId,
+        },
+      },
+      Author: {
+        connectOrCreate: {
+          where: {
+            id: schemaV1.author.toBase58(),
+          },
+          create: {
+            id: schemaV1.author.toBase58(),
+          },
+        },
+      },
+    },
+  });
 }
 
 function getDataV1Fields(entryData: DataV1) {

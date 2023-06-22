@@ -15,6 +15,11 @@ model Forum {
   Posts Post[] @relation("ForumToPost")
 }
 
+enum PostType {
+  TEXT
+  IMAGE
+}
+
 model Post {
   id String @id @unique
   author String
@@ -22,6 +27,7 @@ model Post {
   title String
   body String?
   uri String
+  postType PostType @default(TEXT)
   createdAt BigInt
   editedAt BigInt?
   nonce BigInt
