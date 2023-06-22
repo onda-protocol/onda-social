@@ -4,13 +4,6 @@ import {
   ConnectionProvider,
   WalletProvider,
 } from "@solana/wallet-adapter-react";
-import {
-  LedgerWalletAdapter,
-  PhantomWalletAdapter,
-  SlopeWalletAdapter,
-  SolflareWalletAdapter,
-  TorusWalletAdapter,
-} from "@solana/wallet-adapter-wallets";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import {
   Hydrate,
@@ -27,15 +20,7 @@ import { Navbar } from "../components/layout/navbar";
 import { DocumentHead } from "../components/document";
 
 export default function App({ Component, pageProps }: AppProps) {
-  const wallets = useMemo(
-    () => [
-      new SlopeWalletAdapter(),
-      new SolflareWalletAdapter(),
-      new TorusWalletAdapter(),
-      new LedgerWalletAdapter(),
-    ],
-    []
-  );
+  const wallets = useMemo(() => [], []);
 
   const connectionConfig = useMemo(
     () => ({
@@ -78,7 +63,7 @@ export default function App({ Component, pageProps }: AppProps) {
           </WalletProvider>
         </ConnectionProvider>
       </Hydrate>
-      {/* <ReactQueryDevtools /> */}
+      {process.env.NODE_ENV !== "production" && <ReactQueryDevtools />}
     </QueryClientProvider>
   );
 }

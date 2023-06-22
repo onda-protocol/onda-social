@@ -8,7 +8,7 @@ const Submit: NextPage = () => {
   const forum = router.query.o as string | undefined;
 
   return (
-    <Container maxW="2xl">
+    <Container maxW="3xl">
       <Heading size="md" my="9">
         Create a post
       </Heading>

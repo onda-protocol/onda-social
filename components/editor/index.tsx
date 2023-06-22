@@ -8,21 +8,25 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
-import { useForm } from "react-hook-form";
+import { IoDocumentText, IoImage } from "react-icons/io5";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/router";
 
 import { sleep } from "utils/async";
 import { fetchFora } from "lib/api";
 import { addEntry } from "lib/anchor/actions";
 import { getNameFromAddress, getProfiles } from "utils/profile";
-import { upload } from "lib/bundlr";
+import { ContentType, upload } from "lib/bundlr";
+import { RadioCardMenu } from "components/input";
+import { ImagePicker } from "components/input/imagePicker";
 
 interface EntryForm {
   title: string;
   body: string;
+  image: File | null;
   forum: string;
   url: string;
-  postType: "linkPost" | "textPost";
+  postType: "textPost" | "imagePost";
 }
 
 type EntryConfig =
@@ -68,9 +72,14 @@ export const Editor = ({
     defaultValues: {
       title: "",
       body: "",
+      image: null,
       forum: "",
       postType: "textPost",
     },
+  });
+  const postType = useWatch({
+    control: methods.control,
+    name: "postType",
   });
 
   // Async set forum value because next router is not available on mount
@@ -101,8 +110,8 @@ export const Editor = ({
         throw new Error("Forum not found");
       }
 
+      let uri: string;
       let dataArgs = {};
-      const uri = await upload(wallet, data.body);
 
       if (config.type === "post") {
         switch (data.postType) {
@@ -117,8 +126,18 @@ export const Editor = ({
           // }
 
           case "textPost": {
+            uri = await upload(wallet, data.body, "application/json");
             dataArgs = { textPost: { title: data.title, uri } };
             break;
+          }
+
+          case "imagePost": {
+            if (data.image === null) {
+              throw new Error("Image required");
+            }
+            const buffer = Buffer.from(await data.image.arrayBuffer());
+            uri = await upload(wallet, buffer, data.image.type as ContentType);
+            dataArgs = { imagePost: { title: data.title, uri } };
           }
 
           default: {
@@ -126,6 +145,7 @@ export const Editor = ({
           }
         }
       } else {
+        uri = await upload(wallet, data.body, "application/json");
         dataArgs = {
           comment: {
             uri,
@@ -183,65 +203,142 @@ export const Editor = ({
     }
   );
 
+  if (config.type === "comment") {
+    return (
+      <Box
+        noValidate
+        as="form"
+        onSubmit={methods.handleSubmit((data) => mutation.mutate(data))}
+      >
+        <Textarea
+          mt="2"
+          placeholder={placeholder}
+          minHeight="100px"
+          backgroundColor="#090A20"
+          {...methods.register("body", { required: true })}
+        />
+        <Box display="flex" mt="2" justifyContent="right">
+          {onRequestClose && (
+            <Button
+              isDisabled={mutation.isLoading}
+              variant="ghost"
+              onClick={onRequestClose}
+              mr="2"
+            >
+              Cancel
+            </Button>
+          )}
+          <Button
+            isLoading={mutation.isLoading}
+            variant="solid"
+            type="submit"
+            cursor="pointer"
+          >
+            {buttonLabel || "Submit"}
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
+
+  function renderInputs() {
+    switch (postType) {
+      case "textPost": {
+        return (
+          <Textarea
+            mt="4"
+            placeholder={placeholder || "Text"}
+            minHeight={config.type === "post" ? "200px" : "100px"}
+            backgroundColor="#090A20"
+            {...methods.register("body", { required: true })}
+          />
+        );
+      }
+
+      case "imagePost": {
+        return (
+          <Controller
+            control={methods.control}
+            name="image"
+            render={({ field }) => <ImagePicker {...field} />}
+          />
+        );
+      }
+    }
+  }
+
   return (
     <Box
       noValidate
       as="form"
       onSubmit={methods.handleSubmit((data) => mutation.mutate(data))}
     >
-      {config.type === "post" && (
-        <SelectForum
-          defaultValue={config.forum}
-          {...methods.register("forum", {
-            required: true,
-          })}
-        />
-      )}
-      {/* {config.type === "post" && (
-        <Select
-          mt="6"
-          {...methods.register("postType", {
-            required: true,
-          })}
-        >
-          <option value="textPost">Text Post</option>
-          <option value="linkPost">Link Post</option>
-        </Select>
-      )} */}
-      {config.type === "post" && (
-        <Input
-          mt="6"
-          placeholder="Title"
-          {...methods.register("title", {
-            required: true,
-          })}
-        />
-      )}
-      <Textarea
-        mt="2"
-        placeholder={placeholder}
-        backgroundColor="#090A20"
-        {...methods.register("body", { required: true })}
+      <SelectForum
+        defaultValue={config.forum}
+        {...methods.register("forum", {
+          required: true,
+        })}
       />
-      <Box display="flex" mt="2" justifyContent="right">
-        {onRequestClose && (
-          <Button
-            isDisabled={mutation.isLoading}
-            variant="ghost"
-            onClick={onRequestClose}
-            mr="2"
-          >
-            Cancel
-          </Button>
-        )}
-        <Button
-          isLoading={mutation.isLoading}
-          variant="solid"
-          type="submit"
-          cursor="pointer"
+      <Box my="6">
+        <Controller
+          control={methods.control}
+          name="postType"
+          render={({ field }) => (
+            <RadioCardMenu
+              name={field.name}
+              options={[
+                {
+                  label: "Text Post",
+                  value: "textPost",
+                  icon: <IoDocumentText size="1.25em" />,
+                },
+                {
+                  label: "Image Post",
+                  value: "imagePost",
+                  icon: <IoImage size="1.25em" />,
+                },
+              ]}
+              defaultValue={field.value}
+              onChange={(value) => field.onChange(value)}
+            />
+          )}
+        />
+        <Box
+          borderColor="whiteAlpha.100"
+          borderLeftWidth="1px"
+          borderRightWidth="1px"
+          borderBottomWidth="1px"
+          p="6"
         >
-          {buttonLabel || "Submit"}
-        </Button>
+          <Input
+            placeholder="Title"
+            {...methods.register("title", {
+              required: true,
+            })}
+          />
+          {renderInputs()}
+          <Box display="flex" mt="2" justifyContent="right">
+            {onRequestClose && (
+              <Button
+                isDisabled={mutation.isLoading}
+                variant="ghost"
+                onClick={onRequestClose}
+                mr="2"
+              >
+                Cancel
+              </Button>
+            )}
+            <Button
+              isLoading={mutation.isLoading}
+              variant="solid"
+              minWidth="100px"
+              type="submit"
+              cursor="pointer"
+            >
+              {buttonLabel || "Submit"}
+            </Button>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );

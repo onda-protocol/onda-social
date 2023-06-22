@@ -14,12 +14,23 @@ async function getBundlr(wallet: WalletContextState) {
   return bundlr;
 }
 
+export type ContentType =
+  | "application/json"
+  | "image/webp"
+  | "image/png"
+  | "image/jpeg"
+  | "image/gif";
+
 export async function upload(
   wallet: WalletContextState,
-  data: string | Buffer
+  data: string | Buffer,
+  contentType: ContentType
 ) {
+  console.log(data, contentType);
   const bundlr = await getBundlr(wallet);
-  const result = await bundlr.upload(data);
+  const result = await bundlr.upload(data, {
+    tags: [{ name: "Content-Type", value: contentType }],
+  });
   console.log(`Data uploaded ==> https://arweave.net/${result.id}`);
   return `https://arweave.net/${result.id}`;
 }
