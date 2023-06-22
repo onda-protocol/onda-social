@@ -104,7 +104,6 @@ export default async function enhancedTransactionParser(body: any) {
           console.log("Handling ix: ", ixName);
 
           if (ixName === undefined || ixAccounts === undefined) {
-            console.log("Unknown instruction: ", ix);
             break;
           }
 
@@ -125,16 +124,20 @@ export default async function enhancedTransactionParser(body: any) {
                   },
                 });
               } catch (err) {
-                await prisma.comment.update({
-                  where: {
-                    id: entryId.toBase58(),
-                  },
-                  data: {
-                    likes: {
-                      increment: 1,
+                try {
+                  await prisma.comment.update({
+                    where: {
+                      id: entryId.toBase58(),
                     },
-                  },
-                });
+                    data: {
+                      likes: {
+                        increment: 1,
+                      },
+                    },
+                  });
+                } catch {
+                  // Fail silently - entry not found
+                }
               }
 
               break;
@@ -228,8 +231,6 @@ export default async function enhancedTransactionParser(body: any) {
                 throw new Error("Unknown schema version");
               }
 
-              console.log("type: ", dataV1.type);
-              console.log("post: ", schemaV1.id.toBase58());
               switch (dataV1.type) {
                 // case "LinkPost":
                 case "ImagePost": {
@@ -425,8 +426,6 @@ function createPostV1({
   if (schemaV1 === undefined) {
     throw new Error("Schema is undefined");
   }
-
-  console.log("Creating post: ", schemaV1.id.toBase58());
 
   return prisma.post.create({
     data: {
