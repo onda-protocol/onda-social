@@ -11,6 +11,7 @@ import base58 from "bs58";
 import { snakeCase } from "snake-case";
 import { sha256 } from "js-sha256";
 
+import { trimNullChars } from "../../utils/format";
 import {
   COMPRESSION_PROGRAM_ID,
   BLOOM_PROGRAM_ID,
@@ -24,6 +25,7 @@ import {
 import { IDL as ProfileIDL } from "../anchor/idl/onda_profile";
 import { DataV1, LeafSchemaV1, RestrictionType } from "../anchor/types";
 import prisma from "../prisma";
+import { PostType } from "@prisma/client";
 
 const bloomIxIds = BloomIDL.instructions.map((ix) => {
   return {
@@ -149,12 +151,13 @@ export default async function enhancedTransactionParser(body: any) {
           const ixId = base58.encode(ixData.slice(0, 8));
           const ixName = compressionIxIds.find((i) => i.id === ixId)?.name;
           console.log("Handling ix: ", ixName);
+
           const ixAccounts = CompressionIDL.instructions.find(
             (i) => i.name === ixName
           )?.accounts;
 
           if (ixName === undefined || ixAccounts === undefined) {
-            console.log("Unknown instruction: ", ix);
+            // console.log("Unknown instruction: ", ix);
             break;
           }
 
@@ -220,18 +223,23 @@ export default async function enhancedTransactionParser(body: any) {
                 schemaEventBuffer
               );
               const schemaV1 = schemaEventDecoded["v1"] as LeafSchemaV1;
+
               if (schemaV1 === undefined) {
                 throw new Error("Unknown schema version");
               }
 
+              console.log("type: ", dataV1.type);
+              console.log("post: ", schemaV1.id.toBase58());
               switch (dataV1.type) {
-                case "LinkPost":
+                // case "LinkPost":
                 case "ImagePost": {
                   await createPostV1({
+                    postType: PostType.IMAGE,
                     forumId: forumAddress,
                     schemaV1,
                     dataV1,
                   });
+                  break;
                 }
                 case "TextPost": {
                   const body = await axios
@@ -239,6 +247,7 @@ export default async function enhancedTransactionParser(body: any) {
                     .then((res) => res.data);
 
                   await createPostV1({
+                    postType: PostType.TEXT,
                     forumId: forumAddress,
                     schemaV1,
                     dataV1,
@@ -255,12 +264,13 @@ export default async function enhancedTransactionParser(body: any) {
                   const body = await axios
                     .get(dataV1.uri)
                     .then((res) => res.data);
-
+                  console.log("body: ", body);
+                  console.log("post: ", dataV1.post!.toBase58());
                   await prisma.comment.create({
                     data: {
                       body,
                       id: schemaV1.id.toBase58(),
-                      uri: dataV1.uri,
+                      uri: trimNullChars(dataV1.uri),
                       createdAt: schemaV1.createdAt.toNumber(),
                       nonce: schemaV1.nonce.toNumber(),
                       Parent: dataV1.parent
@@ -401,20 +411,30 @@ interface CreatePostV1Args {
   forumId: string;
   schemaV1: LeafSchemaV1;
   dataV1: ReturnType<typeof getDataV1Fields>;
+  postType: PostType;
   body?: string;
 }
 
-function createPostV1({ forumId, schemaV1, dataV1, body }: CreatePostV1Args) {
+function createPostV1({
+  forumId,
+  schemaV1,
+  dataV1,
+  postType,
+  body,
+}: CreatePostV1Args) {
   if (schemaV1 === undefined) {
     throw new Error("Schema is undefined");
   }
 
+  console.log("Creating post: ", schemaV1.id.toBase58());
+
   return prisma.post.create({
     data: {
-      body,
+      postType,
+      body: body ?? null,
       id: schemaV1.id.toBase58(),
       title: dataV1.title!,
-      uri: dataV1.uri,
+      uri: trimNullChars(dataV1.uri),
       createdAt: schemaV1.createdAt.toNumber(),
       nonce: schemaV1.nonce.toNumber(),
       Forum: {
@@ -445,13 +465,13 @@ function getDataV1Fields(entryData: DataV1) {
     };
   }
 
-  if (entryData.linkPost) {
-    return {
-      type: "LinkPost",
-      title: entryData.linkPost.title,
-      uri: entryData.linkPost.uri,
-    };
-  }
+  // if (entryData.linkPost) {
+  //   return {
+  //     type: "LinkPost",
+  //     title: entryData.linkPost.title,
+  //     uri: entryData.linkPost.uri,
+  //   };
+  // }
 
   if (entryData.imagePost) {
     return {

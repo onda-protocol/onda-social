@@ -4,15 +4,24 @@ import axios from "axios";
 import enhancedTransactionParser from "../lib/parser";
 
 const apiKey = process.env.HELIUS_API_KEY;
-const url = `https://api.helius.xyz/v0/transactions/?api-key=${apiKey}`;
-
+// onda3Sxku2NT88Ho8WfEgbkavNEELWzaguvh4itdn3C - bloom
+// ondapcq2qXTSynRieMCE9BjRsZ2XALEEZZunkwbhCPF - profile
+// ondaV4qqTUGbPR3m4XGi3YXf1NAXYCJEtuMKzVWBbSy - compression
 async function main() {
-  const { data } = await axios.post(url, {
-    transactions: [
-      "2pAswcJA4A183VZDTMb73wQGqFq4h63hiiWCQPtQ1BqzSR9eCnUuQh7NyksU6sX8HtFj6zkZnk9c7V3zVSW77GYt",
-    ],
-  });
-  await enhancedTransactionParser(data);
+  const { data: profiles } = await axios.get(
+    `https://api.helius.xyz/v0/addresses/ondapcq2qXTSynRieMCE9BjRsZ2XALEEZZunkwbhCPF/transactions?api-key=${apiKey}&limit=1000`
+  );
+  const sortedProfileTxs = profiles.sort(
+    (a: any, b: any) => a.timestamp - b.timestamp
+  );
+  await enhancedTransactionParser(sortedProfileTxs);
+  const { data: entries } = await axios.get(
+    `https://api.helius.xyz/v0/addresses/ondaV4qqTUGbPR3m4XGi3YXf1NAXYCJEtuMKzVWBbSy/transactions?api-key=${apiKey}&limit=1000`
+  );
+  const sortedEntryTxs = entries.sort(
+    (a: any, b: any) => a.timestamp - b.timestamp
+  );
+  await enhancedTransactionParser(sortedEntryTxs);
 }
 
 main();

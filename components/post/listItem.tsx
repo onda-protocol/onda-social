@@ -1,5 +1,7 @@
+import { PostType } from "@prisma/client";
 import { Box, Heading } from "@chakra-ui/react";
 import { useRouter } from "next/router";
+import Image from "next/image";
 
 import { PostWithCommentsCountAndForum } from "lib/api";
 import { Markdown } from "../markdown";
@@ -13,6 +15,41 @@ interface PostListItemProps {
 
 export const PostListItem = ({ post }: PostListItemProps) => {
   const router = useRouter();
+
+  function renderBody() {
+    switch (post.postType) {
+      case PostType.IMAGE: {
+        return (
+          <Box position="relative" width="100%" height="512px">
+            <Image
+              fill
+              src={post.uri}
+              alt="post image"
+              style={{
+                objectFit: "cover",
+                maxWidth: "100%",
+                maxHeight: "100%",
+              }}
+            />
+          </Box>
+        );
+      }
+
+      case PostType.TEXT:
+      default: {
+        return (
+          <Box position="relative" maxHeight="250px">
+            <Markdown>{post.body ?? ""}</Markdown>
+            <Box
+              position="absolute"
+              inset={0}
+              background="linear-gradient(to bottom, transparent 100px, var(--chakra-colors-onda-950))"
+            />
+          </Box>
+        );
+      }
+    }
+  }
 
   return (
     <Panel
@@ -31,14 +68,7 @@ export const PostListItem = ({ post }: PostListItemProps) => {
         <Heading my="4" fontSize="2xl" fontWeight="semibold">
           {post.title}
         </Heading>
-        <Box position="relative" maxHeight="250px">
-          <Markdown>{post.body ?? ""}</Markdown>
-          <Box
-            position="absolute"
-            inset={0}
-            background="linear-gradient(to bottom, transparent 100px, var(--chakra-colors-onda-950))"
-          />
-        </Box>
+        {renderBody()}
       </Box>
       <PostButtons post={post} />
     </Panel>

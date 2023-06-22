@@ -138,6 +138,8 @@ export const Editor = ({
             const buffer = Buffer.from(await data.image.arrayBuffer());
             uri = await upload(wallet, buffer, data.image.type as ContentType);
             dataArgs = { imagePost: { title: data.title, uri } };
+            console.log("dataArgs", dataArgs);
+            break;
           }
 
           default: {
@@ -260,7 +262,14 @@ export const Editor = ({
           <Controller
             control={methods.control}
             name="image"
-            render={({ field }) => <ImagePicker {...field} />}
+            render={({ field }) => (
+              <ImagePicker
+                name={field.name}
+                // @ts-ignore
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
           />
         );
       }
@@ -298,6 +307,7 @@ export const Editor = ({
                   icon: <IoImage size="1.25em" />,
                 },
               ]}
+              // @ts-ignore
               defaultValue={field.value}
               onChange={(value) => field.onChange(value)}
             />

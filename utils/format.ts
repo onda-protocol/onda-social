@@ -9,3 +9,7 @@ export function parseBigInt(data: any, fallback: any = []) {
     )
   );
 }
+
+export function trimNullChars(data: string) {
+  return data.replace(/\0.*$/g, "");
+}
