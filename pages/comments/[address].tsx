@@ -1,5 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
+import Image from "next/image";
 import { Box, Container, Divider, Heading, Spinner } from "@chakra-ui/react";
 import {
   QueryClient,
@@ -22,6 +23,7 @@ import { Markdown } from "components/markdown";
 import { CommentListItem } from "components/comment";
 import { PostMeta } from "components/post/meta";
 import { PostButtons } from "components/post/buttons";
+import { PostType } from "@prisma/client";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -87,6 +89,42 @@ const Comments: NextPage<PageProps> = () => {
     );
   }
 
+  function renderPostBody() {
+    switch (postQuery.data?.postType) {
+      case PostType.TEXT: {
+        return <Markdown>{postQuery.data.body ?? ""}</Markdown>;
+      }
+
+      case PostType.IMAGE: {
+        return (
+          <Box
+            position="relative"
+            width="100%"
+            maxHeight="512px"
+            sx={{
+              "&:before": {
+                content: '""',
+                display: "block",
+                paddingBottom: "100%",
+              },
+            }}
+          >
+            <Image
+              fill
+              src={postQuery.data.uri}
+              alt="post image"
+              style={{
+                objectFit: "cover",
+                maxWidth: "100%",
+                maxHeight: "100%",
+              }}
+            />
+          </Box>
+        );
+      }
+    }
+  }
+
   return (
     <Container maxW="container.md">
       <Box mt="12">
@@ -100,6 +138,7 @@ const Comments: NextPage<PageProps> = () => {
         </Heading>
       </Box>
       <Box mb="6">
+        {renderPostBody()}
         <Markdown>{postQuery.data?.body ?? ""}</Markdown>
       </Box>
 
