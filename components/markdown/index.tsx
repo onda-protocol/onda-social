@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import ChakraUIRenderer from "chakra-ui-markdown-renderer";
-import { Box, Text, Heading } from "@chakra-ui/react";
+import { Box, Heading } from "@chakra-ui/react";
 
 export const Markdown = ({ children }: { children: string }) => {
   return (

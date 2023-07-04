@@ -68,6 +68,7 @@ const Comments: NextPage<PageProps> = () => {
             uri: uri,
             likes: "0",
             nonce: nonce,
+            hash: "",
             author: userAddress,
             Author: author,
             Children: [],
@@ -137,10 +138,7 @@ const Comments: NextPage<PageProps> = () => {
           {postQuery.data?.title}
         </Heading>
       </Box>
-      <Box mb="6">
-        {renderPostBody()}
-        <Markdown>{postQuery.data?.body ?? ""}</Markdown>
-      </Box>
+      <Box mb="6">{renderPostBody()}</Box>
 
       <Box mb="6">
         <PostButtons post={postQuery.data} />

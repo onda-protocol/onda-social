@@ -218,9 +218,13 @@ export default async function enhancedTransactionParser(body: any) {
               const dataV1 = getDataV1Fields(dataDecoded);
               // Decode schema event data
               const noopIx = ix.innerInstructions[0];
-              const serializedSchemaEvent = noopIx.data;
+              const serializedSchemaEvent = noopIx.data as string;
               const schemaEvent = base58.decode(serializedSchemaEvent);
-              const schemaEventBuffer = Buffer.from(schemaEvent.slice(8));
+              const leafHash = Buffer.from(schemaEvent.slice(-32));
+              const encodedLeafHash = base58.encode(leafHash);
+              const schemaEventBuffer = Buffer.from(
+                schemaEvent.slice(8, schemaEvent.length - 32)
+              );
               const schemaEventDecoded = compressionProgram.coder.types.decode(
                 "LeafSchema",
                 schemaEventBuffer
@@ -239,6 +243,7 @@ export default async function enhancedTransactionParser(body: any) {
                     forumId: forumAddress,
                     schemaV1,
                     dataV1,
+                    hash: encodedLeafHash,
                   });
                   break;
                 }
@@ -253,6 +258,7 @@ export default async function enhancedTransactionParser(body: any) {
                     schemaV1,
                     dataV1,
                     body,
+                    hash: encodedLeafHash,
                   });
                   break;
                 }
@@ -272,6 +278,7 @@ export default async function enhancedTransactionParser(body: any) {
                       body,
                       id: schemaV1.id.toBase58(),
                       uri: trimNullChars(dataV1.uri),
+                      hash: encodedLeafHash,
                       createdAt: schemaV1.createdAt.toNumber(),
                       nonce: schemaV1.nonce.toNumber(),
                       Parent: dataV1.parent
@@ -414,6 +421,7 @@ interface CreatePostV1Args {
   dataV1: ReturnType<typeof getDataV1Fields>;
   postType: PostType;
   body?: string;
+  hash: string;
 }
 
 function createPostV1({
@@ -422,6 +430,7 @@ function createPostV1({
   dataV1,
   postType,
   body,
+  hash,
 }: CreatePostV1Args) {
   if (schemaV1 === undefined) {
     throw new Error("Schema is undefined");
@@ -430,6 +439,7 @@ function createPostV1({
   return prisma.post.create({
     data: {
       postType,
+      hash,
       body: body ?? null,
       id: schemaV1.id.toBase58(),
       title: dataV1.title!,

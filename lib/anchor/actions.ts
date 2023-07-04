@@ -1,4 +1,4 @@
-import { web3, BN } from "@project-serum/anchor";
+import { web3, BN, Program } from "@project-serum/anchor";
 import {
   AccountLayout,
   getAssociatedTokenAddress,
@@ -7,10 +7,13 @@ import {
 import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
+  ConcurrentMerkleTreeAccount,
   getConcurrentMerkleTreeAccountSize,
+  MerkleTree,
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
+import { keccak_256 } from "js-sha3";
 import base58 from "bs58";
 
 import {
@@ -20,6 +23,7 @@ import {
   findProfilePda,
 } from "utils/pda";
 import { fetchAllAccounts } from "utils/web3";
+import { OndaCompression } from "./idl/onda_compression";
 import { DataV1, LeafSchemaV1 } from "./types";
 import {
   getCompressionProgram,
@@ -164,6 +168,64 @@ export async function addEntry(
       return [eventData.id.toBase58(), eventData.nonce.toString()];
     }
   }
+}
+
+export async function deleteEntry(
+  connection: web3.Connection,
+  wallet: AnchorWallet,
+  options: {
+    forumId: string;
+    forumConfig: string;
+    entryId: string;
+  }
+) {
+  const program = getCompressionProgram(connection, wallet);
+
+  const merkleTreeAddress = new web3.PublicKey(options.forumId);
+  const forumConfigAddress = new web3.PublicKey(options.forumConfig);
+  const merkleTreeAccount =
+    await ConcurrentMerkleTreeAccount.fromAccountAddress(
+      connection,
+      merkleTreeAddress
+    );
+
+  const dataHash = computeDataHash(program, {});
+
+  /**
+   * root: [u8; 32],
+   * created_at: i64,
+   * edited_at: Option<i64>,
+   * data_hash: [u8; 32],
+   * nonce: u64,
+   * index: u32,
+   **/
+  await program.methods
+    .deleteEntry(
+      Array.from(merkleTreeAccount.getCurrentRoot()),
+      new BN(options.createdAt),
+      options.editedAt ? new BN(options.editedAt) : null,
+      options.dataHash,
+      new BN(options.nonce),
+      options.nonce
+    )
+    .accounts({
+      forumConfig: forumConfigAddress,
+      merkleTree: merkleTreeAddress,
+      author: wallet.publicKey,
+      logWrapper: SPL_NOOP_PROGRAM_ID,
+      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+      systemProgram: web3.SystemProgram.programId,
+    })
+    .remainingAccounts(proof)
+    .preInstructions([
+      web3.ComputeBudgetProgram.setComputeUnitLimit({
+        units: 1000000,
+      }),
+    ])
+    .rpc({
+      commitment: "confirmed",
+      skipPreflight: true,
+    });
 }
 
 export async function likeEntry(

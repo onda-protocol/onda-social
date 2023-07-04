@@ -10,7 +10,7 @@ import { likeEntry } from "lib/anchor";
 import { Markdown } from "../markdown";
 import { Editor } from "../editor";
 import { PostMeta } from "../post/meta";
-import { PostButton, LikeButton } from "components/post/buttons";
+import { PostButton, LikeButton, DeleteButton } from "components/post/buttons";
 
 interface CommentListItemProps {
   forum: string;
@@ -154,6 +154,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
               <Markdown>{comment.body}</Markdown>
               <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
                 <CommentLikeButton comment={comment} queryKey={queryKey} />
+                <CommentDeleteButton comment={comment} />
                 {!disableReplies && (
                   <PostButton
                     label="Reply"
@@ -248,6 +249,16 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
       onClick={() => mutation.mutate()}
     />
   );
+};
+
+interface CommentDeleteButtonProps {
+  comment: SerializedCommentNested;
+}
+
+const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
+  comment,
+}) => {
+  return <DeleteButton entry={comment} />;
 };
 
 interface CommentRepliesProps {

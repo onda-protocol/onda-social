@@ -90,3 +90,9 @@ export function fetchUser(address: string): Promise<User> {
     (res) => res.json()
   );
 }
+
+export function fetchProof(address: string): Promise<any> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/proof/${address}`).then(
+    (res) => res.json()
+  );
+}

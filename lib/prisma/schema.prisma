@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("POSTGRES_PRISMA_URL")
 }
 
 model Forum {
@@ -27,6 +27,7 @@ model Post {
   title String
   body String?
   uri String
+  hash String
   postType PostType @default(TEXT)
   createdAt BigInt
   editedAt BigInt?
@@ -43,6 +44,7 @@ model Comment {
   Author User @relation("UserToComment", fields: [author], references: [id])
   body String
   uri String
+  hash String
   createdAt BigInt
   editedAt BigInt?
   nonce BigInt

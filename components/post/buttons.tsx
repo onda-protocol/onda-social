@@ -2,13 +2,17 @@ import Link from "next/link";
 import { Box, Text, Tooltip } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { IoChatbox } from "react-icons/io5";
+import { IoChatbox, IoTrash } from "react-icons/io5";
 import { GiSadCrab } from "react-icons/gi";
 import { MouseEventHandler, forwardRef } from "react";
 import toast from "react-hot-toast";
 
-import { likeEntry } from "lib/anchor";
-import { PostWithCommentsCountAndForum } from "lib/api";
+import { deleteEntry, likeEntry } from "lib/anchor";
+import {
+  PostWithCommentsCountAndForum,
+  SerializedCommentNested,
+  fetchProof,
+} from "lib/api";
 
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
@@ -24,6 +28,7 @@ export const PostButtons = ({ post }: PostButtonsProps) => {
         />
       </Link>
       <PostLikeButton post={post} />
+      <DeleteButton entry={post} />
     </Box>
   );
 };
@@ -33,9 +38,10 @@ interface PostLikeButtonProps {
 }
 
 export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
-  const anchorWallet = useAnchorWallet();
   const { connection } = useConnection();
+  const anchorWallet = useAnchorWallet();
   const queryClient = useQueryClient();
+  const isAuthor = anchorWallet?.publicKey?.toBase58() === post.author;
 
   const mutation = useMutation(
     () => {
@@ -97,7 +103,7 @@ export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
   return (
     <LikeButton
       label={post.likes.toString()}
-      disabled={mutation.isLoading}
+      disabled={isAuthor || mutation.isLoading}
       onClick={(e) => {
         e.stopPropagation();
         mutation.mutate();
@@ -107,8 +113,34 @@ export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
   );
 };
 
+interface PostDeleteButtonProps {
+  entry: PostWithCommentsCountAndForum | SerializedCommentNested;
+  label?: string;
+}
+
+export const DeleteButton = ({ entry, label }: PostDeleteButtonProps) => {
+  const anchorWallet = useAnchorWallet();
+  const isAuthor = anchorWallet?.publicKey?.toBase58() === entry.author;
+
+  const mutation = useMutation(async () => {
+    const proof = fetchProof(entry.id);
+  });
+
+  return (
+    <PostButton
+      icon={<IoTrash />}
+      label={label}
+      disabled={mutation.isLoading}
+      onClick={(e) => {
+        e.stopPropagation();
+        mutation.mutate();
+      }}
+    />
+  );
+};
+
 interface PostButtonProps {
-  label: string;
+  label?: string;
   icon?: JSX.Element;
   disabled?: boolean;
   onClick?: MouseEventHandler<HTMLDivElement>;
@@ -136,9 +168,11 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
         onClick={onClick}
       >
         {icon ?? null}
-        <Text as="span" fontSize="sm" color="gray.600" ml={icon ? "2" : "0"}>
-          {label}
-        </Text>
+        {label ? (
+          <Text as="span" fontSize="sm" color="gray.600" ml={icon ? "2" : "0"}>
+            {label}
+          </Text>
+        ) : null}
       </Box>
     );
   }
