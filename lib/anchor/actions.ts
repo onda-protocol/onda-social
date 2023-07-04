@@ -189,8 +189,6 @@ export async function deleteEntry(
       merkleTreeAddress
     );
 
-  const dataHash = computeDataHash(program, {});
-
   /**
    * root: [u8; 32],
    * created_at: i64,
@@ -199,33 +197,33 @@ export async function deleteEntry(
    * nonce: u64,
    * index: u32,
    **/
-  await program.methods
-    .deleteEntry(
-      Array.from(merkleTreeAccount.getCurrentRoot()),
-      new BN(options.createdAt),
-      options.editedAt ? new BN(options.editedAt) : null,
-      options.dataHash,
-      new BN(options.nonce),
-      options.nonce
-    )
-    .accounts({
-      forumConfig: forumConfigAddress,
-      merkleTree: merkleTreeAddress,
-      author: wallet.publicKey,
-      logWrapper: SPL_NOOP_PROGRAM_ID,
-      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-      systemProgram: web3.SystemProgram.programId,
-    })
-    .remainingAccounts(proof)
-    .preInstructions([
-      web3.ComputeBudgetProgram.setComputeUnitLimit({
-        units: 1000000,
-      }),
-    ])
-    .rpc({
-      commitment: "confirmed",
-      skipPreflight: true,
-    });
+  // await program.methods
+  //   .deleteEntry(
+  //     Array.from(merkleTreeAccount.getCurrentRoot()),
+  //     new BN(options.createdAt),
+  //     options.editedAt ? new BN(options.editedAt) : null,
+  //     options.dataHash,
+  //     new BN(options.nonce),
+  //     options.nonce
+  //   )
+  //   .accounts({
+  //     forumConfig: forumConfigAddress,
+  //     merkleTree: merkleTreeAddress,
+  //     author: wallet.publicKey,
+  //     logWrapper: SPL_NOOP_PROGRAM_ID,
+  //     compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+  //     systemProgram: web3.SystemProgram.programId,
+  //   })
+  //   .remainingAccounts(proof)
+  //   .preInstructions([
+  //     web3.ComputeBudgetProgram.setComputeUnitLimit({
+  //       units: 1000000,
+  //     }),
+  //   ])
+  //   .rpc({
+  //     commitment: "confirmed",
+  //     skipPreflight: true,
+  //   });
 }
 
 export async function likeEntry(
