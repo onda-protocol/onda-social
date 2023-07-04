@@ -1,15 +1,12 @@
-import type { NextApiRequest } from "next";
-import { NextResponse } from "next/server";
+import type { NextApiRequest, NextApiResponse } from "next";
 
 import { parseBigInt } from "utils/format";
 import prisma from "lib/prisma";
 
-export const config = {
-  runtime: "edge",
-  regions: ["iad1"],
-};
-
-export default async function handler(req: NextApiRequest) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   const address = req.query.address as string;
   const parent = typeof req.query.parent === "string" ? req.query.parent : null;
   const limit = Number(req.query.limit) || 100;
@@ -46,14 +43,6 @@ export default async function handler(req: NextApiRequest) {
                 orderBy: {
                   likes: "desc",
                 },
-                include: {
-                  Author: true,
-                  _count: {
-                    select: {
-                      Children: true,
-                    },
-                  },
-                },
               },
               _count: {
                 select: {
@@ -77,5 +66,5 @@ export default async function handler(req: NextApiRequest) {
     },
   });
 
-  NextResponse.json(parseBigInt(result));
+  res.json(parseBigInt(result));
 }
