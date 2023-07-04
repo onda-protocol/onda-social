@@ -1,12 +1,15 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest } from "next";
+import { NextResponse } from "next/server";
 
 import { parseBigInt } from "utils/format";
 import prisma from "lib/prisma";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export const config = {
+  runtime: "edge",
+  regions: ["iad1"],
+};
+
+export default async function handler(req: NextApiRequest) {
   const address = req.query.address as string;
   const parent = typeof req.query.parent === "string" ? req.query.parent : null;
   const limit = Number(req.query.limit) || 100;
@@ -74,5 +77,5 @@ export default async function handler(
     },
   });
 
-  res.json(parseBigInt(result));
+  NextResponse.json(parseBigInt(result));
 }
