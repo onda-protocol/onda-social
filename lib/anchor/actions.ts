@@ -31,6 +31,7 @@ import {
   getProfileProgram,
 } from "./provider";
 import { PLANKTON_MINT, PROTOCOL_FEE_PLANKTON_ATA } from "./constants";
+import { fetchProof } from "lib/api";
 
 export async function initForum(
   connection: web3.Connection,
@@ -175,19 +176,22 @@ export async function deleteEntry(
   wallet: AnchorWallet,
   options: {
     forumId: string;
-    forumConfig: string;
     entryId: string;
+    createdAt: number;
+    editedAt: number | null;
+    nonce: number;
+    dataHash: Buffer;
   }
 ) {
   const program = getCompressionProgram(connection, wallet);
-
   const merkleTreeAddress = new web3.PublicKey(options.forumId);
-  const forumConfigAddress = new web3.PublicKey(options.forumConfig);
   const merkleTreeAccount =
     await ConcurrentMerkleTreeAccount.fromAccountAddress(
       connection,
       merkleTreeAddress
     );
+  const proof = await fetchProof(options.entryId);
+  const forumConfigAddress = findForumConfigPda(merkleTreeAddress);
 
   /**
    * root: [u8; 32],
@@ -197,33 +201,33 @@ export async function deleteEntry(
    * nonce: u64,
    * index: u32,
    **/
-  // await program.methods
-  //   .deleteEntry(
-  //     Array.from(merkleTreeAccount.getCurrentRoot()),
-  //     new BN(options.createdAt),
-  //     options.editedAt ? new BN(options.editedAt) : null,
-  //     options.dataHash,
-  //     new BN(options.nonce),
-  //     options.nonce
-  //   )
-  //   .accounts({
-  //     forumConfig: forumConfigAddress,
-  //     merkleTree: merkleTreeAddress,
-  //     author: wallet.publicKey,
-  //     logWrapper: SPL_NOOP_PROGRAM_ID,
-  //     compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-  //     systemProgram: web3.SystemProgram.programId,
-  //   })
-  //   .remainingAccounts(proof)
-  //   .preInstructions([
-  //     web3.ComputeBudgetProgram.setComputeUnitLimit({
-  //       units: 1000000,
-  //     }),
-  //   ])
-  //   .rpc({
-  //     commitment: "confirmed",
-  //     skipPreflight: true,
-  //   });
+  await program.methods
+    .deleteEntry(
+      Array.from(merkleTreeAccount.getCurrentRoot()),
+      new BN(options.createdAt),
+      options.editedAt ? new BN(options.editedAt) : null,
+      Array.from(options.dataHash),
+      new BN(options.nonce),
+      options.nonce
+    )
+    .accounts({
+      forumConfig: forumConfigAddress,
+      merkleTree: merkleTreeAddress,
+      author: wallet.publicKey,
+      logWrapper: SPL_NOOP_PROGRAM_ID,
+      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+      systemProgram: web3.SystemProgram.programId,
+    })
+    .remainingAccounts(proof)
+    .preInstructions([
+      web3.ComputeBudgetProgram.setComputeUnitLimit({
+        units: 1000000,
+      }),
+    ])
+    .rpc({
+      commitment: "confirmed",
+      skipPreflight: true,
+    });
 }
 
 export async function likeEntry(
