@@ -1,4 +1,4 @@
-import { web3, BN, Program } from "@project-serum/anchor";
+import { web3, BN } from "@project-serum/anchor";
 import {
   AccountLayout,
   getAssociatedTokenAddress,
@@ -9,11 +9,9 @@ import { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
   ConcurrentMerkleTreeAccount,
   getConcurrentMerkleTreeAccountSize,
-  MerkleTree,
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
-import { keccak_256 } from "js-sha3";
 import base58 from "bs58";
 
 import {
@@ -23,7 +21,6 @@ import {
   findProfilePda,
 } from "utils/pda";
 import { fetchAllAccounts } from "utils/web3";
-import { OndaCompression } from "./idl/onda_compression";
 import { DataV1, LeafSchemaV1 } from "./types";
 import {
   getCompressionProgram,
@@ -46,7 +43,7 @@ export async function initForum(
 
   const maxDepth = 18;
   const canopyDepth = 12;
-  const maxBufferSize = 256;
+  const maxBufferSize = 64;
   const merkleTreeKeypair = web3.Keypair.generate();
   const merkleTree = merkleTreeKeypair.publicKey;
   const forumConfig = findForumConfigPda(merkleTree);
@@ -55,12 +52,12 @@ export async function initForum(
   const lamports = await connection.getMinimumBalanceForRentExemption(
     space + canopySpace
   );
-  console.log("Allocating ", space, " bytes for merkle tree");
-  console.log(lamports, " lamports required for rent exemption");
+  console.log("Allocating ", space + canopySpace, " bytes for merkle tree");
   console.log(
     lamports / web3.LAMPORTS_PER_SOL,
     " SOL required for rent exemption"
   );
+  debugger;
   const allocTreeIx = web3.SystemProgram.createAccount({
     lamports,
     space,
@@ -75,7 +72,8 @@ export async function initForum(
         collection: {
           /// Chicken Tribe Collection
           address: new web3.PublicKey(
-            "FcAQivai8rtj48MbuEvRf94Yqymz6N9bkxcudpgRqgcJ"
+            "HdKHJ71tszT6xBdox5JL4yEnDZ2U5CAzczqeKANAJu6P"
+            // "FcAQivai8rtj48MbuEvRf94Yqymz6N9bkxcudpgRqgcJ"
           ),
         },
       },
@@ -113,7 +111,7 @@ export async function addEntry(
   options: {
     forumId: string;
     forumConfig: string;
-    collection: string | null;
+    collections: string[] | null;
     data: DataV1;
   }
 ): Promise<[string, string] | void> {
@@ -126,17 +124,17 @@ export async function addEntry(
 
   const merkleTree = new web3.PublicKey(options.forumId);
   const forumConfig = new web3.PublicKey(options.forumConfig);
-  const collection = options.collection
-    ? new web3.PublicKey(options.collection)
+  const collections = options.collections
+    ? options.collections.map((collection) => new web3.PublicKey(collection))
     : undefined;
 
   let mint, metadata, tokenAccount;
 
-  if (collection) {
+  if (collections) {
     [mint, metadata, tokenAccount] = await fetchTokenAccounts(
       connection,
       wallet.publicKey,
-      collection
+      collections
     );
   }
 
@@ -330,7 +328,7 @@ async function submitInstructions(
 async function fetchTokenAccounts(
   connection: web3.Connection,
   owner: web3.PublicKey,
-  collection: web3.PublicKey
+  collections: web3.PublicKey[]
 ) {
   const tokenAccounts = await connection.getTokenAccountsByOwner(owner, {
     programId: TOKEN_PROGRAM_ID,
@@ -345,7 +343,9 @@ async function fetchTokenAccounts(
   );
 
   const selectedMetadataAccount = metadata.find((metadata) =>
-    metadata.collection?.key.equals(collection)
+    collections.some((collection) =>
+      metadata.collection?.key.equals(collection)
+    )
   );
   const selectedMintAddress = selectedMetadataAccount?.mint;
 

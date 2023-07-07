@@ -5,6 +5,7 @@ import {
   Program,
   AnchorProvider,
 } from "@project-serum/anchor";
+import { PostType } from "@prisma/client";
 import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import axios from "axios";
 import base58 from "bs58";
@@ -22,11 +23,10 @@ import {
   OndaCompression,
   IDL as CompressionIDL,
 } from "../anchor/idl/onda_compression";
+import { findEntryId } from "../../utils/pda";
 import { IDL as ProfileIDL } from "../anchor/idl/onda_profile";
 import { DataV1, LeafSchemaV1, RestrictionType } from "../anchor/types";
 import prisma from "../prisma";
-import { PostType } from "@prisma/client";
-import { findEntryId } from "utils/pda";
 
 const bloomIxIds = BloomIDL.instructions.map((ix) => {
   return {
@@ -162,7 +162,6 @@ export default async function enhancedTransactionParser(body: any) {
           )?.accounts;
 
           if (ixName === undefined || ixAccounts === undefined) {
-            // console.log("Unknown instruction: ", ix);
             break;
           }
 
@@ -184,16 +183,23 @@ export default async function enhancedTransactionParser(body: any) {
               const buffer = Buffer.from(ixData.slice(8));
               const maxDepth = new BN(buffer.subarray(0, 4), "le");
               const totalCapacity = new BN(1).shln(maxDepth.toNumber());
-              const restriction =
-                compressionProgram.coder.types.decode<RestrictionType>(
-                  "RestrictionType",
-                  buffer.subarray(8)
+              const forumConfig =
+                await compressionProgram.account.forumConfig.fetch(
+                  forumConfigAddress
                 );
+              const gate = forumConfig.gate as Array<RestrictionType> | null;
 
               const data = {
                 id: merkleTreeAddress.toBase58(),
                 config: forumConfigAddress.toBase58(),
-                collection: restriction?.collection?.address?.toBase58(),
+                collections: gate
+                  ?.map((restrictionType) =>
+                    restrictionType.collection?.address.toBase58()
+                  )
+                  .filter(
+                    (address): address is string =>
+                      address !== null && address !== undefined
+                  ),
                 totalCapacity: totalCapacity.toNumber(),
               };
               console.log(data);

@@ -201,6 +201,10 @@ export type OndaCompression = {
             type: "u64";
           },
           {
+            name: "admin";
+            type: "publicKey";
+          },
+          {
             name: "gate";
             type: {
               option: {
@@ -427,11 +431,16 @@ export type OndaCompression = {
     },
     {
       code: 6001;
+      name: "TitleTooLong";
+      msg: "Title too long.";
+    },
+    {
+      code: 6002;
       name: "InsufficientPostCapacity";
       msg: "Insufficient post capacity.";
     },
     {
-      code: 6002;
+      code: 6003;
       name: "Unauthorized";
       msg: "Unauthorized.";
     }
@@ -639,6 +648,10 @@ export const IDL: OndaCompression = {
           {
             name: "postCount",
             type: "u64",
+          },
+          {
+            name: "admin",
+            type: "publicKey",
           },
           {
             name: "gate",
@@ -867,11 +880,16 @@ export const IDL: OndaCompression = {
     },
     {
       code: 6001,
+      name: "TitleTooLong",
+      msg: "Title too long.",
+    },
+    {
+      code: 6002,
       name: "InsufficientPostCapacity",
       msg: "Insufficient post capacity.",
     },
     {
-      code: 6002,
+      code: 6003,
       name: "Unauthorized",
       msg: "Unauthorized.",
     },

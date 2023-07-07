@@ -13,7 +13,10 @@ interface Profile {
 }
 
 const profiles = new Map<string, Profile>();
-profiles.set("5geVF3sNA4Pvyx5FDdrzRppjBdviowRk6mU1qC2K9Bte", {
+
+// forumConfig:  GpnZFjvSh1QkyTfjoW2iwEMcmmjn3rxim22ejGMKFLYy
+// merkleTree:  3yCwjHgyftQJ4HfVPXkpwEVN3N9xFWGS2VBFXZG8KFi9
+profiles.set("3yCwjHgyftQJ4HfVPXkpwEVN3N9xFWGS2VBFXZG8KFi9", {
   name: "ChickenTribe",
   description:
     "ChickenTribe is a collection of 3000 unique chickens. Home of the Combinator and SugarUI, we are a community of artists, devs and builders.",

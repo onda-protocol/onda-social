@@ -161,7 +161,7 @@ export const Editor = ({
         data: dataArgs,
         forumId: forum.id,
         forumConfig: forum.config,
-        collection: forum.collection,
+        collections: forum.collections,
       });
 
       if (result) {

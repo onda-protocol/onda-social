@@ -4,7 +4,7 @@ import {
   BLOOM_PROGRAM_ID,
   COMPRESSION_PROGRAM_ID,
   PROFILE_PROGRAM_ID,
-} from "lib/anchor/constants";
+} from "../lib/anchor/constants";
 
 export function findMetadataPda(mint: web3.PublicKey) {
   return web3.PublicKey.findProgramAddressSync(

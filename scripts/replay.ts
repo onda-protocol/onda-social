@@ -8,15 +8,15 @@ const apiKey = process.env.HELIUS_API_KEY;
 // ondapcq2qXTSynRieMCE9BjRsZ2XALEEZZunkwbhCPF - profile
 // ondaV4qqTUGbPR3m4XGi3YXf1NAXYCJEtuMKzVWBbSy - compression
 async function main() {
-  const { data: profiles } = await axios.get(
-    `https://api.helius.xyz/v0/addresses/ondapcq2qXTSynRieMCE9BjRsZ2XALEEZZunkwbhCPF/transactions?api-key=${apiKey}&limit=1000`
-  );
-  const sortedProfileTxs = profiles.sort(
-    (a: any, b: any) => a.timestamp - b.timestamp
-  );
-  await enhancedTransactionParser(sortedProfileTxs);
+  // const { data: profiles } = await axios.get(
+  //   `https://api-devnet.helius.xyz/v0/addresses/ondapcq2qXTSynRieMCE9BjRsZ2XALEEZZunkwbhCPF/transactions?api-key=${apiKey}&limit=1000`
+  // );
+  // const sortedProfileTxs = profiles.sort(
+  //   (a: any, b: any) => a.timestamp - b.timestamp
+  // );
+  // await enhancedTransactionParser(sortedProfileTxs);
   const { data: entries } = await axios.get(
-    `https://api.helius.xyz/v0/addresses/ondaV4qqTUGbPR3m4XGi3YXf1NAXYCJEtuMKzVWBbSy/transactions?api-key=${apiKey}&limit=1000`
+    `https://api-devnet.helius.xyz/v0/addresses/ondaUaJpDBZZQzpGe5Tr391CbuJH1UpZuRcS7sZU2GB/transactions?api-key=${apiKey}&limit=1000`
   );
   const sortedEntryTxs = entries.sort(
     (a: any, b: any) => a.timestamp - b.timestamp
