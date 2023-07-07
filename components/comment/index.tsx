@@ -155,7 +155,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
               <Markdown>{comment.body}</Markdown>
               <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
                 <CommentLikeButton comment={comment} queryKey={queryKey} />
-                <CommentDeleteButton comment={comment} />
+                <CommentDeleteButton forumId={forum} comment={comment} />
                 {!disableReplies && (
                   <PostButton
                     label="Reply"
@@ -253,13 +253,15 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
 };
 
 interface CommentDeleteButtonProps {
+  forumId: string;
   comment: SerializedCommentNested;
 }
 
 const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
+  forumId,
   comment,
 }) => {
-  return <DeleteButton entry={comment} />;
+  return <DeleteButton forumId={forumId} entry={comment} />;
 };
 
 interface CommentRepliesProps {

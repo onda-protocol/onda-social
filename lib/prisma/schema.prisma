@@ -27,7 +27,7 @@ model Post {
   title String
   body String?
   uri String
-  hash String
+  hash String?
   postType PostType @default(TEXT)
   createdAt BigInt
   editedAt BigInt?
@@ -44,7 +44,7 @@ model Comment {
   Author User @relation("UserToComment", fields: [author], references: [id])
   body String
   uri String
-  hash String
+  hash String?
   createdAt BigInt
   editedAt BigInt?
   nonce BigInt

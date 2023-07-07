@@ -46,9 +46,13 @@ export type OndaCompression = {
           type: "u32";
         },
         {
-          name: "restriction";
+          name: "gate";
           type: {
-            defined: "RestrictionType";
+            option: {
+              vec: {
+                defined: "RestrictionType";
+              };
+            };
           };
         }
       ];
@@ -197,9 +201,13 @@ export type OndaCompression = {
             type: "u64";
           },
           {
-            name: "restriction";
+            name: "gate";
             type: {
-              defined: "RestrictionType";
+              option: {
+                vec: {
+                  defined: "RestrictionType";
+                };
+              };
             };
           }
         ];
@@ -244,9 +252,6 @@ export type OndaCompression = {
       type: {
         kind: "enum";
         variants: [
-          {
-            name: "None";
-          },
           {
             name: "Collection";
             fields: [
@@ -481,9 +486,13 @@ export const IDL: OndaCompression = {
           type: "u32",
         },
         {
-          name: "restriction",
+          name: "gate",
           type: {
-            defined: "RestrictionType",
+            option: {
+              vec: {
+                defined: "RestrictionType",
+              },
+            },
           },
         },
       ],
@@ -632,9 +641,13 @@ export const IDL: OndaCompression = {
             type: "u64",
           },
           {
-            name: "restriction",
+            name: "gate",
             type: {
-              defined: "RestrictionType",
+              option: {
+                vec: {
+                  defined: "RestrictionType",
+                },
+              },
             },
           },
         ],
@@ -679,9 +692,6 @@ export const IDL: OndaCompression = {
       type: {
         kind: "enum",
         variants: [
-          {
-            name: "None",
-          },
           {
             name: "Collection",
             fields: [

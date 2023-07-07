@@ -154,7 +154,9 @@ async function fetchLeafHashes(entryIds: string[]) {
   ]);
 
   return [...posts, ...comments].map((entry) => ({
-    hash: new web3.PublicKey(entry.hash).toBuffer(),
+    hash: entry.hash
+      ? new web3.PublicKey(entry.hash).toBuffer()
+      : Buffer.alloc(32),
     nonce: Number(entry.nonce),
   }));
 }

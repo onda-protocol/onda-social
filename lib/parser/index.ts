@@ -26,6 +26,7 @@ import { IDL as ProfileIDL } from "../anchor/idl/onda_profile";
 import { DataV1, LeafSchemaV1, RestrictionType } from "../anchor/types";
 import prisma from "../prisma";
 import { PostType } from "@prisma/client";
+import { findEntryId } from "utils/pda";
 
 const bloomIxIds = BloomIDL.instructions.map((ix) => {
   return {
@@ -137,6 +138,7 @@ export default async function enhancedTransactionParser(body: any) {
                   });
                 } catch {
                   // Fail silently - entry not found
+                  console.log("Entry not found");
                 }
               }
 
@@ -313,6 +315,50 @@ export default async function enhancedTransactionParser(body: any) {
             }
 
             case "deleteEntry": {
+              // Get forum address
+              const merkleTreeIndex = ixAccounts.findIndex(
+                (account) => account.name === "merkleTree"
+              );
+              const forumAddress = ix.accounts[merkleTreeIndex];
+              const entryIndex = new BN(
+                Buffer.from(ixData.slice(-4))
+              ).toNumber();
+              const entryId = findEntryId(forumAddress, entryIndex);
+              console.log("entryIndex: ", entryIndex);
+              console.log("entryId: ", entryId);
+
+              try {
+                await prisma.post.update({
+                  where: {
+                    id: entryId.toBase58(),
+                  },
+                  data: {
+                    body: "[deleted]",
+                    uri: "[deleted]",
+                    hash: null,
+                    editedAt: Date.now() / 1000,
+                  },
+                });
+              } catch (err) {
+                try {
+                  await prisma.comment.update({
+                    where: {
+                      id: entryId.toBase58(),
+                    },
+                    data: {
+                      body: "[deleted]",
+                      uri: "[deleted]",
+                      hash: null,
+                      editedAt: Date.now() / 1000,
+                    },
+                  });
+                } catch {
+                  // Fail silently - entry not found
+                  console.log("Entry not found");
+                }
+              }
+
+              break;
             }
 
             default: {

@@ -44,13 +44,17 @@ export async function initForum(
     throw new Error("Provider not found");
   }
 
-  const maxDepth = 20;
+  const maxDepth = 18;
+  const canopyDepth = 12;
   const maxBufferSize = 256;
   const merkleTreeKeypair = web3.Keypair.generate();
   const merkleTree = merkleTreeKeypair.publicKey;
   const forumConfig = findForumConfigPda(merkleTree);
   const space = getConcurrentMerkleTreeAccountSize(maxDepth, maxBufferSize);
-  const lamports = await connection.getMinimumBalanceForRentExemption(space);
+  const canopySpace = (Math.pow(2, canopyDepth) - 2) * 32;
+  const lamports = await connection.getMinimumBalanceForRentExemption(
+    space + canopySpace
+  );
   console.log("Allocating ", space, " bytes for merkle tree");
   console.log(lamports, " lamports required for rent exemption");
   console.log(
@@ -66,14 +70,16 @@ export async function initForum(
   });
 
   const initIx = await program.methods
-    .initForum(maxDepth, maxBufferSize, {
-      collection: {
-        /// Chicken Tribe Collection
-        address: new web3.PublicKey(
-          "FcAQivai8rtj48MbuEvRf94Yqymz6N9bkxcudpgRqgcJ"
-        ),
+    .initForum(maxDepth, maxBufferSize, [
+      {
+        collection: {
+          /// Chicken Tribe Collection
+          address: new web3.PublicKey(
+            "FcAQivai8rtj48MbuEvRf94Yqymz6N9bkxcudpgRqgcJ"
+          ),
+        },
       },
-    })
+    ])
     .accounts({
       payer,
       forumConfig,
