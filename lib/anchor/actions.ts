@@ -1,4 +1,5 @@
 import { web3, BN } from "@project-serum/anchor";
+import { PostType } from "@prisma/client";
 import {
   AccountLayout,
   getAssociatedTokenAddress,
@@ -13,6 +14,7 @@ import {
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
 import base58 from "bs58";
+import pkg from "js-sha3";
 
 import {
   findForumConfigPda,
@@ -28,7 +30,11 @@ import {
   getProfileProgram,
 } from "./provider";
 import { PLANKTON_MINT, PROTOCOL_FEE_PLANKTON_ATA } from "./constants";
-import { fetchProof } from "lib/api";
+import {
+  PostWithCommentsCountAndForum,
+  SerializedCommentNested,
+  fetchProof,
+} from "lib/api";
 
 export async function initForum(
   connection: web3.Connection,
@@ -49,18 +55,18 @@ export async function initForum(
   const forumConfig = findForumConfigPda(merkleTree);
   const space = getConcurrentMerkleTreeAccountSize(maxDepth, maxBufferSize);
   const canopySpace = (Math.pow(2, canopyDepth) - 2) * 32;
+  const totalSpace = space + canopySpace;
   const lamports = await connection.getMinimumBalanceForRentExemption(
-    space + canopySpace
+    totalSpace
   );
-  console.log("Allocating ", space + canopySpace, " bytes for merkle tree");
+  console.log("Allocating ", totalSpace, " bytes for merkle tree");
   console.log(
     lamports / web3.LAMPORTS_PER_SOL,
     " SOL required for rent exemption"
   );
-  debugger;
   const allocTreeIx = web3.SystemProgram.createAccount({
     lamports,
-    space,
+    space: totalSpace,
     fromPubkey: payer,
     newAccountPubkey: merkleTree,
     programId: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
@@ -175,6 +181,59 @@ export async function addEntry(
   }
 }
 
+export function getDataHash(
+  connection: web3.Connection,
+  wallet: AnchorWallet,
+  entry: PostWithCommentsCountAndForum | SerializedCommentNested
+) {
+  const program = getCompressionProgram(connection, wallet);
+
+  if ("postType" in entry) {
+    switch (entry.postType) {
+      case PostType.TEXT: {
+        console.log({
+          textPost: {
+            title: entry.title,
+            uri: entry.uri,
+          },
+        });
+        return pkg.keccak_256.digest(
+          program.coder.types.encode<DataV1>("DataV1", {
+            textPost: {
+              title: entry.title,
+              uri: entry.uri,
+            },
+          })
+        );
+      }
+      case PostType.IMAGE: {
+        return pkg.keccak_256.digest(
+          program.coder.types.encode<DataV1>("DataV1", {
+            imagePost: {
+              title: entry.title,
+              uri: entry.uri,
+            },
+          })
+        );
+      }
+
+      default: {
+        throw new Error("Invalid post type");
+      }
+    }
+  }
+
+  return pkg.keccak_256.digest(
+    program.coder.types.encode<DataV1>("DataV1", {
+      comment: {
+        post: new web3.PublicKey(entry.post),
+        parent: entry.parent ? new web3.PublicKey(entry.parent) : null,
+        uri: entry.uri,
+      },
+    })
+  );
+}
+
 export async function deleteEntry(
   connection: web3.Connection,
   wallet: AnchorWallet,
@@ -184,7 +243,7 @@ export async function deleteEntry(
     createdAt: number;
     editedAt: number | null;
     nonce: number;
-    dataHash: Buffer;
+    dataHash: number[];
   }
 ) {
   const program = getCompressionProgram(connection, wallet);
@@ -194,9 +253,8 @@ export async function deleteEntry(
       connection,
       merkleTreeAddress
     );
-  const proof = await fetchProof(options.entryId);
+  const response = await fetchProof(options.entryId);
   const forumConfigAddress = findForumConfigPda(merkleTreeAddress);
-
   /**
    * root: [u8; 32],
    * created_at: i64,
@@ -210,7 +268,7 @@ export async function deleteEntry(
       Array.from(merkleTreeAccount.getCurrentRoot()),
       new BN(options.createdAt),
       options.editedAt ? new BN(options.editedAt) : null,
-      Array.from(options.dataHash),
+      options.dataHash,
       new BN(options.nonce),
       options.nonce
     )
@@ -222,15 +280,20 @@ export async function deleteEntry(
       compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
       systemProgram: web3.SystemProgram.programId,
     })
-    .remainingAccounts(proof)
+    .remainingAccounts(
+      response.proof.map((proof) => ({
+        pubkey: new web3.PublicKey(proof),
+        isWritable: false,
+        isSigner: false,
+      }))
+    )
     .preInstructions([
       web3.ComputeBudgetProgram.setComputeUnitLimit({
-        units: 1000000,
+        units: 1_000_000,
       }),
     ])
     .rpc({
       commitment: "confirmed",
-      skipPreflight: true,
     });
 }
 

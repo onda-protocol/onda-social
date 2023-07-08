@@ -10,7 +10,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import {
   SerializedCommentNested,
@@ -45,6 +45,14 @@ const Comments: NextPage<PageProps> = () => {
   });
   const anchorWallet = useAnchorWallet();
   const queryClient = useQueryClient();
+  const isAuthor = useMemo(
+    () => anchorWallet?.publicKey?.toBase58() === postQuery.data?.author,
+    [anchorWallet, postQuery.data?.author]
+  );
+  const isDeleted = useMemo(
+    () => postQuery.data?.body === "[deleted]",
+    [postQuery.data?.body]
+  );
 
   const onUpdateCache = useCallback(
     async (entryId: string, nonce: string, body: string, uri: string) => {
@@ -141,7 +149,10 @@ const Comments: NextPage<PageProps> = () => {
       <Box mb="6">{renderPostBody()}</Box>
 
       <Box mb="6">
-        <PostButtons post={postQuery.data} />
+        <PostButtons
+          post={postQuery.data}
+          displayDelete={isAuthor && !isDeleted}
+        />
       </Box>
 
       <Editor

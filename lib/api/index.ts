@@ -3,6 +3,8 @@ import { Comment, Post, Forum, User } from "@prisma/client";
 type DeepReplaceBigInt<T, U> = {
   [K in keyof T]: T[K] extends bigint
     ? U
+    : T[K] extends bigint | null
+    ? U | null
     : T[K] extends object
     ? DeepReplaceBigInt<T[K], U>
     : T[K];
@@ -91,7 +93,10 @@ export function fetchUser(address: string): Promise<User> {
   );
 }
 
-export function fetchProof(address: string): Promise<any> {
+export function fetchProof(address: string): Promise<{
+  hash: string;
+  proof: string[];
+}> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/proof/${address}`).then(
     (res) => res.json()
   );

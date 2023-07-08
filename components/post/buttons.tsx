@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { web3 } from "@project-serum/anchor";
 import { Box, Text, Tooltip } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -8,23 +7,18 @@ import { GiSadCrab } from "react-icons/gi";
 import { MouseEventHandler, forwardRef } from "react";
 import toast from "react-hot-toast";
 
-import {
-  DataV1,
-  deleteEntry,
-  getCompressionProgram,
-  likeEntry,
-} from "lib/anchor";
+import { deleteEntry, getDataHash, likeEntry } from "lib/anchor";
 import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
 } from "lib/api";
-import { PostType } from "@prisma/client";
 
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
+  displayDelete?: boolean;
 }
 
-export const PostButtons = ({ post }: PostButtonsProps) => {
+export const PostButtons = ({ post, displayDelete }: PostButtonsProps) => {
   return (
     <Box display="flex" flexDirection="row" gap="2" mt="6">
       <Link href={`/comments/${post.id}`}>
@@ -34,7 +28,9 @@ export const PostButtons = ({ post }: PostButtonsProps) => {
         />
       </Link>
       <PostLikeButton post={post} />
-      <DeleteButton forumId={post.forum} entry={post} />
+      {displayDelete && (
+        <DeleteButton forumId={post.forum} entry={post} label="Delete" />
+      )}
     </Box>
   );
 };
@@ -132,30 +128,38 @@ export const DeleteButton = ({
 }: PostDeleteButtonProps) => {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
-  const isAuthor = anchorWallet?.publicKey?.toBase58() === entry.author;
 
-  const mutation = useMutation(async () => {
-    if (!anchorWallet) {
-      throw new Error("Wallet not connected");
+  const mutation = useMutation(
+    async () => {
+      if (!anchorWallet) {
+        throw new Error("Wallet not connected");
+      }
+
+      const dataHash = getDataHash(connection, anchorWallet, entry);
+
+      return deleteEntry(connection, anchorWallet, {
+        forumId,
+        dataHash,
+        entryId: entry.id,
+        createdAt: Number(entry.createdAt),
+        editedAt: Number(entry.editedAt),
+        nonce: Number(entry.nonce),
+      });
+    },
+    {
+      onError(err) {
+        // @ts-ignore
+        console.log(err.logs);
+        toast.error("Failed to delete post");
+      },
     }
-
-    const dataHash = getDataHash(connection, entry);
-
-    return deleteEntry(connection, anchorWallet, {
-      forumId,
-      dataHash,
-      entryId: entry.id,
-      createdAt: Number(entry.createdAt),
-      editedAt: Number(entry.editedAt),
-      nonce: Number(entry.nonce),
-    });
-  });
+  );
 
   return (
     <PostButton
       icon={<IoTrash />}
       label={label}
-      disabled={mutation.isLoading || !isAuthor}
+      disabled={mutation.isLoading}
       onClick={(e) => {
         e.stopPropagation();
         mutation.mutate();
@@ -163,46 +167,6 @@ export const DeleteButton = ({
     />
   );
 };
-
-function getDataHash(
-  connection: web3.Connection,
-  entry: PostWithCommentsCountAndForum | SerializedCommentNested
-) {
-  const program = getCompressionProgram(connection);
-
-  if ("postType" in entry) {
-    switch (entry.postType) {
-      case PostType.TEXT: {
-        return program.coder.types.encode<DataV1>("DataV1", {
-          textPost: {
-            title: entry.title,
-            uri: entry.uri,
-          },
-        });
-      }
-      case PostType.IMAGE: {
-        return program.coder.types.encode<DataV1>("DataV1", {
-          imagePost: {
-            title: entry.title,
-            uri: entry.uri,
-          },
-        });
-      }
-
-      default: {
-        throw new Error("Invalid post type");
-      }
-    }
-  }
-
-  return program.coder.types.encode<DataV1>("DataV1", {
-    comment: {
-      post: new web3.PublicKey(entry.post),
-      parent: entry.parent ? new web3.PublicKey(entry.parent) : null,
-      uri: entry.uri,
-    },
-  });
-}
 
 interface PostButtonProps {
   label?: string;

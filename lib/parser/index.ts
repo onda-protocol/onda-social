@@ -325,13 +325,14 @@ export default async function enhancedTransactionParser(body: any) {
               const merkleTreeIndex = ixAccounts.findIndex(
                 (account) => account.name === "merkleTree"
               );
-              const forumAddress = ix.accounts[merkleTreeIndex];
-              const entryIndex = new BN(
-                Buffer.from(ixData.slice(-4))
-              ).toNumber();
-              const entryId = findEntryId(forumAddress, entryIndex);
+              const merkleTreeAddress = new web3.PublicKey(
+                ix.accounts[merkleTreeIndex]
+              );
+              const entryIndex = new BN(ixData.slice(-4), "le").toNumber();
+              const entryId = findEntryId(merkleTreeAddress, entryIndex);
+              console.log("merkleTree: ", merkleTreeAddress.toBase58());
               console.log("entryIndex: ", entryIndex);
-              console.log("entryId: ", entryId);
+              console.log("entryId: ", entryId.toBase58());
 
               try {
                 await prisma.post.update({
@@ -342,7 +343,7 @@ export default async function enhancedTransactionParser(body: any) {
                     body: "[deleted]",
                     uri: "[deleted]",
                     hash: null,
-                    editedAt: Date.now() / 1000,
+                    editedAt: Math.floor(Date.now() / 1000),
                   },
                 });
               } catch (err) {
@@ -355,10 +356,11 @@ export default async function enhancedTransactionParser(body: any) {
                       body: "[deleted]",
                       uri: "[deleted]",
                       hash: null,
-                      editedAt: Date.now() / 1000,
+                      editedAt: Math.floor(Date.now() / 1000),
                     },
                   });
-                } catch {
+                } catch (err) {
+                  console.log(err);
                   // Fail silently - entry not found
                   console.log("Entry not found");
                 }

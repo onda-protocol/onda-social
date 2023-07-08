@@ -35,6 +35,10 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
 
     const anchorWallet = useAnchorWallet();
     const queryClient = useQueryClient();
+    const isAuthor = useMemo(
+      () => anchorWallet?.publicKey.toBase58() === comment.author,
+      [anchorWallet, comment.author]
+    );
 
     const onUpdateCache = useCallback(
       async (entryId: string, nonce: string, body: string, uri: string) => {
@@ -148,6 +152,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
             displayAvatar
             author={comment.Author}
             createdAt={comment.createdAt}
+            editedAt={comment.editedAt}
           />
 
           {!collapsed && (
@@ -155,13 +160,15 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
               <Markdown>{comment.body}</Markdown>
               <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
                 <CommentLikeButton comment={comment} queryKey={queryKey} />
-                <CommentDeleteButton forumId={forum} comment={comment} />
                 {!disableReplies && (
                   <PostButton
                     label="Reply"
                     icon={<IoChatbox />}
                     onClick={toggleReply}
                   />
+                )}
+                {isAuthor && comment.body !== "[deleted]" && (
+                  <CommentDeleteButton forumId={forum} comment={comment} />
                 )}
               </Box>
               {reply && disableReplies === false && (

@@ -11,6 +11,7 @@ import dayjs from "lib/dayjs";
 interface PostMetaProps {
   author: User;
   createdAt?: string;
+  editedAt?: string | null;
   forum?: string;
   displayAvatar?: boolean;
 }
@@ -25,6 +26,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
   author,
   forum,
   createdAt,
+  editedAt,
   displayAvatar = false,
 }) => {
   const authorAddress = useMemo(
@@ -42,6 +44,10 @@ export const PostMeta: React.FC<PostMetaProps> = ({
   const time = useMemo(
     () => (createdAt ? dayjs.unix(Number(createdAt)).fromNow() : null),
     [createdAt]
+  );
+  const lastEdited = useMemo(
+    () => (editedAt ? dayjs.unix(Number(editedAt)).fromNow() : null),
+    [editedAt]
   );
 
   function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
@@ -115,6 +121,13 @@ export const PostMeta: React.FC<PostMetaProps> = ({
             </Text>
             {forum ? <>&nbsp;</> : <Dot />}
             {time}
+            {lastEdited ? (
+              <>
+                <Dot />
+                last edited&nbsp;
+                {lastEdited}
+              </>
+            ) : null}
           </Box>
         </Link>
       </Text>

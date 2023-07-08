@@ -2,8 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import type { Post, Comment } from "@prisma/client";
 import { web3 } from "@project-serum/anchor";
 import {
-  ConcurrentMerkleTreeAccount,
   hash,
+  ConcurrentMerkleTreeAccount,
 } from "@solana/spl-account-compression";
 import prisma from "lib/prisma";
 import { findEntryId } from "utils/pda";
@@ -79,10 +79,11 @@ function recursiveHash(
   const [left, right] = path;
 
   if (left instanceof Array && right instanceof Array) {
-    return hash(
+    const h = hash(
       recursiveHash(leafHashes, left),
       recursiveHash(leafHashes, right)
     );
+    return h;
   }
 
   if (typeof left === "number" && typeof right === "number") {
