@@ -17,6 +17,7 @@ import {
   fetchPost,
   fetchComments,
   fetchUser,
+  PostWithCommentsCountAndForum,
 } from "lib/api";
 import { Editor } from "components/editor";
 import { Markdown } from "components/markdown";
@@ -32,12 +33,13 @@ interface PageProps {
 const Comments: NextPage<PageProps> = () => {
   const router = useRouter();
   const id = router.query.address as string;
+  const postQueryKey = useMemo(() => ["post", id], [id]);
   const postQuery = useQuery({
-    queryKey: ["post", id],
+    queryKey: postQueryKey,
     queryFn: () => fetchPost(id),
     enabled: true,
   });
-  const commentsQueryKey = ["comments", id];
+  const commentsQueryKey = useMemo(() => ["comments", id], [id]);
   const commentsQuery = useQuery({
     queryKey: commentsQueryKey,
     queryFn: () => fetchComments(id),
@@ -54,7 +56,7 @@ const Comments: NextPage<PageProps> = () => {
     [postQuery.data?.body]
   );
 
-  const onUpdateCache = useCallback(
+  const onCommentCreated = useCallback(
     async (entryId: string, nonce: string, body: string, uri: string) => {
       if (anchorWallet === undefined) return;
 
@@ -64,7 +66,7 @@ const Comments: NextPage<PageProps> = () => {
       );
 
       queryClient.setQueryData<SerializedCommentNested[]>(
-        ["comments", id],
+        commentsQueryKey,
         (data) => {
           const newComment = {
             id: entryId,
@@ -87,8 +89,25 @@ const Comments: NextPage<PageProps> = () => {
         }
       );
     },
-    [anchorWallet, id, queryClient]
+    [anchorWallet, id, queryClient, commentsQueryKey]
   );
+
+  const onPostDeleted = useCallback(() => {
+    queryClient.setQueryData<PostWithCommentsCountAndForum>(
+      postQueryKey,
+      (data) => {
+        if (data) {
+          const post: PostWithCommentsCountAndForum = {
+            ...data,
+            uri: "[deleted]",
+            body: "[deleted]",
+            editedAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
+          };
+          return post;
+        }
+      }
+    );
+  }, [queryClient, postQueryKey]);
 
   if (!postQuery.data) {
     return (
@@ -140,7 +159,8 @@ const Comments: NextPage<PageProps> = () => {
         <PostMeta
           author={postQuery.data.Author}
           forum={postQuery.data.forum}
-          createdAt={String(postQuery.data.createdAt)}
+          createdAt={postQuery.data.createdAt}
+          editedAt={postQuery.data.editedAt}
         />
         <Heading my="6" as="h1">
           {postQuery.data?.title}
@@ -152,6 +172,7 @@ const Comments: NextPage<PageProps> = () => {
         <PostButtons
           post={postQuery.data}
           displayDelete={isAuthor && !isDeleted}
+          onDeleted={onPostDeleted}
         />
       </Box>
 
@@ -164,7 +185,7 @@ const Comments: NextPage<PageProps> = () => {
           forum: postQuery.data?.forum,
           parent: null,
         }}
-        onUpdate={onUpdateCache}
+        onUpdate={onCommentCreated}
       />
 
       <Divider my="6" />

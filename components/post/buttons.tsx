@@ -16,9 +16,14 @@ import {
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
   displayDelete?: boolean;
+  onDeleted?: () => void;
 }
 
-export const PostButtons = ({ post, displayDelete }: PostButtonsProps) => {
+export const PostButtons = ({
+  post,
+  displayDelete,
+  onDeleted,
+}: PostButtonsProps) => {
   return (
     <Box display="flex" flexDirection="row" gap="2" mt="6">
       <Link href={`/comments/${post.id}`}>
@@ -29,7 +34,12 @@ export const PostButtons = ({ post, displayDelete }: PostButtonsProps) => {
       </Link>
       <PostLikeButton post={post} />
       {displayDelete && (
-        <DeleteButton forumId={post.forum} entry={post} label="Delete" />
+        <DeleteButton
+          forumId={post.forum}
+          entry={post}
+          label="Delete"
+          onDeleted={onDeleted}
+        />
       )}
     </Box>
   );
@@ -119,12 +129,14 @@ interface PostDeleteButtonProps {
   forumId: string;
   entry: PostWithCommentsCountAndForum | SerializedCommentNested;
   label?: string;
+  onDeleted?: () => void;
 }
 
 export const DeleteButton = ({
   forumId,
   entry,
   label,
+  onDeleted,
 }: PostDeleteButtonProps) => {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
@@ -150,7 +162,13 @@ export const DeleteButton = ({
       onError(err) {
         // @ts-ignore
         console.log(err.logs);
-        toast.error("Failed to delete post");
+        toast.error("Failed to delete entry");
+      },
+      onSuccess() {
+        toast.success("Entry deleted");
+        if (onDeleted) {
+          onDeleted();
+        }
       },
     }
   );
