@@ -40,7 +40,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
       [anchorWallet, comment.author]
     );
 
-    const onUpdateCache = useCallback(
+    const onReplyAdded = useCallback(
       async (entryId: string, nonce: string, body: string, uri: string) => {
         if (anchorWallet === undefined) return;
 
@@ -168,7 +168,11 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                   />
                 )}
                 {isAuthor && comment.body !== "[deleted]" && (
-                  <CommentDeleteButton forumId={forum} comment={comment} />
+                  <CommentDeleteButton
+                    forumId={forum}
+                    comment={comment}
+                    queryKey={queryKey}
+                  />
                 )}
               </Box>
               {reply && disableReplies === false && (
@@ -184,7 +188,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                     forum,
                   }}
                   onRequestClose={() => setReply(false)}
-                  onUpdate={onUpdateCache}
+                  onUpdate={onReplyAdded}
                 />
               )}
             </Box>
@@ -262,13 +266,30 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
 interface CommentDeleteButtonProps {
   forumId: string;
   comment: SerializedCommentNested;
+  queryKey: (string | { offset: number })[];
 }
 
 const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
   forumId,
   comment,
+  queryKey,
 }) => {
-  return <DeleteButton forumId={forumId} entry={comment} />;
+  const queryClient = useQueryClient();
+
+  const onCommentDeleted = useCallback(() => {
+    queryClient.setQueryData<Array<SerializedCommentNested>>(
+      queryKey,
+      nestedCommentsDeleteReducer(comment.id)
+    );
+  }, [queryClient, queryKey, comment]);
+
+  return (
+    <DeleteButton
+      forumId={forumId}
+      entry={comment}
+      onDeleted={onCommentDeleted}
+    />
+  );
 };
 
 interface CommentRepliesProps {
@@ -466,6 +487,31 @@ function nestedCommentsLikeReducer(
 ): (
   input: SerializedCommentNested[] | undefined
 ) => SerializedCommentNested[] | undefined {
+  return nestedCommentsReducer(id, (comment) => ({
+    ...comment,
+    likes: increment(comment.likes),
+  }));
+}
+
+function nestedCommentsDeleteReducer(
+  id: string
+): (
+  input: SerializedCommentNested[] | undefined
+) => SerializedCommentNested[] | undefined {
+  return nestedCommentsReducer(id, (comment) => ({
+    ...comment,
+    body: "[deleted]",
+    uri: "[deleted]",
+    editedAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
+  }));
+}
+
+function nestedCommentsReducer(
+  id: string,
+  updater: (comment: SerializedCommentNested) => SerializedCommentNested
+): (
+  input: SerializedCommentNested[] | undefined
+) => SerializedCommentNested[] | undefined {
   return (comments) => {
     if (!comments) {
       return;
@@ -477,10 +523,7 @@ function nestedCommentsLikeReducer(
       if (comment.id === id) {
         return [
           ...comments.slice(0, Number(index)),
-          {
-            ...comment,
-            likes: increment(comment.likes),
-          },
+          updater(comment),
           ...comments.slice(Number(index) + 1),
         ];
       } else if (comment.Children) {
