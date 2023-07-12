@@ -19,6 +19,7 @@ import { getNameFromAddress, getProfiles } from "utils/profile";
 import { ContentType, upload } from "lib/bundlr";
 import { RadioCardMenu } from "components/input";
 import { ImagePicker } from "components/input/imagePicker";
+import { useSessionKeyManager } from "@gumhq/react-sdk";
 
 interface EntryForm {
   title: string;
@@ -65,6 +66,11 @@ export const Editor = ({
   const { connection } = useConnection();
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet();
+  const sessionWallet = useSessionKeyManager(
+    anchorWallet!,
+    connection,
+    "devnet"
+  );
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -157,7 +163,7 @@ export const Editor = ({
         };
       }
 
-      const result = await addEntry(connection, anchorWallet, {
+      const result = await addEntry(connection, anchorWallet, sessionWallet, {
         data: dataArgs,
         forumId: forum.id,
         forumConfig: forum.config,

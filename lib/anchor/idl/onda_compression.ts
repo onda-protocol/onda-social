@@ -62,6 +62,17 @@ export type OndaCompression = {
       accounts: [
         {
           name: "author";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "sessionToken";
+          isMut: false;
+          isSigner: false;
+          isOptional: true;
+        },
+        {
+          name: "signer";
           isMut: true;
           isSigner: true;
         },
@@ -317,6 +328,10 @@ export type OndaCompression = {
               {
                 name: "uri";
                 type: "string";
+              },
+              {
+                name: "nsfw";
+                type: "bool";
               }
             ];
           },
@@ -330,6 +345,10 @@ export type OndaCompression = {
               {
                 name: "uri";
                 type: "string";
+              },
+              {
+                name: "nsfw";
+                type: "bool";
               }
             ];
           },
@@ -343,6 +362,10 @@ export type OndaCompression = {
               {
                 name: "uri";
                 type: "string";
+              },
+              {
+                name: "nsfw";
+                type: "bool";
               }
             ];
           },
@@ -356,6 +379,10 @@ export type OndaCompression = {
               {
                 name: "uri";
                 type: "string";
+              },
+              {
+                name: "nsfw";
+                type: "bool";
               }
             ];
           },
@@ -511,6 +538,17 @@ export const IDL: OndaCompression = {
       accounts: [
         {
           name: "author",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "sessionToken",
+          isMut: false,
+          isSigner: false,
+          isOptional: true,
+        },
+        {
+          name: "signer",
           isMut: true,
           isSigner: true,
         },
@@ -767,6 +805,10 @@ export const IDL: OndaCompression = {
                 name: "uri",
                 type: "string",
               },
+              {
+                name: "nsfw",
+                type: "bool",
+              },
             ],
           },
           {
@@ -779,6 +821,10 @@ export const IDL: OndaCompression = {
               {
                 name: "uri",
                 type: "string",
+              },
+              {
+                name: "nsfw",
+                type: "bool",
               },
             ],
           },
@@ -793,6 +839,10 @@ export const IDL: OndaCompression = {
                 name: "uri",
                 type: "string",
               },
+              {
+                name: "nsfw",
+                type: "bool",
+              },
             ],
           },
           {
@@ -805,6 +855,10 @@ export const IDL: OndaCompression = {
               {
                 name: "uri",
                 type: "string",
+              },
+              {
+                name: "nsfw",
+                type: "bool",
               },
             ],
           },

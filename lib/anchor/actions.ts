@@ -13,6 +13,7 @@ import {
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
+import { SessionWalletInterface } from "@gumhq/react-sdk";
 import base58 from "bs58";
 import pkg from "js-sha3";
 
@@ -29,7 +30,11 @@ import {
   getBloomProgram,
   getProfileProgram,
 } from "./provider";
-import { PLANKTON_MINT, PROTOCOL_FEE_PLANKTON_ATA } from "./constants";
+import {
+  COMPRESSION_PROGRAM_ID,
+  PLANKTON_MINT,
+  PROTOCOL_FEE_PLANKTON_ATA,
+} from "./constants";
 import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
@@ -114,6 +119,7 @@ export async function initForum(
 export async function addEntry(
   connection: web3.Connection,
   wallet: AnchorWallet,
+  session: SessionWalletInterface,
   options: {
     forumId: string;
     forumConfig: string;
@@ -121,12 +127,8 @@ export async function addEntry(
     data: DataV1;
   }
 ): Promise<[string, string] | void> {
+  // @ts-ignore
   const program = getCompressionProgram(connection, wallet);
-  const payer = program.provider.publicKey;
-
-  if (!payer || !program.provider.sendAndConfirm) {
-    throw new Error("Provider not found");
-  }
 
   const merkleTree = new web3.PublicKey(options.forumId);
   const forumConfig = new web3.PublicKey(options.forumConfig);
@@ -144,7 +146,40 @@ export async function addEntry(
     );
   }
 
-  const signature = await program.methods
+  let sessionToken = await session.getSessionToken();
+
+  if (!sessionToken) {
+    const newSession = await session.createSession(
+      COMPRESSION_PROGRAM_ID,
+      true,
+      undefined,
+      ({ sessionToken, publicKey }) => {
+        console.log("Session created: ", sessionToken, publicKey);
+      }
+    );
+
+    if (newSession) {
+      session = newSession;
+      sessionToken = await session.getSessionToken();
+      console.log("Session created:", session);
+    } else {
+      console.error("Failed to create session");
+    }
+  }
+
+  if (!session.publicKey) {
+    throw new Error("Session publicKey not found");
+  }
+
+  if (!session.ownerPublicKey) {
+    throw new Error("Session owner not found");
+  }
+
+  if (!session.signAndSendTransaction) {
+    throw new Error("Session signAndSendTransaction not found");
+  }
+
+  const transaction = await program.methods
     .addEntry(options.data)
     .accounts({
       forumConfig,
@@ -152,12 +187,14 @@ export async function addEntry(
       mint,
       tokenAccount,
       metadata,
+      author: wallet.publicKey,
+      sessionToken: new web3.PublicKey(sessionToken!),
+      signer: session.publicKey,
       logWrapper: SPL_NOOP_PROGRAM_ID,
       compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
     })
-    .rpc({
-      commitment: "confirmed",
-    });
+    .transaction();
+  const [signature] = await session.signAndSendTransaction(transaction);
 
   const logs = await connection.getTransaction(signature, {
     commitment: "confirmed",
@@ -202,6 +239,7 @@ export function getDataHash(
             textPost: {
               title: entry.title,
               uri: entry.uri,
+              nsfw: entry.nsfw,
             },
           })
         );
@@ -212,6 +250,7 @@ export function getDataHash(
             imagePost: {
               title: entry.title,
               uri: entry.uri,
+              nsfw: entry.nsfw,
             },
           })
         );
