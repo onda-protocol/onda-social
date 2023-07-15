@@ -18,7 +18,7 @@ async function getBundlr(
   const bundlr = new WebBundlr(
     BUNDLR_URL,
     "solana",
-    isFreeUpload ? await getOrCreateSession(session) : wallet
+    isFreeUpload ? session : wallet
   );
   await bundlr.ready();
   return bundlr;

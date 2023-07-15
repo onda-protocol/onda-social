@@ -20,6 +20,7 @@ import { ContentType, upload } from "lib/bundlr";
 import { RadioCardMenu } from "components/input";
 import { ImagePicker } from "components/input/imagePicker";
 import { useSessionKeyManager } from "@gumhq/react-sdk";
+import { getOrCreateSession } from "lib/gum";
 
 interface EntryForm {
   title: string;
@@ -107,6 +108,8 @@ export const Editor = ({
         throw new Error("Wallet not connected");
       }
 
+      const session = await getOrCreateSession(sessionWallet);
+
       const forumId = config.type === "comment" ? config.forum : data.forum;
       const forum = await queryClient
         .fetchQuery(["fora"], fetchFora)
@@ -132,12 +135,7 @@ export const Editor = ({
           // }
 
           case "textPost": {
-            uri = await upload(
-              wallet,
-              sessionWallet,
-              data.body,
-              "application/json"
-            );
+            uri = await upload(wallet, session, data.body, "application/json");
             dataArgs = { textPost: { title: data.title, uri } };
             break;
           }
@@ -149,7 +147,7 @@ export const Editor = ({
             const buffer = Buffer.from(await data.image.arrayBuffer());
             uri = await upload(
               wallet,
-              sessionWallet,
+              session,
               buffer,
               data.image.type as ContentType
             );
@@ -163,12 +161,7 @@ export const Editor = ({
           }
         }
       } else {
-        uri = await upload(
-          wallet,
-          sessionWallet,
-          data.body,
-          "application/json"
-        );
+        uri = await upload(wallet, session, data.body, "application/json");
         dataArgs = {
           comment: {
             uri,
@@ -178,7 +171,7 @@ export const Editor = ({
         };
       }
 
-      const result = await addEntry(connection, anchorWallet, sessionWallet, {
+      const result = await addEntry(connection, anchorWallet, session, {
         data: dataArgs,
         forumId: forum.id,
         forumConfig: forum.config,

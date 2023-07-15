@@ -146,10 +146,7 @@ export async function addEntry(
     );
   }
 
-  session = await getOrCreateSession(session);
-  let sessionToken = await session.getSessionToken();
-
-  if (!sessionToken) {
+  if (!session.sessionToken) {
     throw new Error("Session token not found");
   }
 
@@ -174,7 +171,7 @@ export async function addEntry(
       tokenAccount,
       metadata,
       author: wallet.publicKey,
-      sessionToken: new web3.PublicKey(sessionToken!),
+      sessionToken: new web3.PublicKey(session.sessionToken),
       signer: session.publicKey,
       logWrapper: SPL_NOOP_PROGRAM_ID,
       compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
