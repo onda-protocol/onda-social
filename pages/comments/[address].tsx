@@ -75,6 +75,7 @@ const Comments: NextPage<PageProps> = () => {
             parent: null,
             post: id,
             body: body,
+            nsfw: false,
             uri: uri,
             likes: "0",
             nonce: nonce,
@@ -179,6 +180,7 @@ const Comments: NextPage<PageProps> = () => {
       <Editor
         buttonLabel="Comment"
         placeholder="Got some thinky thoughts?"
+        successMessage="Reply added"
         config={{
           type: "comment",
           post: id,

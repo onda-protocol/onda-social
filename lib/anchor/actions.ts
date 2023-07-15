@@ -40,6 +40,7 @@ import {
   SerializedCommentNested,
   fetchProof,
 } from "lib/api";
+import { getOrCreateSession } from "lib/gum";
 
 export async function initForum(
   connection: web3.Connection,
@@ -129,7 +130,6 @@ export async function addEntry(
 ): Promise<[string, string] | void> {
   // @ts-ignore
   const program = getCompressionProgram(connection, wallet);
-
   const merkleTree = new web3.PublicKey(options.forumId);
   const forumConfig = new web3.PublicKey(options.forumConfig);
   const collections = options.collections
@@ -146,25 +146,11 @@ export async function addEntry(
     );
   }
 
+  session = await getOrCreateSession(session);
   let sessionToken = await session.getSessionToken();
 
   if (!sessionToken) {
-    const newSession = await session.createSession(
-      COMPRESSION_PROGRAM_ID,
-      true,
-      undefined,
-      ({ sessionToken, publicKey }) => {
-        console.log("Session created: ", sessionToken, publicKey);
-      }
-    );
-
-    if (newSession) {
-      session = newSession;
-      sessionToken = await session.getSessionToken();
-      console.log("Session created:", session);
-    } else {
-      console.error("Failed to create session");
-    }
+    throw new Error("Session token not found");
   }
 
   if (!session.publicKey) {
@@ -194,14 +180,19 @@ export async function addEntry(
       compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
     })
     .transaction();
-  const [signature] = await session.signAndSendTransaction(transaction);
+  const signatures = await session.signAndSendTransaction(
+    transaction,
+    connection,
+    {
+      preflightCommitment: "confirmed",
+    }
+  );
 
-  const logs = await connection.getTransaction(signature, {
-    commitment: "confirmed",
-    maxSupportedTransactionVersion: 2,
-  });
+  console.log("Transaction sent: ", signatures);
 
-  const innerInstructions = logs?.meta?.innerInstructions?.[0];
+  const response = await waitForConfirmation(connection, signatures[0]);
+  const innerInstructions = response?.meta?.innerInstructions?.[0];
+
   if (innerInstructions) {
     const noopIx = innerInstructions.instructions[0];
     const serializedEvent = noopIx.data;
@@ -216,6 +207,31 @@ export async function addEntry(
       return [eventData.id.toBase58(), eventData.nonce.toString()];
     }
   }
+}
+
+function waitForConfirmation(
+  connection: web3.Connection,
+  signature: string,
+  retries: number = 0
+): Promise<web3.VersionedTransactionResponse | undefined> {
+  return new Promise(async (resolve, reject) => {
+    const logs = await connection.getTransaction(signature, {
+      commitment: "confirmed",
+      maxSupportedTransactionVersion: 2,
+    });
+
+    if (logs) {
+      return resolve(logs);
+    }
+
+    if (retries > 3) {
+      return reject(undefined);
+    }
+
+    setTimeout(() => {
+      waitForConfirmation(connection, signature, retries + 1).then(resolve);
+    }, 500);
+  });
 }
 
 export function getDataHash(

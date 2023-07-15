@@ -182,6 +182,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                   placeholder={`Reply to ${
                     comment.Author.name ?? comment.author
                   }`}
+                  successMessage="Reply added"
                   config={{
                     type: "comment",
                     parent: comment.id,

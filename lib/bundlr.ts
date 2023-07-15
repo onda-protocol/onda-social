@@ -1,16 +1,26 @@
 import { WebBundlr } from "@bundlr-network/client";
+import { SessionWalletInterface } from "@gumhq/react-sdk";
 import { WalletContextState } from "@solana/wallet-adapter-react";
+import { getOrCreateSession } from "./gum";
 
 const BUNDLR_URL = process.env.NEXT_PUBLIC_BUNDLR_URL as string;
 
-let bundlr: WebBundlr;
+async function getBundlr(
+  wallet: WalletContextState,
+  session: SessionWalletInterface,
+  data: string | Buffer
+) {
+  const byteLength = Buffer.isBuffer(data)
+    ? data.byteLength
+    : Buffer.from(data, "utf-8").byteLength;
+  const isFreeUpload = byteLength < 100000;
 
-async function getBundlr(wallet: WalletContextState) {
-  if (!bundlr) {
-    bundlr = new WebBundlr(BUNDLR_URL, "solana", wallet);
-    await bundlr.ready();
-  }
-  console.log("bundlr", bundlr);
+  const bundlr = new WebBundlr(
+    BUNDLR_URL,
+    "solana",
+    isFreeUpload ? await getOrCreateSession(session) : wallet
+  );
+  await bundlr.ready();
   return bundlr;
 }
 
@@ -23,11 +33,11 @@ export type ContentType =
 
 export async function upload(
   wallet: WalletContextState,
+  session: SessionWalletInterface,
   data: string | Buffer,
   contentType: ContentType
 ) {
-  console.log(data, contentType);
-  const bundlr = await getBundlr(wallet);
+  const bundlr = await getBundlr(wallet, session, data);
   const result = await bundlr.upload(data, {
     tags: [{ name: "Content-Type", value: contentType }],
   });

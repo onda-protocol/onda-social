@@ -5,6 +5,12 @@ import {
   WalletProvider,
 } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import { SessionWalletProvider, useSessionKeyManager } from "@gumhq/react-sdk";
+import {
+  AnchorWallet,
+  useAnchorWallet,
+  useConnection,
+} from "@solana/wallet-adapter-react";
 import {
   Hydrate,
   QueryClient,
@@ -49,16 +55,18 @@ export default function App({ Component, pageProps }: AppProps) {
         >
           <WalletProvider wallets={wallets} autoConnect>
             <WalletModalProvider>
-              <ChakraProvider theme={theme}>
-                <DocumentHead
-                  title="Onda | Find your community"
-                  description="Decentralized, community-owned, and community-driven. Discover your web3 tribe today with Onda."
-                  url={``}
-                />
-                <Navbar />
-                <Component {...pageProps} />
-                <Toaster />
-              </ChakraProvider>
+              <SessionProvider>
+                <ChakraProvider theme={theme}>
+                  <DocumentHead
+                    title="Onda | Find your community"
+                    description="Decentralized, community-owned, and community-driven. Discover your web3 tribe today with Onda."
+                    url={``}
+                  />
+                  <Navbar />
+                  <Component {...pageProps} />
+                  <Toaster />
+                </ChakraProvider>
+              </SessionProvider>
             </WalletModalProvider>
           </WalletProvider>
         </ConnectionProvider>
@@ -67,3 +75,20 @@ export default function App({ Component, pageProps }: AppProps) {
     </QueryClientProvider>
   );
 }
+
+interface SessionProviderProps {
+  children: React.ReactNode;
+}
+
+const SessionProvider = ({ children }: SessionProviderProps) => {
+  const { connection } = useConnection();
+  const anchorWallet = useAnchorWallet() as AnchorWallet;
+  const cluster = "devnet"; // or "mainnet-beta", "testnet", "localnet"
+  const sessionWallet = useSessionKeyManager(anchorWallet, connection, cluster);
+
+  return (
+    <SessionWalletProvider sessionWallet={sessionWallet}>
+      {children}
+    </SessionWalletProvider>
+  );
+};

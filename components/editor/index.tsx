@@ -132,7 +132,12 @@ export const Editor = ({
           // }
 
           case "textPost": {
-            uri = await upload(wallet, data.body, "application/json");
+            uri = await upload(
+              wallet,
+              sessionWallet,
+              data.body,
+              "application/json"
+            );
             dataArgs = { textPost: { title: data.title, uri } };
             break;
           }
@@ -142,7 +147,12 @@ export const Editor = ({
               throw new Error("Image required");
             }
             const buffer = Buffer.from(await data.image.arrayBuffer());
-            uri = await upload(wallet, buffer, data.image.type as ContentType);
+            uri = await upload(
+              wallet,
+              sessionWallet,
+              buffer,
+              data.image.type as ContentType
+            );
             dataArgs = { imagePost: { title: data.title, uri } };
             console.log("dataArgs", dataArgs);
             break;
@@ -153,7 +163,12 @@ export const Editor = ({
           }
         }
       } else {
-        uri = await upload(wallet, data.body, "application/json");
+        uri = await upload(
+          wallet,
+          sessionWallet,
+          data.body,
+          "application/json"
+        );
         dataArgs = {
           comment: {
             uri,
