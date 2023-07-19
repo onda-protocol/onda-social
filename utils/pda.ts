@@ -4,6 +4,7 @@ import {
   BLOOM_PROGRAM_ID,
   COMPRESSION_PROGRAM_ID,
   PROFILE_PROGRAM_ID,
+  PLANKTON_MINT,
 } from "../lib/anchor/constants";
 
 export function findMetadataPda(mint: web3.PublicKey) {
@@ -16,6 +17,27 @@ export function findMetadataPda(mint: web3.PublicKey) {
 export function findBloomPda(entryId: web3.PublicKey, author: web3.PublicKey) {
   return web3.PublicKey.findProgramAddressSync(
     [Buffer.from("bloom"), entryId.toBuffer(), author.toBuffer()],
+    BLOOM_PROGRAM_ID
+  )[0];
+}
+
+export function findEscrowTokenPda(owner: web3.PublicKey) {
+  return web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("escrow"), PLANKTON_MINT.toBuffer(), owner.toBuffer()],
+    BLOOM_PROGRAM_ID
+  )[0];
+}
+
+export function findRewardEscrowPda() {
+  return web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("reward_escrow"), PLANKTON_MINT.toBuffer()],
+    BLOOM_PROGRAM_ID
+  )[0];
+}
+
+export function findClaimMarkerPda(owner: web3.PublicKey) {
+  return web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("claim_marker"), owner.toBuffer()],
     BLOOM_PROGRAM_ID
   )[0];
 }

@@ -22,6 +22,9 @@ import {
   findBloomPda,
   findMetadataPda,
   findProfilePda,
+  findEscrowTokenPda,
+  findRewardEscrowPda,
+  findClaimMarkerPda,
 } from "utils/pda";
 import { fetchAllAccounts } from "utils/web3";
 import { DataV1, LeafSchemaV1 } from "./types";
@@ -128,6 +131,7 @@ export async function addEntry(
     data: DataV1;
   }
 ): Promise<[string, string] | void> {
+  assertSessionIsValid(session);
   // @ts-ignore
   const program = getCompressionProgram(connection, wallet);
   const merkleTree = new web3.PublicKey(options.forumId);
@@ -146,22 +150,6 @@ export async function addEntry(
     );
   }
 
-  if (!session.sessionToken) {
-    throw new Error("Session token not found");
-  }
-
-  if (!session.publicKey) {
-    throw new Error("Session publicKey not found");
-  }
-
-  if (!session.ownerPublicKey) {
-    throw new Error("Session owner not found");
-  }
-
-  if (!session.signAndSendTransaction) {
-    throw new Error("Session signAndSendTransaction not found");
-  }
-
   const transaction = await program.methods
     .addEntry(options.data)
     .accounts({
@@ -171,13 +159,13 @@ export async function addEntry(
       tokenAccount,
       metadata,
       author: wallet.publicKey,
-      sessionToken: new web3.PublicKey(session.sessionToken),
-      signer: session.publicKey,
+      sessionToken: new web3.PublicKey(session.sessionToken!),
+      signer: session.publicKey!,
       logWrapper: SPL_NOOP_PROGRAM_ID,
       compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
     })
     .transaction();
-  const signatures = await session.signAndSendTransaction(
+  const signatures = await session.signAndSendTransaction!(
     transaction,
     connection,
     {
@@ -352,34 +340,68 @@ export async function deleteEntry(
 export async function likeEntry(
   connection: web3.Connection,
   wallet: AnchorWallet,
+  session: SessionWalletInterface,
   options: {
     id: string;
     author: string;
   }
 ) {
+  assertSessionIsValid(session);
+
   const program = getBloomProgram(connection, wallet);
   const entryId = new web3.PublicKey(options.id);
   const author = new web3.PublicKey(options.author);
+  const sessionToken = new web3.PublicKey(session.sessionToken!);
   const bloomPda = findBloomPda(entryId, author);
-  const authorTokenAccount = await getAssociatedTokenAddress(
-    PLANKTON_MINT,
-    author
-  );
-  const depositTokenAccount = await getAssociatedTokenAddress(
-    PLANKTON_MINT,
-    wallet.publicKey
-  );
+  const authorTokenAccount = await findEscrowTokenPda(author);
+  const depositTokenAccount = await findEscrowTokenPda(wallet.publicKey);
 
-  await program.methods
+  const transaction = await program.methods
     .feedPlankton(entryId, new BN(100_000))
     .accounts({
       payer: wallet.publicKey,
       author,
+      sessionToken,
       authorTokenAccount,
       depositTokenAccount,
       bloom: bloomPda,
       mint: PLANKTON_MINT,
       protocolFeeTokenAccount: PROTOCOL_FEE_PLANKTON_ATA,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .transaction();
+
+  const signatures = await session.signAndSendTransaction!(
+    transaction,
+    connection,
+    {
+      preflightCommitment: "confirmed",
+    }
+  );
+  const latestBlockhash = await connection.getLatestBlockhash();
+  await connection.confirmTransaction({
+    ...latestBlockhash,
+    signature: signatures[0],
+  });
+}
+
+export async function claimPlankton(
+  connection: web3.Connection,
+  wallet: AnchorWallet
+) {
+  const program = getBloomProgram(connection, wallet);
+  const escrowTokenAccount = await findEscrowTokenPda(wallet.publicKey);
+  const rewardTokenAccount = await findRewardEscrowPda();
+  const claimMarker = await findClaimMarkerPda(wallet.publicKey);
+
+  await program.methods
+    .claimPlankton()
+    .accounts({
+      signer: wallet.publicKey,
+      escrowTokenAccount,
+      rewardTokenAccount,
+      claimMarker,
+      mint: PLANKTON_MINT,
       tokenProgram: TOKEN_PROGRAM_ID,
     })
     .rpc({
@@ -497,4 +519,22 @@ async function fetchMetadataAccounts(
   return rawMetadataAccounts
     .map((account) => (account ? Metadata.fromAccountInfo(account)[0] : null))
     .filter((metadata): metadata is NonNullable<Metadata> => metadata !== null);
+}
+
+function assertSessionIsValid(session: SessionWalletInterface) {
+  if (!session.sessionToken) {
+    throw new Error("Session token not found");
+  }
+
+  if (!session.publicKey) {
+    throw new Error("Session publicKey not found");
+  }
+
+  if (!session.ownerPublicKey) {
+    throw new Error("Session owner not found");
+  }
+
+  if (!session.signAndSendTransaction) {
+    throw new Error("Session signAndSendTransaction not found");
+  }
 }

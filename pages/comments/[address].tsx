@@ -57,7 +57,7 @@ const Comments: NextPage<PageProps> = () => {
   );
 
   const onCommentCreated = useCallback(
-    async (entryId: string, nonce: string, body: string, uri: string) => {
+    async (vars: { id: string; nonce: string; body: string; uri: string }) => {
       if (anchorWallet === undefined) return;
 
       const userAddress = anchorWallet.publicKey.toBase58();
@@ -69,16 +69,16 @@ const Comments: NextPage<PageProps> = () => {
         commentsQueryKey,
         (data) => {
           const newComment = {
-            id: entryId,
+            id: vars.id,
             createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
             editedAt: null,
             parent: null,
             post: id,
-            body: body,
+            body: vars.body,
             nsfw: false,
-            uri: uri,
+            uri: vars.uri,
             likes: "0",
-            nonce: nonce,
+            nonce: vars.nonce,
             hash: "",
             author: userAddress,
             Author: author,

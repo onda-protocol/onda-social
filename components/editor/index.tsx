@@ -6,20 +6,23 @@ import {
   useWallet,
 } from "@solana/wallet-adapter-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Forum, PostType } from "@prisma/client";
 import toast from "react-hot-toast";
 import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
+import { useSessionWallet } from "@gumhq/react-sdk";
 import { IoDocumentText, IoImage } from "react-icons/io5";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/router";
+import { randomBytes } from "crypto";
 
 import { sleep } from "utils/async";
-import { fetchFora } from "lib/api";
+import { getPrismaPostType } from "utils/format";
+import { SerializedForum, fetchFora } from "lib/api";
 import { addEntry } from "lib/anchor/actions";
 import { getNameFromAddress, getProfiles } from "utils/profile";
 import { ContentType, upload } from "lib/bundlr";
 import { RadioCardMenu } from "components/input";
 import { ImagePicker } from "components/input/imagePicker";
-import { useSessionKeyManager } from "@gumhq/react-sdk";
 import { getOrCreateSession } from "lib/gum";
 
 interface EntryForm {
@@ -51,7 +54,17 @@ interface EditorProps {
   successMessage?: string;
   config: EntryConfig;
   onRequestClose?: () => void;
-  onUpdate?: (id: string, nonce: string, body: string, uri: string) => void;
+  onUpdate?: (data: {
+    id: string;
+    nonce: string;
+    title: string;
+    nsfw?: boolean;
+    body: string;
+    uri: string;
+    postType: PostType;
+    author: string;
+    Forum: SerializedForum;
+  }) => void;
 }
 
 export const Editor = ({
@@ -67,11 +80,7 @@ export const Editor = ({
   const { connection } = useConnection();
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet();
-  const sessionWallet = useSessionKeyManager(
-    anchorWallet!,
-    connection,
-    "devnet"
-  );
+  const sessionWallet = useSessionWallet();
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -99,7 +108,8 @@ export const Editor = ({
   }, [methods.setValue, config.forum]);
 
   const mutation = useMutation<
-    { uri: string; entryId: string; nonce: string } | void,
+    | { uri: string; entryId: string; nonce: string; forum: SerializedForum }
+    | undefined,
     Error,
     EntryForm
   >(
@@ -152,7 +162,6 @@ export const Editor = ({
               data.image.type as ContentType
             );
             dataArgs = { imagePost: { title: data.title, uri } };
-            console.log("dataArgs", dataArgs);
             break;
           }
 
@@ -183,6 +192,7 @@ export const Editor = ({
           uri,
           entryId: result[0],
           nonce: result[1],
+          forum,
         };
       }
     },
@@ -199,7 +209,17 @@ export const Editor = ({
         }
 
         if (data && onUpdate) {
-          onUpdate(data.entryId, data.nonce, variables.body, data.uri);
+          onUpdate({
+            id: data.entryId,
+            nonce: data.nonce,
+            title: variables.title,
+            nsfw: false,
+            body: variables.body,
+            uri: data.uri,
+            postType: getPrismaPostType(variables.postType),
+            author: wallet.publicKey!.toBase58(),
+            Forum: data.forum,
+          });
         }
 
         if (invalidateQueries) {
@@ -207,7 +227,7 @@ export const Editor = ({
           await queryClient.invalidateQueries(invalidateQueries);
         }
 
-        if (redirect) {
+        if (data && redirect) {
           router.push(redirect);
         }
       },

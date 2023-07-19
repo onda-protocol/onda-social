@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { Prisma } from "@prisma/client";
 
 import { parseBigInt } from "utils/format";
-import prisma from "lib/prisma";
+import { queryPosts } from "./index";
 
 export default async function handler(
   req: NextApiRequest,
@@ -9,23 +10,7 @@ export default async function handler(
 ) {
   const { address } = req.query;
 
-  const result = await prisma.post.findMany({
-    where: {
-      forum: address as string,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      Author: true,
-      Forum: true,
-      _count: {
-        select: {
-          Comments: true,
-        },
-      },
-    },
-  });
+  const results = await queryPosts(Prisma.sql`WHERE "Forum"."id" = ${address}`);
 
-  res.json(parseBigInt(result));
+  res.json(parseBigInt(results));
 }

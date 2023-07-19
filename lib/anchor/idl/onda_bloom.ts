@@ -8,6 +8,17 @@ export type OndaBloom = {
         {
           name: "payer";
           isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "sessionToken";
+          isMut: false;
+          isSigner: false;
+          isOptional: true;
+        },
+        {
+          name: "signer";
+          isMut: true;
           isSigner: true;
         },
         {
@@ -17,7 +28,7 @@ export type OndaBloom = {
         },
         {
           name: "author";
-          isMut: true;
+          isMut: false;
           isSigner: false;
         },
         {
@@ -66,6 +77,52 @@ export type OndaBloom = {
           type: "u64";
         }
       ];
+    },
+    {
+      name: "claimPlankton";
+      accounts: [
+        {
+          name: "signer";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "escrowTokenAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "rewardTokenAccount";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "claimMarker";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "mint";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "associatedTokenProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [];
     }
   ];
   accounts: [
@@ -77,6 +134,18 @@ export type OndaBloom = {
           {
             name: "plankton";
             type: "u64";
+          }
+        ];
+      };
+    },
+    {
+      name: "claimMarker";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "marker";
+            type: "u8";
           }
         ];
       };
@@ -111,6 +180,17 @@ export const IDL: OndaBloom = {
         {
           name: "payer",
           isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "sessionToken",
+          isMut: false,
+          isSigner: false,
+          isOptional: true,
+        },
+        {
+          name: "signer",
+          isMut: true,
           isSigner: true,
         },
         {
@@ -120,7 +200,7 @@ export const IDL: OndaBloom = {
         },
         {
           name: "author",
-          isMut: true,
+          isMut: false,
           isSigner: false,
         },
         {
@@ -170,6 +250,52 @@ export const IDL: OndaBloom = {
         },
       ],
     },
+    {
+      name: "claimPlankton",
+      accounts: [
+        {
+          name: "signer",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "escrowTokenAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "rewardTokenAccount",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "claimMarker",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "mint",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "associatedTokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [],
+    },
   ],
   accounts: [
     {
@@ -180,6 +306,18 @@ export const IDL: OndaBloom = {
           {
             name: "plankton",
             type: "u64",
+          },
+        ],
+      },
+    },
+    {
+      name: "claimMarker",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "marker",
+            type: "u8",
           },
         ],
       },

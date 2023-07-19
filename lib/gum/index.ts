@@ -1,12 +1,16 @@
 import { SessionWalletInterface } from "@gumhq/react-sdk";
+import { web3 } from "@project-serum/anchor";
 import { COMPRESSION_PROGRAM_ID } from "lib/anchor/constants";
 
-export async function getOrCreateSession(session: SessionWalletInterface) {
+export async function getOrCreateSession(
+  session: SessionWalletInterface,
+  programId: web3.PublicKey = COMPRESSION_PROGRAM_ID
+) {
   let sessionToken = await session.getSessionToken();
 
   if (!sessionToken) {
     const newSession = await session.createSession(
-      COMPRESSION_PROGRAM_ID,
+      programId,
       true,
       24 * 60,
       ({ sessionToken, publicKey }) => {

@@ -1,12 +1,15 @@
 import { Box, Button } from "@chakra-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
+import { useSessionWallet } from "@gumhq/react-sdk";
 import { memo, useCallback, useMemo, useState } from "react";
 import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
 
 import { SerializedCommentNested, fetchReplies, fetchUser } from "lib/api";
 import { likeEntry } from "lib/anchor";
+import { BLOOM_PROGRAM_ID } from "lib/anchor/constants";
+import { getOrCreateSession } from "lib/gum";
 import { Markdown } from "../markdown";
 import { Editor } from "../editor";
 import { PostMeta } from "../post/meta";
@@ -41,7 +44,12 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
     );
 
     const onReplyAdded = useCallback(
-      async (entryId: string, nonce: string, body: string, uri: string) => {
+      async (vars: {
+        id: string;
+        nonce: string;
+        body: string;
+        uri: string;
+      }) => {
         if (anchorWallet === undefined) return;
 
         const userAddress = anchorWallet.publicKey.toBase58();
@@ -51,16 +59,16 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
 
         const hasNestedChildren = "Children" in comment;
         const newComment = {
-          id: entryId,
+          id: vars.id,
           createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
           editedAt: null,
           parent: comment.id,
           post: comment.post,
-          body: body,
-          uri: uri,
+          body: vars.body,
+          uri: vars.uri,
           nsfw: false,
           likes: "0",
-          nonce: nonce,
+          nonce: vars.nonce,
           hash: "",
           author: userAddress,
           Author: author,
@@ -233,15 +241,18 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
 }) => {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
+  const sessionWallet = useSessionWallet();
   const queryClient = useQueryClient();
 
   const mutation = useMutation(
-    () => {
+    async () => {
       if (!anchorWallet) {
         throw new Error("Wallet not connected");
       }
 
-      return likeEntry(connection, anchorWallet, {
+      const session = await getOrCreateSession(sessionWallet, BLOOM_PROGRAM_ID);
+
+      return likeEntry(connection, anchorWallet, session, {
         id: comment.id,
         author: comment.author,
       });
