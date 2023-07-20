@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ["amazonaws.com", "arweave.net", "dweb.link"],
+    domains: ["amazonaws.com", "arweave.net", "dweb.link", "nftstorage.link"],
     remotePatterns: [
       {
         protocol: "https",
@@ -15,6 +15,10 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "**.amazonaws.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.nftstorage.link",
       },
     ],
   },
