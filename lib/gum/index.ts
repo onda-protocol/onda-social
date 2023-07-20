@@ -12,7 +12,7 @@ export async function getOrCreateSession(
     const newSession = await session.createSession(
       programId,
       true,
-      24 * 60,
+      60,
       ({ sessionToken, publicKey }) => {
         console.log("Session created: ", sessionToken, publicKey);
       }
