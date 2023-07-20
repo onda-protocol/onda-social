@@ -73,17 +73,7 @@ export async function initForum(
   });
 
   const initIx = await program.methods
-    .initForum(maxDepth, maxBufferSize, [
-      {
-        collection: {
-          /// Chicken Tribe Collection
-          address: new web3.PublicKey(
-            "HdKHJ71tszT6xBdox5JL4yEnDZ2U5CAzczqeKANAJu6P"
-            // "FcAQivai8rtj48MbuEvRf94Yqymz6N9bkxcudpgRqgcJ"
-          ),
-        },
-      },
-    ])
+    .initForum(maxDepth, maxBufferSize, null)
     .accounts({
       payer,
       forumConfig,
@@ -131,9 +121,11 @@ export async function addEntry(
     ? options.collections.map((collection) => new web3.PublicKey(collection))
     : undefined;
 
-  let mint, metadata, tokenAccount;
+  let mint = null;
+  let metadata = null;
+  let tokenAccount = null;
 
-  if (collections) {
+  if (collections?.length) {
     [mint, metadata, tokenAccount] = await fetchTokenAccounts(
       connection,
       wallet.publicKey,

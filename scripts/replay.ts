@@ -17,10 +17,10 @@ async function main() {
   // await enhancedTransactionParser(sortedProfileTxs);
   const { data: entries } = await axios.post(
     // `https://api-devnet.helius.xyz/v0/addresses/ondaUaJpDBZZQzpGe5Tr391CbuJH1UpZuRcS7sZU2GB/transactions?api-key=${apiKey}&limit=1000`
-    `https://api-devnet.helius.xyz/v0/transactions/?api-key=${apiKey}`,
+    `https://api.helius.xyz/v0/transactions/?api-key=${apiKey}`,
     {
       transactions: [
-        "4cwZHDD4Dynxa8x1S5fDLSp4MroC1CJbWkmYHWJFEyYDrCxo1Dn2cgXKwETxawZY9nHJGq2vfJogePimNAnzjihs",
+        "4sbD5HMuk5ErWXRfZMj15hAcci57cRt2kKdW9283y9LrbA2VUMzkkTyq8x4YQsz8oTrV6WMue3e6RsaYo7vbMCjV",
       ],
     },
     {

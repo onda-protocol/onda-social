@@ -14,16 +14,13 @@ interface Profile {
 
 const profiles = new Map<string, Profile>();
 
-profiles.set("EEkFZBVZnjk4Mm5HVbUQCPMoyAoSod9VkiUcPWdsHz2t", {
-  name: "ChickenTribe",
+profiles.set("BC8yMiHMQ6kiHFqxxNunQrdKb6jgV92fj89amU8qT9B6", {
+  name: "self",
   description:
-    "ChickenTribe is a collection of 3000 unique chickens. Home of the Combinator and SugarUI, we are a community of artists, devs and builders.",
-  image: "https://chickentribe.s3.us-west-2.amazonaws.com/collection.png",
+    "The self-referential onda profile. The place for announcements, news, and updates.",
+  image: "/profile.png",
   links: {
-    twitter: "https://twitter.com/ChickenTribe",
-    discord: "https://discord.gg/H3DbQRSjUa",
-    website: "https://www.chickentribe.com/",
-    magicEden: "https://magiceden.io/marketplace/chicken_tribe",
+    twitter: "https://twitter.com/OndaProtocol",
   },
 });
 
