@@ -9,18 +9,10 @@ export async function getOrCreateSession(
   let sessionToken = await session.getSessionToken();
 
   if (!sessionToken) {
-    const newSession = await session.createSession(
-      programId,
-      true,
-      60,
-      ({ sessionToken, publicKey }) => {
-        console.log("Session created: ", sessionToken, publicKey);
-      }
-    );
+    const newSession = await session.createSession(programId, true, 60);
 
     if (newSession) {
       session = newSession;
-      console.log("Session created:", session);
     } else {
       console.error("Failed to create session");
     }
