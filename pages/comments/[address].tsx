@@ -158,6 +158,8 @@ const Comments: NextPage<PageProps> = () => {
     <Container maxW="container.md">
       <Box mt="12">
         <PostMeta
+          showRewards
+          likes={Number(postQuery.data.likes)}
           author={postQuery.data.Author}
           forum={postQuery.data.forum}
           createdAt={postQuery.data.createdAt}

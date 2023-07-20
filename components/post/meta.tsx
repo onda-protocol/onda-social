@@ -10,9 +10,11 @@ import dayjs from "lib/dayjs";
 
 interface PostMetaProps {
   author: User;
+  likes: number;
   createdAt?: string;
   editedAt?: string | null;
   forum?: string;
+  showRewards?: boolean;
   displayAvatar?: boolean;
 }
 
@@ -24,9 +26,11 @@ const Dot = () => (
 
 export const PostMeta: React.FC<PostMetaProps> = ({
   author,
+  likes,
   forum,
   createdAt,
   editedAt,
+  showRewards = false,
   displayAvatar = false,
 }) => {
   const authorAddress = useMemo(
@@ -131,6 +135,19 @@ export const PostMeta: React.FC<PostMetaProps> = ({
           </Box>
         </Link>
       </Text>
+      {showRewards && likes >= 10 && (
+        <Box ml="2">
+          <Image
+            alt="Plank icon"
+            src="https://spl6zzbxyf3yvcbh2ltohntq24pfsxpl2n3rpr7t7twqfcszee5q.arweave.net/k9fs5DfBd4qIJ9Lm47Zw1x5ZXevTdxfH8_ztAopZITs"
+            height={16}
+            width={16}
+            style={{
+              borderRadius: "2px",
+            }}
+          />
+        </Box>
+      )}
     </Box>
   );
 };

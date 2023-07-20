@@ -72,6 +72,7 @@ export const PostListItem = ({ post }: PostListItemProps) => {
     >
       <PostMeta
         author={post.Author}
+        likes={Number(post.likes)}
         forum={post.forum}
         createdAt={String(post.createdAt)}
       />

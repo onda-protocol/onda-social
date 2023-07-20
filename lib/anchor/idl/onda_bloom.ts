@@ -60,11 +60,6 @@ export type OndaBloom = {
           name: "tokenProgram";
           isMut: false;
           isSigner: false;
-        },
-        {
-          name: "associatedTokenProgram";
-          isMut: false;
-          isSigner: false;
         }
       ];
       args: [
@@ -93,7 +88,7 @@ export type OndaBloom = {
         },
         {
           name: "rewardTokenAccount";
-          isMut: false;
+          isMut: true;
           isSigner: false;
         },
         {
@@ -113,11 +108,6 @@ export type OndaBloom = {
         },
         {
           name: "tokenProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
-          name: "associatedTokenProgram";
           isMut: false;
           isSigner: false;
         }
@@ -233,11 +223,6 @@ export const IDL: OndaBloom = {
           isMut: false,
           isSigner: false,
         },
-        {
-          name: "associatedTokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
       ],
       args: [
         {
@@ -265,7 +250,7 @@ export const IDL: OndaBloom = {
         },
         {
           name: "rewardTokenAccount",
-          isMut: false,
+          isMut: true,
           isSigner: false,
         },
         {
@@ -285,11 +270,6 @@ export const IDL: OndaBloom = {
         },
         {
           name: "tokenProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "associatedTokenProgram",
           isMut: false,
           isSigner: false,
         },

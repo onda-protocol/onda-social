@@ -159,7 +159,9 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
         <Box p="4" pb="2">
           <PostMeta
             displayAvatar
+            showRewards
             author={comment.Author}
+            likes={Number(comment.likes)}
             createdAt={comment.createdAt}
             editedAt={comment.editedAt}
           />

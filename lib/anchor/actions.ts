@@ -1,10 +1,6 @@
 import { web3, BN } from "@project-serum/anchor";
 import { PostType } from "@prisma/client";
-import {
-  AccountLayout,
-  getAssociatedTokenAddress,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
+import { AccountLayout, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
@@ -33,17 +29,12 @@ import {
   getBloomProgram,
   getProfileProgram,
 } from "./provider";
-import {
-  COMPRESSION_PROGRAM_ID,
-  PLANKTON_MINT,
-  PROTOCOL_FEE_PLANKTON_ATA,
-} from "./constants";
+import { PLANKTON_MINT, PROTOCOL_FEE_PLANKTON_ATA } from "./constants";
 import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
   fetchProof,
 } from "lib/api";
-import { getOrCreateSession } from "lib/gum";
 
 export async function initForum(
   connection: web3.Connection,

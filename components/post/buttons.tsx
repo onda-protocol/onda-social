@@ -2,9 +2,10 @@ import Link from "next/link";
 import { Box, Text, Tooltip } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useSessionWallet } from "@gumhq/react-sdk";
 import { IoChatbox, IoTrash } from "react-icons/io5";
 import { GiSadCrab } from "react-icons/gi";
-import { MouseEventHandler, forwardRef } from "react";
+import { MouseEventHandler, forwardRef, use } from "react";
 import toast from "react-hot-toast";
 
 import { deleteEntry, getDataHash, likeEntry } from "lib/anchor";
@@ -12,6 +13,8 @@ import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
 } from "lib/api";
+import { getOrCreateSession } from "lib/gum";
+import { BLOOM_PROGRAM_ID } from "lib/anchor/constants";
 
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
@@ -51,17 +54,16 @@ interface PostLikeButtonProps {
 
 export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
   const { connection } = useConnection();
-  const anchorWallet = useAnchorWallet();
+  const anchorWallet = useAnchorWallet()!;
   const queryClient = useQueryClient();
+  const sessionWallet = useSessionWallet();
   const isAuthor = anchorWallet?.publicKey?.toBase58() === post.author;
 
   const mutation = useMutation(
-    () => {
-      if (!anchorWallet) {
-        throw new Error("Wallet not connected");
-      }
+    async () => {
+      const session = await getOrCreateSession(sessionWallet, BLOOM_PROGRAM_ID);
 
-      return likeEntry(connection, anchorWallet, {
+      return likeEntry(connection, anchorWallet, session, {
         id: post.id,
         author: post.author,
       });
@@ -226,7 +228,7 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
 );
 
 export const LikeButton: React.FC<Omit<PostButtonProps, "icon">> = (props) => (
-  <Tooltip label="Boost post with PLANK" shouldWrapChildren>
+  <Tooltip label="Reward PLANK" shouldWrapChildren>
     <PostButton icon={<GiSadCrab />} {...props} />
   </Tooltip>
 );
