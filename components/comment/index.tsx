@@ -252,9 +252,7 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
         throw new Error("Wallet not connected");
       }
 
-      const session = await getOrCreateSession(sessionWallet, BLOOM_PROGRAM_ID);
-
-      return likeEntry(connection, anchorWallet, session, {
+      return likeEntry(connection, anchorWallet, {
         id: comment.id,
         author: comment.author,
       });

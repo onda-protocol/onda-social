@@ -61,9 +61,7 @@ export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
 
   const mutation = useMutation(
     async () => {
-      const session = await getOrCreateSession(sessionWallet, BLOOM_PROGRAM_ID);
-
-      return likeEntry(connection, anchorWallet, session, {
+      return likeEntry(connection, anchorWallet, {
         id: post.id,
         author: post.author,
       });

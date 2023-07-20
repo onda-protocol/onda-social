@@ -323,28 +323,24 @@ export async function deleteEntry(
 export async function likeEntry(
   connection: web3.Connection,
   wallet: AnchorWallet,
-  session: SessionWalletInterface,
   options: {
     id: string;
     author: string;
   }
 ) {
-  assertSessionIsValid(session);
-
   const program = getBloomProgram(connection, wallet);
   const entryId = new web3.PublicKey(options.id);
   const author = new web3.PublicKey(options.author);
-  const sessionToken = new web3.PublicKey(session.sessionToken!);
   const bloomPda = findBloomPda(entryId, author);
   const authorTokenAccount = await findEscrowTokenPda(author);
   const depositTokenAccount = await findEscrowTokenPda(wallet.publicKey);
 
-  const transaction = await program.methods
+  await program.methods
     .feedPlankton(entryId, new BN(100_000))
     .accounts({
       payer: wallet.publicKey,
       author,
-      sessionToken,
+      sessionToken: null,
       authorTokenAccount,
       depositTokenAccount,
       bloom: bloomPda,
@@ -352,20 +348,7 @@ export async function likeEntry(
       protocolFeeTokenAccount: PROTOCOL_FEE_PLANKTON_ATA,
       tokenProgram: TOKEN_PROGRAM_ID,
     })
-    .transaction();
-
-  const signatures = await session.signAndSendTransaction!(
-    transaction,
-    connection,
-    {
-      preflightCommitment: "confirmed",
-    }
-  );
-  const latestBlockhash = await connection.getLatestBlockhash();
-  await connection.confirmTransaction({
-    ...latestBlockhash,
-    signature: signatures[0],
-  });
+    .rpc();
 }
 
 export async function claimPlankton(
