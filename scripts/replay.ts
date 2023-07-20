@@ -15,19 +15,19 @@ async function main() {
   //   (a: any, b: any) => a.timestamp - b.timestamp
   // );
   // await enhancedTransactionParser(sortedProfileTxs);
-  const { data: entries } = await axios.post(
-    // `https://api-devnet.helius.xyz/v0/addresses/ondaUaJpDBZZQzpGe5Tr391CbuJH1UpZuRcS7sZU2GB/transactions?api-key=${apiKey}&limit=1000`
-    `https://api.helius.xyz/v0/transactions/?api-key=${apiKey}`,
-    {
-      transactions: [
-        "4sbD5HMuk5ErWXRfZMj15hAcci57cRt2kKdW9283y9LrbA2VUMzkkTyq8x4YQsz8oTrV6WMue3e6RsaYo7vbMCjV",
-      ],
-    },
-    {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
+  const { data: entries } = await axios.get(
+    `https://api-devnet.helius.xyz/v0/addresses/ondaUaJpDBZZQzpGe5Tr391CbuJH1UpZuRcS7sZU2GB/transactions?api-key=${apiKey}&limit=1000`
+    // `https://api.helius.xyz/v0/transactions/?api-key=${apiKey}`,
+    // {
+    //   transactions: [
+    //     "4sbD5HMuk5ErWXRfZMj15hAcci57cRt2kKdW9283y9LrbA2VUMzkkTyq8x4YQsz8oTrV6WMue3e6RsaYo7vbMCjV",
+    //   ],
+    // },
+    // {
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    // }
   );
   const sortedEntryTxs = entries.sort(
     (a: any, b: any) => a.timestamp - b.timestamp

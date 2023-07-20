@@ -21,11 +21,11 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
       ) AS "_count.Comments",
       CAST("createdAt" AS float) + (CAST(likes AS float) * 36000) AS likes_per_created_at
     FROM "Post"
-    ${where}
     LEFT JOIN 
       "User" ON "Post"."author" = "User"."id"
     LEFT JOIN 
       "Forum" ON "Post"."forum" = "Forum"."id"
+    ${where}
     ORDER BY likes_per_created_at DESC;
   `;
 
