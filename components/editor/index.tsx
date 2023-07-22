@@ -25,7 +25,7 @@ import { RadioCardMenu } from "components/input";
 import { ImagePicker } from "components/input/imagePicker";
 import { getOrCreateSession } from "lib/gum";
 
-interface EntryForm {
+export interface EntryForm {
   title: string;
   body: string;
   image: File | null;
@@ -54,35 +54,22 @@ interface EditorProps {
   successMessage?: string;
   config: EntryConfig;
   onRequestClose?: () => void;
-  onUpdate?: (data: {
-    id: string;
-    nonce: string;
-    title: string;
-    nsfw?: boolean;
-    body: string;
-    uri: string;
-    postType: PostType;
-    author: string;
-    Forum: SerializedForum;
-  }) => void;
+  onSuccess?: (signature: string, uri: string, variables: EntryForm) => void;
 }
 
 export const Editor = ({
   buttonLabel,
-  invalidateQueries,
   placeholder,
-  redirect,
   successMessage,
   config,
   onRequestClose,
-  onUpdate,
+  onSuccess,
 }: EditorProps) => {
   const { connection } = useConnection();
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet();
   const sessionWallet = useSessionWallet();
   const queryClient = useQueryClient();
-  const router = useRouter();
 
   const methods = useForm<EntryForm>({
     defaultValues: {
@@ -108,8 +95,7 @@ export const Editor = ({
   }, [methods.setValue, config.forum]);
 
   const mutation = useMutation<
-    | { uri: string; entryId: string; nonce: string; forum: SerializedForum }
-    | undefined,
+    { signature: string; uri: string },
     Error,
     EntryForm
   >(
@@ -180,21 +166,17 @@ export const Editor = ({
         };
       }
 
-      const result = await addEntry(connection, anchorWallet, session, {
+      const signature = await addEntry(connection, anchorWallet, session, {
         data: dataArgs,
         forumId: forum.id,
         forumConfig: forum.config,
         collections: forum.collections,
       });
 
-      if (result) {
-        return {
-          uri,
-          entryId: result[0],
-          nonce: result[1],
-          forum,
-        };
-      }
+      return {
+        uri,
+        signature,
+      };
     },
     {
       async onSuccess(data, variables) {
@@ -208,28 +190,21 @@ export const Editor = ({
           onRequestClose();
         }
 
-        if (data && onUpdate) {
-          onUpdate({
-            id: data.entryId,
-            nonce: data.nonce,
-            title: variables.title,
-            nsfw: false,
-            body: variables.body,
-            uri: data.uri,
-            postType: getPrismaPostType(variables.postType),
-            author: wallet.publicKey!.toBase58(),
-            Forum: data.forum,
-          });
+        if (onSuccess) {
+          onSuccess(data.signature, data.uri, variables);
         }
 
-        if (invalidateQueries) {
-          await sleep(2000);
-          await queryClient.invalidateQueries(invalidateQueries);
-        }
-
-        if (data && redirect) {
-          router.push(redirect);
-        }
+        // {
+        //   id: data.entryId,
+        //   nonce: data.nonce,
+        //   title: variables.title,
+        //   nsfw: false,
+        //   body: variables.body,
+        //   uri: data.uri,
+        //   postType: getPrismaPostType(variables.postType),
+        //   author: wallet.publicKey!.toBase58(),
+        //   Forum: data.forum,
+        // }
       },
       onError(error) {
         // @ts-ignore

@@ -22,6 +22,7 @@ import {
   findRewardEscrowPda,
   findClaimMarkerPda,
 } from "utils/pda";
+import { parseDataV1Fields } from "utils/parse";
 import { fetchAllAccounts } from "utils/web3";
 import { DataV1, LeafSchemaV1 } from "./types";
 import {
@@ -111,7 +112,7 @@ export async function addEntry(
     collections: string[] | null;
     data: DataV1;
   }
-): Promise<[string, string] | void> {
+): Promise<string> {
   assertSessionIsValid(session);
   // @ts-ignore
   const program = getCompressionProgram(connection, wallet);
@@ -148,34 +149,84 @@ export async function addEntry(
       compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
     })
     .transaction();
-  const signatures = await session.signAndSendTransaction!(
+
+  const [signature] = await session.signAndSendTransaction!(
     transaction,
     connection,
     {
       preflightCommitment: "confirmed",
     }
   );
+  console.log("Transaction sent: ", signature);
 
-  console.log("Transaction sent: ", signatures);
+  return signature;
+}
 
-  const response = await waitForConfirmation(connection, signatures[0]);
+export async function getEventIdFromSignature(
+  connection: web3.Connection,
+  wallet: AnchorWallet,
+  signature: string
+) {
+  const program = getCompressionProgram(connection, wallet);
+  const ixAccounts = program.idl.instructions.find(
+    (i) => i.name === "addEntry"
+  )?.accounts;
+  const response = await waitForConfirmation(connection, signature);
+  console.log(response);
+  const message = response?.transaction.message;
   const innerInstructions = response?.meta?.innerInstructions?.[0];
 
-  if (innerInstructions) {
-    const noopIx = innerInstructions.instructions[0];
-    const serializedEvent = noopIx.data;
-    const event = base58.decode(serializedEvent);
-    const eventBuffer = Buffer.from(event.slice(8));
-    const eventData: LeafSchemaV1 = program.coder.types.decode(
-      "LeafSchema",
-      eventBuffer
-    ).v1;
-
-    if (eventData) {
-      return [eventData.id.toBase58(), eventData.nonce.toString()];
-    }
+  if (!message) {
+    throw new Error("Transaction message not found");
   }
+
+  if (!innerInstructions) {
+    throw new Error("Noop instruction not found");
+  }
+
+  const instruction =
+    "instructions" in message
+      ? message.instructions[0]
+      : message.compiledInstructions[0];
+
+  const accountKeys = message.getAccountKeys().staticAccountKeys;
+  const merkleTreeAddressIndex = ixAccounts!.findIndex(
+    (a) => a.name === "merkleTree"
+  );
+  const merkleTreeAddress = accountKeys[merkleTreeAddressIndex];
+  const forumConfig = findForumConfigPda(merkleTreeAddress);
+
+  const ixData = instruction.data;
+  const entry = typeof ixData === "string" ? base58.decode(ixData) : ixData;
+  const buffer = Buffer.from(entry.slice(8));
+  const data: DataV1 = program.coder.types.decode("DataV1", buffer);
+
+  const noopIx = innerInstructions.instructions[0];
+  const serializedEvent = noopIx.data;
+  const event = base58.decode(serializedEvent);
+  const eventBuffer = Buffer.from(event.slice(8));
+  const eventData: LeafSchemaV1 = program.coder.types.decode(
+    "LeafSchema",
+    eventBuffer
+  ).v1;
+
+  if (!eventData) {
+    throw new Error("Event data did not decode");
+  }
+
+  return {
+    id: eventData.id.toBase58(),
+    nonce: eventData.nonce.toNumber(),
+    author: eventData.author.toBase58(),
+    createdAt: eventData.createdAt.toNumber(),
+    editedAt: eventData.editedAt?.toNumber() || null,
+    forum: merkleTreeAddress.toBase58(),
+    forumConfig: forumConfig.toBase58(),
+    data: parseDataV1Fields(data),
+  };
 }
+
+const MAX_RETRIES = 5;
 
 function waitForConfirmation(
   connection: web3.Connection,
@@ -192,7 +243,7 @@ function waitForConfirmation(
       return resolve(logs);
     }
 
-    if (retries > 3) {
+    if (retries >= MAX_RETRIES) {
       return reject(undefined);
     }
 

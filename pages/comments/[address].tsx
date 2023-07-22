@@ -10,6 +10,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
+import { PostType } from "@prisma/client";
 import { useCallback, useMemo } from "react";
 
 import {
@@ -19,12 +20,12 @@ import {
   fetchUser,
   PostWithCommentsCountAndForum,
 } from "lib/api";
-import { Editor } from "components/editor";
+import { Editor, EntryForm } from "components/editor";
 import { Markdown } from "components/markdown";
 import { CommentListItem } from "components/comment";
 import { PostMeta } from "components/post/meta";
 import { PostButtons } from "components/post/buttons";
-import { PostType } from "@prisma/client";
+import { PostHead } from "components/post/head";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -57,7 +58,7 @@ const Comments: NextPage<PageProps> = () => {
   );
 
   const onCommentCreated = useCallback(
-    async (vars: { id: string; nonce: string; body: string; uri: string }) => {
+    async (_: string, uri: string, entry: EntryForm) => {
       if (anchorWallet === undefined) return;
 
       const userAddress = anchorWallet.publicKey.toBase58();
@@ -69,16 +70,16 @@ const Comments: NextPage<PageProps> = () => {
         commentsQueryKey,
         (data) => {
           const newComment = {
-            id: vars.id,
+            uri,
+            id: Math.random().toString(36),
             createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
             editedAt: null,
             parent: null,
             post: id,
-            body: vars.body,
+            body: entry.body,
             nsfw: false,
-            uri: vars.uri,
-            likes: "0",
-            nonce: vars.nonce,
+            likes: BigInt(0).toString(),
+            nonce: BigInt(0).toString(),
             hash: "",
             author: userAddress,
             Author: author,
@@ -118,58 +119,19 @@ const Comments: NextPage<PageProps> = () => {
     );
   }
 
-  function renderPostBody() {
-    switch (postQuery.data?.postType) {
-      case PostType.TEXT: {
-        return <Markdown>{postQuery.data.body ?? ""}</Markdown>;
-      }
-
-      case PostType.IMAGE: {
-        return (
-          <Box
-            position="relative"
-            width="100%"
-            maxHeight="512px"
-            sx={{
-              "&:before": {
-                content: '""',
-                display: "block",
-                paddingBottom: "100%",
-              },
-            }}
-          >
-            <Image
-              fill
-              src={postQuery.data.uri}
-              alt="post image"
-              style={{
-                objectFit: "cover",
-                maxWidth: "100%",
-                maxHeight: "100%",
-              }}
-            />
-          </Box>
-        );
-      }
-    }
-  }
-
   return (
     <Container maxW="container.md">
-      <Box mt="12">
-        <PostMeta
-          showRewards
-          likes={Number(postQuery.data.likes)}
-          author={postQuery.data.Author}
-          forum={postQuery.data.forum}
-          createdAt={postQuery.data.createdAt}
-          editedAt={postQuery.data.editedAt}
-        />
-        <Heading my="6" as="h1">
-          {postQuery.data?.title}
-        </Heading>
-      </Box>
-      <Box mb="6">{renderPostBody()}</Box>
+      <PostHead
+        title={postQuery.data?.title}
+        body={postQuery.data?.body}
+        uri={postQuery.data?.uri}
+        likes={Number(postQuery.data.likes)}
+        postType={postQuery.data.postType}
+        author={postQuery.data.Author}
+        forum={postQuery.data.forum}
+        createdAt={postQuery.data.createdAt}
+        editedAt={postQuery.data.editedAt}
+      />
 
       <Box mb="6">
         <PostButtons
@@ -189,7 +151,7 @@ const Comments: NextPage<PageProps> = () => {
           forum: postQuery.data?.forum,
           parent: null,
         }}
-        onUpdate={onCommentCreated}
+        onSuccess={onCommentCreated}
       />
 
       <Divider my="6" />

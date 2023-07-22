@@ -24,6 +24,7 @@ import {
   IDL as CompressionIDL,
 } from "../anchor/idl/onda_compression";
 import { findEntryId } from "../../utils/pda";
+import { parseDataV1Fields } from "../../utils/parse";
 import { IDL as ProfileIDL } from "../anchor/idl/onda_profile";
 import { DataV1, LeafSchemaV1, RestrictionType } from "../anchor/types";
 import prisma from "../prisma";
@@ -223,7 +224,7 @@ export default async function enhancedTransactionParser(body: any) {
                 "DataV1",
                 buffer
               );
-              const dataV1 = getDataV1Fields(dataDecoded);
+              const dataV1 = parseDataV1Fields(dataDecoded);
               // Decode schema event data
               const noopIx = ix.innerInstructions[0];
               const serializedSchemaEvent = noopIx.data as string;
@@ -472,7 +473,7 @@ export default async function enhancedTransactionParser(body: any) {
 interface CreatePostV1Args {
   forumId: string;
   schemaV1: LeafSchemaV1;
-  dataV1: ReturnType<typeof getDataV1Fields>;
+  dataV1: ReturnType<typeof parseDataV1Fields>;
   postType: PostType;
   body?: string;
   hash: string;
@@ -517,41 +518,4 @@ function createPostV1({
       },
     },
   });
-}
-
-function getDataV1Fields(entryData: DataV1) {
-  if (entryData.textPost) {
-    return {
-      type: "TextPost",
-      title: entryData.textPost.title,
-      uri: entryData.textPost.uri,
-    };
-  }
-
-  // if (entryData.linkPost) {
-  //   return {
-  //     type: "LinkPost",
-  //     title: entryData.linkPost.title,
-  //     uri: entryData.linkPost.uri,
-  //   };
-  // }
-
-  if (entryData.imagePost) {
-    return {
-      type: "ImagePost",
-      title: entryData.imagePost.title,
-      uri: entryData.imagePost.uri,
-    };
-  }
-
-  if (entryData.comment) {
-    return {
-      type: "Comment",
-      post: entryData.comment.post,
-      parent: entryData.comment.parent,
-      uri: entryData.comment.uri,
-    };
-  }
-
-  throw new Error("Invalid entry data");
 }

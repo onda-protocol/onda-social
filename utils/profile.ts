@@ -14,7 +14,18 @@ interface Profile {
 
 const profiles = new Map<string, Profile>();
 
-profiles.set("BC8yMiHMQ6kiHFqxxNunQrdKb6jgV92fj89amU8qT9B6", {
+// profiles.set("BC8yMiHMQ6kiHFqxxNunQrdKb6jgV92fj89amU8qT9B6", {
+//   name: "self",
+//   description:
+//     "The self-referential onda profile. The place for announcements, news, and updates... and some fun.",
+//   image: "/profile.png",
+//   links: {
+//     twitter: "https://twitter.com/OndaProtocol",
+//   },
+// });
+
+// DEVNET
+profiles.set("6XWURNHAmajFCocQXEP4ytFb5xFAyDsB976D3nLRG97A", {
   name: "self",
   description:
     "The self-referential onda profile. The place for announcements, news, and updates... and some fun.",

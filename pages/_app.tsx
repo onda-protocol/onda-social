@@ -83,8 +83,12 @@ interface SessionProviderProps {
 const SessionProvider = ({ children }: SessionProviderProps) => {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet() as AnchorWallet;
-  const cluster = "devnet"; // or "mainnet-beta", "testnet", "localnet"
-  const sessionWallet = useSessionKeyManager(anchorWallet, connection, cluster);
+  const cluster = process.env.NEXT_PUBLIC_CLUSTER as "devnet" | "mainnet-beta";
+  const sessionWallet = useSessionKeyManager(
+    anchorWallet,
+    connection,
+    cluster ?? "mainnet-beta"
+  );
 
   return (
     <SessionWalletProvider sessionWallet={sessionWallet}>

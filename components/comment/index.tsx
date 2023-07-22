@@ -11,7 +11,7 @@ import { likeEntry } from "lib/anchor";
 import { BLOOM_PROGRAM_ID } from "lib/anchor/constants";
 import { getOrCreateSession } from "lib/gum";
 import { Markdown } from "../markdown";
-import { Editor } from "../editor";
+import { Editor, EntryForm } from "../editor";
 import { PostMeta } from "../post/meta";
 import { PostButton, LikeButton, DeleteButton } from "components/post/buttons";
 
@@ -44,12 +44,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
     );
 
     const onReplyAdded = useCallback(
-      async (vars: {
-        id: string;
-        nonce: string;
-        body: string;
-        uri: string;
-      }) => {
+      async (_: string, uri: string, entry: EntryForm) => {
         if (anchorWallet === undefined) return;
 
         const userAddress = anchorWallet.publicKey.toBase58();
@@ -59,16 +54,16 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
 
         const hasNestedChildren = "Children" in comment;
         const newComment = {
-          id: vars.id,
+          uri,
+          id: Math.random().toString(36),
           createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
           editedAt: null,
           parent: comment.id,
           post: comment.post,
-          body: vars.body,
-          uri: vars.uri,
+          body: entry.body,
           nsfw: false,
-          likes: "0",
-          nonce: vars.nonce,
+          likes: BigInt(0).toString(),
+          nonce: BigInt(0).toString(),
           hash: "",
           author: userAddress,
           Author: author,
@@ -200,7 +195,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                     forum,
                   }}
                   onRequestClose={() => setReply(false)}
-                  onUpdate={onReplyAdded}
+                  onSuccess={onReplyAdded}
                 />
               )}
             </Box>
