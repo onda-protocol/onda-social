@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
 
 import { fetchUser } from "lib/api";
+import { getPrismaPostType } from "utils/parse";
 import { Editor, EntryForm } from "components/editor";
 
 const Submit: NextPage = () => {
@@ -24,12 +25,13 @@ const Submit: NextPage = () => {
 
   const onSuccess = useCallback(
     async (signature: string, uri: string, variables: EntryForm) => {
-      const user = await queryClient.getQueryData([
+      let user = queryClient.getQueryData([
         "user",
         wallet.publicKey?.toBase58(),
       ]);
 
-      router.push(`/pending/${signature}`, {
+      router.push({
+        pathname: `/pending/${signature}`,
         query: {
           uri,
           title: variables.title,
@@ -40,7 +42,7 @@ const Submit: NextPage = () => {
               id: wallet.publicKey?.toBase58(),
             }
           ),
-          postType: variables.postType,
+          postType: getPrismaPostType(variables.postType),
         },
       });
     },
@@ -54,8 +56,6 @@ const Submit: NextPage = () => {
       </Heading>
       <Editor
         config={{ type: "post", forum }}
-        invalidateQueries={["posts"]}
-        redirect="/"
         buttonLabel="Post"
         successMessage="Post created!"
         onSuccess={onSuccess}

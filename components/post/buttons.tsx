@@ -48,6 +48,13 @@ export const PostButtons = ({
   );
 };
 
+export const DummyPostButtons = () => (
+  <Box display="flex" flexDirection="row" gap="2" mt="6">
+    <PostButton icon={<IoChatbox />} label={`0 comments`} />
+    <LikeButton disabled label={"0"} />
+  </Box>
+);
+
 interface PostLikeButtonProps {
   post: PostWithCommentsCountAndForum;
 }

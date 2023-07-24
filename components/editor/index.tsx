@@ -49,8 +49,6 @@ type EntryConfig =
 interface EditorProps {
   buttonLabel?: string;
   placeholder?: string;
-  invalidateQueries?: string[];
-  redirect?: string;
   successMessage?: string;
   config: EntryConfig;
   onRequestClose?: () => void;
@@ -193,18 +191,6 @@ export const Editor = ({
         if (onSuccess) {
           onSuccess(data.signature, data.uri, variables);
         }
-
-        // {
-        //   id: data.entryId,
-        //   nonce: data.nonce,
-        //   title: variables.title,
-        //   nsfw: false,
-        //   body: variables.body,
-        //   uri: data.uri,
-        //   postType: getPrismaPostType(variables.postType),
-        //   author: wallet.publicKey!.toBase58(),
-        //   Forum: data.forum,
-        // }
       },
       onError(error) {
         // @ts-ignore
@@ -377,3 +363,20 @@ const SelectForum = React.forwardRef<
     </Select>
   );
 });
+
+export const DummyCommentEditor = () => (
+  <Box>
+    <Textarea
+      isDisabled
+      mt="2"
+      placeholder="Loading..."
+      minHeight="100px"
+      backgroundColor="#090A20"
+    />
+    <Box display="flex" mt="2" justifyContent="right">
+      <Button isDisabled variant="solid" type="submit" cursor="pointer">
+        Submit
+      </Button>
+    </Box>
+  </Box>
+);

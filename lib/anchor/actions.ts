@@ -162,7 +162,7 @@ export async function addEntry(
   return signature;
 }
 
-export async function getEventIdFromSignature(
+export async function getEventFromSignature(
   connection: web3.Connection,
   wallet: AnchorWallet,
   signature: string
@@ -172,7 +172,6 @@ export async function getEventIdFromSignature(
     (i) => i.name === "addEntry"
   )?.accounts;
   const response = await waitForConfirmation(connection, signature);
-  console.log(response);
   const message = response?.transaction.message;
   const innerInstructions = response?.meta?.innerInstructions?.[0];
 
@@ -184,16 +183,20 @@ export async function getEventIdFromSignature(
     throw new Error("Noop instruction not found");
   }
 
-  const instruction =
-    "instructions" in message
-      ? message.instructions[0]
-      : message.compiledInstructions[0];
+  const instruction = message.instructions[0];
+  const accountKeys = message.accountKeys;
+  const accounts = instruction.accounts.map((key) => accountKeys[key]);
+  accounts.forEach((key) => console.log(key.toBase58()));
 
-  const accountKeys = message.getAccountKeys().staticAccountKeys;
   const merkleTreeAddressIndex = ixAccounts!.findIndex(
     (a) => a.name === "merkleTree"
   );
-  const merkleTreeAddress = accountKeys[merkleTreeAddressIndex];
+
+  if (merkleTreeAddressIndex === undefined) {
+    throw new Error("Merkle tree address index not found");
+  }
+
+  const merkleTreeAddress = accounts[merkleTreeAddressIndex];
   const forumConfig = findForumConfigPda(merkleTreeAddress);
 
   const ixData = instruction.data;
@@ -232,7 +235,7 @@ function waitForConfirmation(
   connection: web3.Connection,
   signature: string,
   retries: number = 0
-): Promise<web3.VersionedTransactionResponse | undefined> {
+): Promise<web3.TransactionResponse> {
   return new Promise(async (resolve, reject) => {
     const logs = await connection.getTransaction(signature, {
       commitment: "confirmed",
@@ -240,7 +243,7 @@ function waitForConfirmation(
     });
 
     if (logs) {
-      return resolve(logs);
+      return resolve(logs as web3.TransactionResponse);
     }
 
     if (retries >= MAX_RETRIES) {
@@ -456,27 +459,6 @@ export async function updateProfile(
       metadata: metadataPda,
     })
     .rpc();
-}
-
-async function submitInstructions(
-  connection: web3.Connection,
-  instructions: web3.TransactionInstruction[],
-  payer: web3.PublicKey,
-  signers: web3.Signer[]
-) {
-  const latestBlockhash = await connection.getLatestBlockhash();
-  const message = new web3.TransactionMessage({
-    instructions,
-    payerKey: payer,
-    recentBlockhash: latestBlockhash.blockhash,
-  }).compileToV0Message();
-  const transaction = new web3.VersionedTransaction(message);
-  transaction.sign(signers);
-  const signature = await connection.sendTransaction(transaction);
-  await connection.confirmTransaction({
-    signature,
-    ...latestBlockhash,
-  });
 }
 
 async function fetchTokenAccounts(

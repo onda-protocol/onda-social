@@ -1,3 +1,5 @@
+import { PostType } from "@prisma/client";
+import { camelCase } from "lodash";
 import { DataV1 } from "../lib/anchor/types";
 
 export function parseDataV1Fields(entryData: DataV1) {
@@ -37,4 +39,16 @@ export function parseDataV1Fields(entryData: DataV1) {
   }
 
   throw new Error("Invalid entry data");
+}
+
+export function getPrismaPostType(postType: string): PostType {
+  switch (camelCase(postType)) {
+    case "textPost":
+      return PostType.TEXT;
+    case "imagePost":
+      return PostType.IMAGE;
+    default: {
+      throw new Error(`Unknown post type: ${postType}`);
+    }
+  }
 }

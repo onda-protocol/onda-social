@@ -1,16 +1,18 @@
 import type { NextPage } from "next";
+import axios from "axios";
 import { useRouter } from "next/router";
-import Image from "next/image";
-import { Box, Container, Divider, Heading, Spinner } from "@chakra-ui/react";
+import { PostType, User } from "@prisma/client";
+import { Box, Container, Divider, Spinner } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useEffect, useMemo } from "react";
 
-import { getEventIdFromSignature } from "lib/anchor/actions";
-import { PostType, User } from "@prisma/client";
+import { getEventFromSignature } from "lib/anchor/actions";
+import { getPrismaPostType } from "utils/parse";
 import { PostWithCommentsCountAndForum, fetchUser } from "lib/api";
-import axios from "axios";
 import { PostHead } from "components/post/head";
+import { DummyCommentEditor } from "components/editor";
+import { DummyPostButtons } from "components/post/buttons";
 
 const Pending: NextPage = () => {
   const router = useRouter();
@@ -24,13 +26,13 @@ const Pending: NextPage = () => {
   );
   const signatureQuery = useQuery({
     queryKey: signatureQueryKey,
-    queryFn: () => getEventIdFromSignature(connection, wallet, signature),
+    queryFn: () => getEventFromSignature(connection, wallet, signature),
     enabled: Boolean(signature && wallet?.publicKey),
   });
 
   useEffect(() => {
     async function updateCache(
-      result: Awaited<ReturnType<typeof getEventIdFromSignature>>
+      result: Awaited<ReturnType<typeof getEventFromSignature>>
     ) {
       const [author, response] = await Promise.all([
         queryClient.fetchQuery(["user", result.author], () =>
@@ -38,18 +40,7 @@ const Pending: NextPage = () => {
         ),
         axios.get<string>(result.data.uri),
       ]);
-
-      function getPostType(postType: string): PostType {
-        switch (postType) {
-          case "TextPost":
-            return PostType.TEXT;
-          case "ImagePost":
-            return PostType.IMAGE;
-          default: {
-            throw new Error(`Unknown post type: ${postType}`);
-          }
-        }
-      }
+      console.log("author", author);
 
       queryClient.setQueryData<PostWithCommentsCountAndForum>(
         ["post", result.id],
@@ -61,7 +52,7 @@ const Pending: NextPage = () => {
             title: result.data.title!,
             body: response.data,
             uri: result.data.uri,
-            postType: getPostType(result.data.type),
+            postType: getPrismaPostType(result.data.type),
             nsfw: result.data.nsfw ?? false,
             hash: "",
             likes: BigInt(0).toString(),
@@ -110,6 +101,8 @@ const Pending: NextPage = () => {
     postType: PostType;
   };
 
+  console.log("data", data);
+
   const user = useMemo(() => {
     try {
       return JSON.parse(data.author) as User;
@@ -117,6 +110,8 @@ const Pending: NextPage = () => {
       return null;
     }
   }, [data.author]);
+
+  console.log("user: ", user);
 
   if (!user) {
     // TODO: 404 error
@@ -136,6 +131,20 @@ const Pending: NextPage = () => {
         createdAt={data.createdAt}
         editedAt={null}
       />
+
+      <Box mb="6">
+        <DummyPostButtons />
+      </Box>
+
+      <DummyCommentEditor />
+
+      <Divider my="6" />
+
+      <Box pb="12" mx="-2">
+        <Box display="flex" alignItems="center" justifyContent="center" pt="12">
+          <Spinner />
+        </Box>
+      </Box>
     </Container>
   );
 };
