@@ -349,15 +349,9 @@ export default async function enhancedTransactionParser(body: any) {
                 });
               } catch (err) {
                 try {
-                  await prisma.comment.update({
+                  await prisma.comment.delete({
                     where: {
                       id: entryId.toBase58(),
-                    },
-                    data: {
-                      body: "[deleted]",
-                      uri: "[deleted]",
-                      hash: null,
-                      editedAt: Math.floor(Date.now() / 1000),
                     },
                   });
                 } catch (err) {
