@@ -1,17 +1,13 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import Image from "next/image";
-import { Box, Container, Divider, Heading, Spinner } from "@chakra-ui/react";
+import { useCallback, useMemo } from "react";
+import { Box, Container, Divider, IconButton, Spinner } from "@chakra-ui/react";
 import {
-  QueryClient,
   DehydratedState,
-  dehydrate,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
-import { PostType } from "@prisma/client";
-import { useCallback, useMemo } from "react";
 
 import {
   SerializedCommentNested,
@@ -21,9 +17,7 @@ import {
   PostWithCommentsCountAndForum,
 } from "lib/api";
 import { Editor, EntryForm } from "components/editor";
-import { Markdown } from "components/markdown";
 import { CommentListItem } from "components/comment";
-import { PostMeta } from "components/post/meta";
 import { PostButtons } from "components/post/buttons";
 import { PostHead } from "components/post/head";
 
@@ -33,22 +27,23 @@ interface PageProps {
 
 const Comments: NextPage<PageProps> = () => {
   const router = useRouter();
+  const anchorWallet = useAnchorWallet();
+  const queryClient = useQueryClient();
   const id = router.query.address as string;
+
   const postQueryKey = useMemo(() => ["post", id], [id]);
   const postQuery = useQuery({
     queryKey: postQueryKey,
     queryFn: () => fetchPost(id),
     enabled: true,
   });
-  console.log("postQuery", postQuery);
   const commentsQueryKey = useMemo(() => ["comments", id], [id]);
   const commentsQuery = useQuery({
     queryKey: commentsQueryKey,
     queryFn: () => fetchComments(id),
     enabled: true,
   });
-  const anchorWallet = useAnchorWallet();
-  const queryClient = useQueryClient();
+
   const isAuthor = useMemo(
     () => anchorWallet?.publicKey?.toBase58() === postQuery.data?.author,
     [anchorWallet, postQuery.data?.author]
