@@ -1,5 +1,10 @@
 import type { NextPage } from "next";
-import { DehydratedState, useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import {
+  DehydratedState,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { Box, Spinner, Text } from "@chakra-ui/react";
 
 import { getProfiles } from "utils/profile";
@@ -18,7 +23,17 @@ interface PageProps {
 }
 
 const Home: NextPage<PageProps> = () => {
+  const queryClient = useQueryClient();
   const query = useQuery(["posts"], fetchPosts);
+
+  // Seed posts to cache
+  useEffect(() => {
+    if (query.data) {
+      for (const post of query.data) {
+        queryClient.setQueryData(["post", post.id], post);
+      }
+    }
+  }, [queryClient, query.data]);
 
   return (
     <Box mt="4">
