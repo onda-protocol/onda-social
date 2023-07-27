@@ -1,13 +1,12 @@
 import { useMemo } from "react";
 import Image from "next/image";
 import { PostType, User } from "@prisma/client";
-import { Box, Container, Divider, Heading, Spinner } from "@chakra-ui/react";
+import { Box, Heading, Link as CLink } from "@chakra-ui/react";
+import { Tweet } from "react-tweet";
+import { IoLink } from "react-icons/io5";
 
-import { Editor } from "components/editor";
 import { Markdown } from "components/markdown";
-import { CommentListItem } from "components/comment";
 import { PostMeta } from "components/post/meta";
-import { PostButtons } from "components/post/buttons";
 
 interface PostHeadProps {
   title: string;
@@ -62,6 +61,30 @@ export const PostHead = ({
                 maxHeight: "100%",
               }}
             />
+          </Box>
+        );
+      }
+
+      case PostType.LINK: {
+        const isTweet = uri.includes("twitter.com/");
+
+        if (isTweet) {
+          const id = uri.match(/\/(\d+)$/)?.[0];
+
+          if (id) {
+            return (
+              <Box data-theme="dark">
+                <Tweet id={id} />
+              </Box>
+            );
+          }
+        }
+
+        return (
+          <Box>
+            <CLink href="https://chakra-ui.com" isExternal>
+              Chakra Design system <IoLink />
+            </CLink>
           </Box>
         );
       }

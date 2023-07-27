@@ -6,18 +6,13 @@ import {
   useWallet,
 } from "@solana/wallet-adapter-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Forum, PostType } from "@prisma/client";
 import toast from "react-hot-toast";
 import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
 import { useSessionWallet } from "@gumhq/react-sdk";
 import { IoDocumentText, IoImage } from "react-icons/io5";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { useRouter } from "next/router";
-import { randomBytes } from "crypto";
 
-import { sleep } from "utils/async";
-import { getPrismaPostType } from "utils/format";
-import { SerializedForum, fetchFora } from "lib/api";
+import { fetchFora } from "lib/api";
 import { addEntry } from "lib/anchor/actions";
 import { getNameFromAddress, getProfiles } from "utils/profile";
 import { ContentType, upload } from "lib/bundlr";
@@ -267,6 +262,12 @@ export const Editor = ({
               />
             )}
           />
+        );
+      }
+
+      case "linkPost": {
+        return (
+          <Input mt="4" placeholder="Enter url" {...methods.register("url")} />
         );
       }
     }
