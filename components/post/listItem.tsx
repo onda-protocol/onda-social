@@ -29,10 +29,12 @@ export const PostListItem = ({ post }: PostListItemProps) => {
         createdAt={String(post.createdAt)}
       />
       <Box overflow="hidden">
-        <Heading my="4" fontSize="2xl" fontWeight="semibold">
-          {post.title}
-        </Heading>
-        <PostContent type={post.postType} body={post.body} uri={post.uri} />
+        <PostContent
+          type={post.postType}
+          title={post.title}
+          body={post.body}
+          uri={post.uri}
+        />
       </Box>
       <PostButtons post={post} />
     </Panel>

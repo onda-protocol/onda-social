@@ -38,12 +38,9 @@ export const PostHead = ({
           createdAt={createdAt}
           editedAt={editedAt}
         />
-        <Heading my="6" as="h1">
-          {title}
-        </Heading>
       </Box>
       <Box mb="6">
-        <PostContent type={postType} body={body} uri={uri} />
+        <PostContent type={postType} title={title} body={body} uri={uri} />
       </Box>
     </>
   );

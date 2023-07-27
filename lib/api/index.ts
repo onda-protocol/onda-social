@@ -101,3 +101,11 @@ export function fetchProof(address: string): Promise<{
     (res) => res.json()
   );
 }
+
+export function fetchOGTags(
+  url: string
+): Promise<{ image?: string; height?: string; width?: string }> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/og?url=${url}`).then(
+    (res) => res.json()
+  );
+}
