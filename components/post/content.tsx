@@ -1,11 +1,12 @@
-import { useMemo } from "react";
 import Image from "next/image";
-import { PostType, User } from "@prisma/client";
-import { Box, Heading, Link as CLink } from "@chakra-ui/react";
+import { PostType } from "@prisma/client";
+import { Box, Link as CLink } from "@chakra-ui/react";
 import { Tweet } from "react-tweet";
-import { IoLink } from "react-icons/io5";
 
 import { Markdown } from "components/markdown";
+import { ExternalLinkIcon } from "@chakra-ui/icons";
+
+const MAX_URI_DISPLAY_LENGTH = 72;
 
 interface PostContentProps {
   type: PostType;
@@ -64,8 +65,19 @@ export const PostContent = ({ type, body, uri }: PostContentProps) => {
 
       return (
         <Box>
-          <CLink href="https://chakra-ui.com" isExternal>
-            Chakra Design system <IoLink />
+          <CLink
+            href={uri}
+            isExternal
+            sx={{
+              "& svg": {
+                display: "inline",
+              },
+            }}
+          >
+            {uri.length > MAX_URI_DISPLAY_LENGTH
+              ? uri.substring(0, MAX_URI_DISPLAY_LENGTH).concat("...")
+              : uri}{" "}
+            <ExternalLinkIcon />
           </CLink>
         </Box>
       );
