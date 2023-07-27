@@ -1,12 +1,8 @@
-import { useMemo } from "react";
-import Image from "next/image";
 import { PostType, User } from "@prisma/client";
-import { Box, Heading, Link as CLink } from "@chakra-ui/react";
-import { Tweet } from "react-tweet";
-import { IoLink } from "react-icons/io5";
+import { Box, Heading } from "@chakra-ui/react";
 
-import { Markdown } from "components/markdown";
 import { PostMeta } from "components/post/meta";
+import { PostContent } from "components/post/content";
 
 interface PostHeadProps {
   title: string;
@@ -31,66 +27,6 @@ export const PostHead = ({
   forum,
   postType,
 }: PostHeadProps) => {
-  const content = useMemo(() => {
-    switch (postType) {
-      case PostType.TEXT: {
-        return <Markdown>{body ?? ""}</Markdown>;
-      }
-
-      case PostType.IMAGE: {
-        return (
-          <Box
-            position="relative"
-            width="100%"
-            maxHeight="512px"
-            sx={{
-              "&:before": {
-                content: '""',
-                display: "block",
-                paddingBottom: "100%",
-              },
-            }}
-          >
-            <Image
-              fill
-              src={uri}
-              alt="post image"
-              style={{
-                objectFit: "cover",
-                maxWidth: "100%",
-                maxHeight: "100%",
-              }}
-            />
-          </Box>
-        );
-      }
-
-      case PostType.LINK: {
-        const isTweet = uri.includes("twitter.com/");
-
-        if (isTweet) {
-          const id = uri.match(/\/(\d+)$/)?.[0];
-
-          if (id) {
-            return (
-              <Box display="flex" justifyContent="center" data-theme="dark">
-                <Tweet id={id.replace("/", "")} />
-              </Box>
-            );
-          }
-        }
-
-        return (
-          <Box>
-            <CLink href="https://chakra-ui.com" isExternal>
-              Chakra Design system <IoLink />
-            </CLink>
-          </Box>
-        );
-      }
-    }
-  }, [body, uri, postType]);
-
   return (
     <>
       <Box mt="12">
@@ -106,7 +42,9 @@ export const PostHead = ({
           {title}
         </Heading>
       </Box>
-      <Box mb="6">{content}</Box>
+      <Box mb="6">
+        <PostContent type={postType} body={body} uri={uri} />
+      </Box>
     </>
   );
 };
