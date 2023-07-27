@@ -15,17 +15,3 @@ export function parseBigInt(data: any, fallback: any = []) {
 export function trimNullChars(data: string) {
   return data.replace(/\0.*$/g, "");
 }
-
-export function getPrismaPostType(
-  postType: "textPost" | "imagePost" | "linkPost"
-) {
-  switch (postType) {
-    case "textPost":
-    default:
-      return PostType.TEXT;
-    case "imagePost":
-      return PostType.IMAGE;
-    // case "linkPost":
-    //   return PostType.LINK;
-  }
-}

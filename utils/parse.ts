@@ -12,13 +12,13 @@ export function parseDataV1Fields(entryData: DataV1) {
     };
   }
 
-  // if (entryData.linkPost) {
-  //   return {
-  //     type: "LinkPost",
-  //     title: entryData.linkPost.title,
-  //     uri: entryData.linkPost.uri,
-  //   };
-  // }
+  if (entryData.linkPost) {
+    return {
+      type: "LinkPost",
+      title: entryData.linkPost.title,
+      uri: entryData.linkPost.uri,
+    };
+  }
 
   if (entryData.imagePost) {
     return {
@@ -47,6 +47,8 @@ export function getPrismaPostType(postType: string): PostType {
       return PostType.TEXT;
     case "imagePost":
       return PostType.IMAGE;
+    case "linkPost":
+      return PostType.LINK;
     default: {
       throw new Error(`Unknown post type: ${postType}`);
     }

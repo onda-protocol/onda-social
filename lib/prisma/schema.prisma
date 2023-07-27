@@ -18,6 +18,7 @@ model Forum {
 enum PostType {
   TEXT
   IMAGE
+  LINK
 }
 
 model Post {

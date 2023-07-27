@@ -49,6 +49,7 @@
     "react-hot-toast": "^2.4.0",
     "react-icons": "^4.8.0",
     "react-markdown": "^8.0.6",
+    "react-tweet": "^3.0.3",
     "snake-case": "^3.0.4",
     "typescript": "5.0.4"
   },

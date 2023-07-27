@@ -31,7 +31,7 @@ export interface EntryForm {
   image: File | null;
   forum: string;
   url: string;
-  postType: "textPost" | "imagePost";
+  postType: "textPost" | "imagePost" | "linkPost";
 }
 
 type EntryConfig =
@@ -118,15 +118,16 @@ export const Editor = ({
 
       if (config.type === "post") {
         switch (data.postType) {
-          // case "linkPost": {
-          //   dataArgs = {
-          //     linkPost: {
-          //       title: data.title,
-          //       url: data.url,
-          //     },
-          //   };
-          //   break;
-          // }
+          case "linkPost": {
+            uri = data.url;
+            dataArgs = {
+              linkPost: {
+                uri,
+                title: data.title,
+              },
+            };
+            break;
+          }
 
           case "textPost": {
             uri = await upload(wallet, session, data.body, "application/json");
