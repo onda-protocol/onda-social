@@ -1,11 +1,12 @@
 import type { NextPage } from "next";
 import axios from "axios";
+import { useEffect, useMemo } from "react";
+import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import { PostType, User } from "@prisma/client";
 import { Box, Container, Divider, Spinner } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { useEffect, useMemo } from "react";
 
 import { getEventFromSignature } from "lib/anchor/actions";
 import { getPrismaPostType } from "utils/parse";
@@ -34,25 +35,25 @@ const Pending: NextPage = () => {
     async function updateCache(
       result: Awaited<ReturnType<typeof getEventFromSignature>>
     ) {
+      const postType = getPrismaPostType(result.data.type);
       const [author, response] = await Promise.all([
         queryClient.fetchQuery(["user", result.author], () =>
           fetchUser(result.author)
         ),
-        axios.get<string>(result.data.uri),
+        postType === PostType.TEXT ? axios.get<string>(result.data.uri) : null,
       ]);
-      console.log("author", author);
 
       queryClient.setQueryData<PostWithCommentsCountAndForum>(
         ["post", result.id],
         () => {
           const newPost: PostWithCommentsCountAndForum = {
+            postType,
             id: result.id,
             nonce: BigInt(result.nonce).toString(),
             author: result.author,
             title: result.data.title!,
-            body: response.data,
+            body: response?.data ?? null,
             uri: result.data.uri,
-            postType: getPrismaPostType(result.data.type),
             nsfw: result.data.nsfw ?? false,
             hash: "",
             likes: BigInt(0).toString(),
@@ -86,7 +87,10 @@ const Pending: NextPage = () => {
     const result = signatureQuery.data;
 
     if (result) {
-      updateCache(result);
+      updateCache(result).catch((err) => {
+        console.error(err);
+        toast.error(err.message);
+      });
     }
   }, [router, queryClient, signatureQuery.data]);
 
@@ -101,8 +105,6 @@ const Pending: NextPage = () => {
     postType: PostType;
   };
 
-  console.log("data", data);
-
   const user = useMemo(() => {
     try {
       return JSON.parse(data.author) as User;
@@ -110,8 +112,6 @@ const Pending: NextPage = () => {
       return null;
     }
   }, [data.author]);
-
-  console.log("user: ", user);
 
   if (!user) {
     // TODO: 404 error

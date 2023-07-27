@@ -9,7 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
 import { useSessionWallet } from "@gumhq/react-sdk";
-import { IoDocumentText, IoImage } from "react-icons/io5";
+import { IoDocumentText, IoImage, IoLink } from "react-icons/io5";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { fetchFora } from "lib/api";
@@ -302,6 +302,11 @@ export const Editor = ({
                   label: "Image Post",
                   value: "imagePost",
                   icon: <IoImage size="1.25em" />,
+                },
+                {
+                  label: "Link Post",
+                  value: "linkPost",
+                  icon: <IoLink size="1.25em" />,
                 },
               ]}
               // @ts-ignore

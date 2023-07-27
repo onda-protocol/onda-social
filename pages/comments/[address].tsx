@@ -37,6 +37,7 @@ const Comments: NextPage<PageProps> = () => {
     queryFn: () => fetchPost(id),
     enabled: true,
   });
+  console.log(postQuery.data);
   const commentsQueryKey = useMemo(() => ["comments", id], [id]);
   const commentsQuery = useQuery({
     queryKey: commentsQueryKey,

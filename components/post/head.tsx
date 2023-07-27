@@ -73,8 +73,8 @@ export const PostHead = ({
 
           if (id) {
             return (
-              <Box data-theme="dark">
-                <Tweet id={id} />
+              <Box display="flex" justifyContent="center" data-theme="dark">
+                <Tweet id={id.replace("/", "")} />
               </Box>
             );
           }
