@@ -245,17 +245,6 @@ export default async function enhancedTransactionParser(body: any) {
               }
 
               switch (dataV1.type) {
-                // case "LinkPost":
-                case "ImagePost": {
-                  await createPostV1({
-                    postType: PostType.IMAGE,
-                    forumId: forumAddress,
-                    schemaV1,
-                    dataV1,
-                    hash: encodedLeafHash,
-                  });
-                  break;
-                }
                 case "TextPost": {
                   const body = await axios
                     .get(dataV1.uri)
@@ -267,6 +256,28 @@ export default async function enhancedTransactionParser(body: any) {
                     schemaV1,
                     dataV1,
                     body,
+                    hash: encodedLeafHash,
+                  });
+                  break;
+                }
+
+                case "ImagePost": {
+                  await createPostV1({
+                    postType: PostType.IMAGE,
+                    forumId: forumAddress,
+                    schemaV1,
+                    dataV1,
+                    hash: encodedLeafHash,
+                  });
+                  break;
+                }
+
+                case "LinkPost": {
+                  await createPostV1({
+                    postType: PostType.LINK,
+                    forumId: forumAddress,
+                    schemaV1,
+                    dataV1,
                     hash: encodedLeafHash,
                   });
                   break;
