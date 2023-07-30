@@ -36,9 +36,21 @@ export function fetchPost(id: string): Promise<PostWithCommentsCountAndForum> {
 }
 
 export function fetchPosts(): Promise<PostWithCommentsCountAndForum[]> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/posts`).then((res) =>
-    res.json()
-  );
+  const headers = new Headers();
+  headers.append("Content-Type", "application/json");
+  headers.append("Connection", "keep-alive");
+
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/posts`, {
+    headers,
+  })
+    .then((res) => {
+      console.log("RES: ", res);
+      return res.json();
+    })
+    .then((data) => {
+      console.log("DATA: ", data);
+      return data;
+    });
 }
 
 export function fetchPostsByForum(

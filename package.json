@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate": "npx prisma generate --schema ./lib/prisma/schema.prisma",
+    "generate": "npx prisma generate --schema ./lib/prisma/schema.prisma --data-proxy",
     "postinstall": "npm run generate",
     "replay": "ts-node ./scripts/replay.ts"
   },
@@ -53,7 +53,8 @@
     "react-tweet": "^3.0.3",
     "react-youtube": "^10.1.0",
     "snake-case": "^3.0.4",
-    "typescript": "5.0.4"
+    "typescript": "5.0.4",
+    "vercel": "^31.1.1"
   },
   "devDependencies": {
     "@metaplex-foundation/js": "^0.19.1",

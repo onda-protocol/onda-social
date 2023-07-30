@@ -1,8 +1,13 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { Prisma } from "@prisma/client";
+import type { NextFetchEvent, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client/edge";
 
 import { parseBigInt } from "utils/format";
 import prisma from "lib/prisma";
+
+export const config = {
+  runtime: "edge",
+};
 
 export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
   const result: any = await prisma.$queryRaw`
@@ -65,11 +70,8 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
   });
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const results = await queryPosts();
-
-  res.json(parseBigInt(results));
+export default async function handler(_req: NextRequest, _ctx: NextFetchEvent) {
+  const result = await queryPosts();
+  const parsedResult = parseBigInt(result);
+  return NextResponse.json(parsedResult);
 }
