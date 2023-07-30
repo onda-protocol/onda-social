@@ -98,8 +98,10 @@ export const PostContent = memo(function PostContent({
       }
 
       const isYouTube = uri.match(
-        /(https:\/\/youtu\.be\/|https:\/\/youtube\.com\/)?.*/
+        /^(https:\/\/youtu\.be\/|https:\/\/(www\.)?youtube\.com\/)/
       );
+
+      console.log("isYouTube", isYouTube);
 
       if (isYouTube) {
         return (
