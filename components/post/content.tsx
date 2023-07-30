@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { PostType } from "@prisma/client";
-import { Box, Link as CLink, Heading } from "@chakra-ui/react";
+import { Box, Fade, Heading, Link as CLink } from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
-import { useEffect, useRef, useState } from "react";
+import { memo, useState } from "react";
 import { Tweet } from "react-tweet";
 import YouTube from "react-youtube";
 
@@ -18,7 +18,12 @@ interface PostContentProps {
   uri: string;
 }
 
-export const PostContent = ({ type, title, body, uri }: PostContentProps) => {
+export const PostContent = memo(function PostContent({
+  type,
+  title,
+  body,
+  uri,
+}: PostContentProps) {
   switch (type) {
     case PostType.TEXT: {
       return (
@@ -99,19 +104,7 @@ export const PostContent = ({ type, title, body, uri }: PostContentProps) => {
               <Heading my="6" as="h1">
                 {title}
               </Heading>
-              <Dimensions
-                render={({ width, height }) =>
-                  width && height ? (
-                    <YouTube
-                      videoId={id}
-                      opts={{
-                        width,
-                        height,
-                      }}
-                    />
-                  ) : null
-                }
-              />
+              <YouTubeVideoContainer id={id} />
             </>
           );
         }
@@ -143,34 +136,27 @@ export const PostContent = ({ type, title, body, uri }: PostContentProps) => {
       );
     }
   }
-};
+});
 
-interface DimensionsProps {
-  render: ({
-    width,
-    height,
-  }: {
-    width: number | null;
-    height: number | null;
-  }) => JSX.Element | null;
+interface YouTubeVideoContainerProps {
+  id: string;
 }
 
-const Dimensions = ({ render }: DimensionsProps) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState<number | null>(null);
-  const [height, setHeight] = useState<number | null>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (el) {
-      setWidth(el.offsetWidth);
-      setHeight(Math.round(el.offsetWidth * 0.5625));
-    }
-  }, []);
+const YouTubeVideoContainer = ({ id }: YouTubeVideoContainerProps) => {
+  const [isReady, setIsReady] = useState(false);
 
   return (
-    <Box sx={{ width: "100%", maxWidth: "100%" }} ref={ref}>
-      {render({ width, height })}
+    <Box
+      position="relative"
+      width="100%"
+      paddingBottom="56.25%"
+      backgroundColor="gray.600"
+    >
+      <Box position="absolute" inset={0}>
+        <Fade in={isReady}>
+          <YouTube videoId={id} onReady={() => setIsReady(true)} />
+        </Fade>
+      </Box>
     </Box>
   );
 };
