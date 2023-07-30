@@ -2,6 +2,8 @@ import type { NextPage } from "next";
 import { useEffect } from "react";
 import {
   DehydratedState,
+  QueryClient,
+  dehydrate,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -80,6 +82,25 @@ const Home: NextPage<PageProps> = () => {
       />
     </Box>
   );
+};
+
+Home.getInitialProps = async () => {
+  if (typeof window === "undefined") {
+    try {
+      const queryClient = new QueryClient();
+      await queryClient.prefetchQuery(["posts"], fetchPosts);
+
+      return {
+        dehydratedState: dehydrate(queryClient),
+      };
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  return {
+    dehydratedState: undefined,
+  };
 };
 
 export default Home;
