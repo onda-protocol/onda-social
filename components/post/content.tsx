@@ -1,13 +1,21 @@
 import Image from "next/image";
 import { PostType } from "@prisma/client";
-import { Box, Fade, Heading, Link as CLink } from "@chakra-ui/react";
+import { Box, Heading, Link as CLink } from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
-import { memo, useState } from "react";
+import React, { memo } from "react";
 import { Tweet } from "react-tweet";
-import YouTube from "react-youtube";
 
 import { Markdown } from "components/markdown";
 import { OG } from "components/post/og";
+import dynamic from "next/dynamic";
+
+const YouTubeVideo = dynamic(
+  () => import("components/video/youtube").then((mod) => mod.YouTubeVideo),
+  {
+    ssr: false,
+    loading: () => <VideoPlaceholder />,
+  }
+);
 
 const MAX_URI_DISPLAY_LENGTH = 48;
 
@@ -94,20 +102,14 @@ export const PostContent = memo(function PostContent({
       );
 
       if (isYouTube) {
-        const id = uri.match(
-          /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=)?)([a-zA-Z0-9_-]{11})/
-        )?.[1];
-
-        if (id) {
-          return (
-            <>
-              <Heading my="6" as="h1">
-                {title}
-              </Heading>
-              <YouTubeVideoContainer id={id} />
-            </>
-          );
-        }
+        return (
+          <>
+            <Heading my="6" as="h1">
+              {title}
+            </Heading>
+            <YouTubeVideo uri={uri} />
+          </>
+        );
       }
 
       return (
@@ -138,24 +140,22 @@ export const PostContent = memo(function PostContent({
   }
 });
 
-interface YouTubeVideoContainerProps {
-  id: string;
+interface VideoPlaceholderProps {
+  children?: React.ReactNode;
 }
 
-const YouTubeVideoContainer = ({ id }: YouTubeVideoContainerProps) => {
-  const [isReady, setIsReady] = useState(false);
-
+const VideoPlaceholder = ({ children = null }: VideoPlaceholderProps) => {
   return (
-    <Box
-      position="relative"
-      width="100%"
-      paddingBottom="56.25%"
-      backgroundColor="gray.600"
-    >
-      <Box position="absolute" inset={0}>
-        <Fade in={isReady}>
-          <YouTube videoId={id} onReady={() => setIsReady(true)} />
-        </Fade>
+    <Box display="flex" justifyContent="center" width="100%">
+      <Box width="100%" maxWidth="640px">
+        <Box
+          position="relative"
+          width="100%"
+          paddingBottom="56.25%"
+          backgroundColor="gray.600"
+        >
+          {children}
+        </Box>
       </Box>
     </Box>
   );
