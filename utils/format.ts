@@ -6,8 +6,9 @@ export function shortenAddress(address: string) {
 
 export function parseBigInt(data: any, fallback: any = []) {
   return JSON.parse(
-    JSON.stringify(data ?? fallback, (_, v) =>
-      typeof v === "bigint" ? v.toString() : v
+    JSON.stringify(
+      typeof data === "string" ? JSON.parse(data) : data ?? fallback,
+      (_, v) => (typeof v === "bigint" ? v.toString() : v)
     )
   );
 }

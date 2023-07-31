@@ -1,13 +1,21 @@
 import Image from "next/image";
 import { PostType } from "@prisma/client";
-import { Box, Link as CLink, Heading } from "@chakra-ui/react";
+import { Box, Heading, Link as CLink } from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
-import { useEffect, useRef, useState } from "react";
+import React, { memo } from "react";
 import { Tweet } from "react-tweet";
-import YouTube from "react-youtube";
 
 import { Markdown } from "components/markdown";
 import { OG } from "components/post/og";
+import dynamic from "next/dynamic";
+
+const YouTubeVideo = dynamic(
+  () => import("components/video/youtube").then((mod) => mod.YouTubeVideo),
+  {
+    ssr: false,
+    loading: () => <VideoPlaceholder />,
+  }
+);
 
 const MAX_URI_DISPLAY_LENGTH = 48;
 
@@ -18,7 +26,12 @@ interface PostContentProps {
   uri: string;
 }
 
-export const PostContent = ({ type, title, body, uri }: PostContentProps) => {
+export const PostContent = memo(function PostContent({
+  type,
+  title,
+  body,
+  uri,
+}: PostContentProps) {
   switch (type) {
     case PostType.TEXT: {
       return (
@@ -85,36 +98,18 @@ export const PostContent = ({ type, title, body, uri }: PostContentProps) => {
       }
 
       const isYouTube = uri.match(
-        /(https:\/\/youtu\.be\/|https:\/\/youtube\.com\/)?.*/
+        /^(https:\/\/youtu\.be\/|https:\/\/(www\.)?youtube\.com\/)/
       );
 
       if (isYouTube) {
-        const id = uri.match(
-          /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=)?)([a-zA-Z0-9_-]{11})/
-        )?.[1];
-
-        if (id) {
-          return (
-            <>
-              <Heading my="6" as="h1">
-                {title}
-              </Heading>
-              <Dimensions
-                render={({ width, height }) =>
-                  width && height ? (
-                    <YouTube
-                      videoId={id}
-                      opts={{
-                        width,
-                        height,
-                      }}
-                    />
-                  ) : null
-                }
-              />
-            </>
-          );
-        }
+        return (
+          <>
+            <Heading my="6" as="h1">
+              {title}
+            </Heading>
+            <YouTubeVideo uri={uri} />
+          </>
+        );
       }
 
       return (
@@ -143,34 +138,25 @@ export const PostContent = ({ type, title, body, uri }: PostContentProps) => {
       );
     }
   }
-};
+});
 
-interface DimensionsProps {
-  render: ({
-    width,
-    height,
-  }: {
-    width: number | null;
-    height: number | null;
-  }) => JSX.Element | null;
+interface VideoPlaceholderProps {
+  children?: React.ReactNode;
 }
 
-const Dimensions = ({ render }: DimensionsProps) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState<number | null>(null);
-  const [height, setHeight] = useState<number | null>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (el) {
-      setWidth(el.offsetWidth);
-      setHeight(Math.round(el.offsetWidth * 0.5625));
-    }
-  }, []);
-
+const VideoPlaceholder = ({ children = null }: VideoPlaceholderProps) => {
   return (
-    <Box sx={{ width: "100%", maxWidth: "100%" }} ref={ref}>
-      {render({ width, height })}
+    <Box display="flex" justifyContent="center" width="100%">
+      <Box width="100%" maxWidth="640px">
+        <Box
+          position="relative"
+          width="100%"
+          paddingBottom="56.25%"
+          backgroundColor="gray.600"
+        >
+          {children}
+        </Box>
+      </Box>
     </Box>
   );
 };

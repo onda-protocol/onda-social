@@ -41,6 +41,6 @@ export async function upload(
   const result = await bundlr.upload(data, {
     tags: [{ name: "Content-Type", value: contentType }],
   });
-  console.log(`Data uploaded ==> https://arweave.net/${result.id}`);
+  `Data uploaded ==> https://arweave.net/${result.id}`;
   return `https://arweave.net/${result.id}`;
 }
