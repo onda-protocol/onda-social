@@ -105,7 +105,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
           color: "gray.400",
         }}
       >
-        <Link href={`/u/${author.id}`} onClick={handleClick}>
+        <Link href={`/u/${author?.id}`} onClick={handleClick}>
           <Box as="span" display="flex" flexDirection="row" alignItems="center">
             {displayAvatar && author.avatar && author.name && (
               <Box as="span" mr="2">
@@ -121,7 +121,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
               </Box>
             )}
             <Text as="span" color="gray.300">
-              {forum ? "Posted by " : ""} {author.name ?? authorAddress}
+              {forum ? "Posted by " : ""} {author?.name ?? authorAddress}
             </Text>
             {forum ? <>&nbsp;</> : <Dot />}
             {time}

@@ -25,14 +25,11 @@ const profiles = new Map<string, Profile>();
 // });
 
 // DEVNET
-profiles.set("6XWURNHAmajFCocQXEP4ytFb5xFAyDsB976D3nLRG97A", {
-  name: "self",
-  description:
-    "The self-referential onda profile. The place for announcements, news, and updates... and some fun.",
+profiles.set("4QyVRzYiG2SyFJjAfcnxFz9PjdjJYn9XyW62bJXwJfFU", {
+  name: "test",
+  description: "test",
   image: "/profile.png",
-  links: {
-    twitter: "https://twitter.com/OndaProtocol",
-  },
+  links: {},
 });
 
 export function getProfiles(): (Profile & { id: string })[] {

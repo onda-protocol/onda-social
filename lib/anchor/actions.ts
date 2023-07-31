@@ -266,12 +266,6 @@ export function getDataHash(
   if ("postType" in entry) {
     switch (entry.postType) {
       case PostType.TEXT: {
-        console.log({
-          textPost: {
-            title: entry.title,
-            uri: entry.uri,
-          },
-        });
         return pkg.keccak_256.digest(
           program.coder.types.encode<DataV1>("DataV1", {
             textPost: {
@@ -282,10 +276,23 @@ export function getDataHash(
           })
         );
       }
+  
       case PostType.IMAGE: {
         return pkg.keccak_256.digest(
           program.coder.types.encode<DataV1>("DataV1", {
             imagePost: {
+              title: entry.title,
+              uri: entry.uri,
+              nsfw: entry.nsfw,
+            },
+          })
+        );
+      }
+
+      case PostType.LINK: {
+        return pkg.keccak_256.digest(
+          program.coder.types.encode<DataV1>("DataV1", {
+            linkPost: {
               title: entry.title,
               uri: entry.uri,
               nsfw: entry.nsfw,
