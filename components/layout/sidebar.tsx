@@ -96,17 +96,6 @@ interface SidebarButtonsProps {
 }
 
 export const SidebarButtons: React.FC<SidebarButtonsProps> = ({ forum }) => {
-  const { connection } = useConnection();
-  const anchorWallet = useAnchorWallet();
-
-  const initForumMutation = useMutation(async () => {
-    if (!anchorWallet) {
-      throw new Error("Wallet not connected");
-    }
-
-    return initForum(connection, anchorWallet);
-  });
-
   return (
     <Box my="6" mx="4">
       <Button
@@ -120,12 +109,11 @@ export const SidebarButtons: React.FC<SidebarButtonsProps> = ({ forum }) => {
         Create Post
       </Button>
       <Button
-        //isDisabled
+        as={Link}
+        href="/o/new"
         width="100%"
         borderRadius="lg"
         variant="outline"
-        isLoading={initForumMutation.isLoading}
-        onClick={() => initForumMutation.mutate()}
       >
         Create Community
       </Button>

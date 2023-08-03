@@ -108,7 +108,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
               <Box mb="4">
                 <IoImage size="2em" />
               </Box>
-              <Text color="inherit">
+              <Text color="inherit" textAlign="center">
                 Drag &apos;n&apos; drop some files here, or click to select
                 files
               </Text>

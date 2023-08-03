@@ -3,12 +3,13 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { Controller, set, useForm } from "react-hook-form";
-import { IoHelpCircle } from "react-icons/io5";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { IoTrash } from "react-icons/io5";
 import { web3 } from "@project-serum/anchor";
 import {
   Box,
   Container,
+  Divider,
   Heading,
   Input,
   FormControl,
@@ -27,29 +28,33 @@ import {
   Progress,
   useSteps,
   Button,
+  IconButton,
+  CardBody,
+  Card,
 } from "@chakra-ui/react";
+import { getConcurrentMerkleTreeAccountSize } from "@solana/spl-account-compression";
 import {
-  getConcurrentMerkleTreeAccountSize,
-  ValidDepthSizePair,
-} from "@solana/spl-account-compression";
-import { useConnection } from "@solana/wallet-adapter-react";
+  useAnchorWallet,
+  useConnection,
+  useWallet,
+} from "@solana/wallet-adapter-react";
 
 import { ImagePicker } from "components/input/imagePicker";
+import { useMutation } from "@tanstack/react-query";
+import { initForum } from "lib/anchor";
 
 const SIZE_OPTIONS = [14, 15, 16, 17, 18, 19, 20];
 
 const STEPS = [
   { title: "First", description: "Config" },
   { title: "Second", description: "Metadata" },
-  { title: "Third", description: "Admins" },
+  { title: "Third", description: "Confirm" },
 ];
 
-type CommunityConfig = {
-  sizePair: ValidDepthSizePair;
-};
-
 const New: NextPage = () => {
-  const { activeStep, goToNext } = useSteps({
+  const [step1Data, setStep1Data] = useState<Step1Form>();
+  const [step2Data, setStep2Data] = useState<Step2Form>();
+  const { activeStep, goToNext, goToPrevious } = useSteps({
     index: 0,
     count: STEPS.length,
   });
@@ -61,7 +66,10 @@ const New: NextPage = () => {
   return (
     <Container maxW="container.sm">
       <Heading my="12">Create Community</Heading>
-      <Box position="relative">
+      <Text my="4">
+        Step {activeStep + 1}: <b>{activeStepText}</b>
+      </Text>
+      <Box position="relative" mb="8">
         <Stepper size="sm" index={activeStep} gap="0">
           {STEPS.map((_, i) => (
             <Step key={i}>
@@ -84,39 +92,57 @@ const New: NextPage = () => {
           zIndex={-1}
         />
       </Box>
-      <Text my="4">
-        Step {activeStep + 1}: <b>{activeStepText}</b>
-      </Text>
-      {activeStep === 0 && <Step1 onNext={goToNext} />}
-      {activeStep === 1 && <Step2 onNext={goToNext} />}
+      {activeStep === 0 && (
+        <Step1
+          onNext={(data) => {
+            setStep1Data(data);
+            goToNext();
+          }}
+        />
+      )}
+      {activeStep === 1 && (
+        <Step2
+          onPrev={goToPrevious}
+          onNext={(data) => {
+            setStep2Data(data);
+            goToNext();
+          }}
+        />
+      )}
+      {activeStep === 2 && step1Data && step2Data && (
+        <Step3 config={step1Data} metadata={step2Data} onPrev={goToPrevious} />
+      )}
     </Container>
   );
 };
 
 interface Step1Form {
-  slug: string;
   size: number;
-  logo: File | null;
+  tokens: {
+    address: string;
+  }[];
 }
 
 interface Step1Props {
-  onNext: () => void;
+  onNext: (data: Step1Form) => void;
 }
 
 const Step1 = ({ onNext }: Step1Props) => {
   const { connection } = useConnection();
   const [lamports, setLamports] = useState<number>();
   const methods = useForm<Step1Form>({});
+  const fieldArray = useFieldArray({
+    control: methods.control,
+    name: "tokens",
+  });
   const size = methods.watch("size");
 
   useEffect(() => {
     async function fetchCost() {
-      const space = getConcurrentMerkleTreeAccountSize(size, 64);
       const canopyDepth = size - 5;
-      const canopySpace = (Math.pow(2, canopyDepth) - 2) * 32;
-      const totalSpace = space + canopySpace;
+      const space = getConcurrentMerkleTreeAccountSize(size, 64, canopyDepth);
       const lamports = await connection.getMinimumBalanceForRentExemption(
-        totalSpace
+        space
       );
       setLamports(lamports);
     }
@@ -127,23 +153,16 @@ const Step1 = ({ onNext }: Step1Props) => {
   }, [connection, size]);
 
   return (
-    <Box noValidate as="form" onSubmit={methods.handleSubmit(() => onNext())}>
+    <Box
+      noValidate
+      as="form"
+      onSubmit={methods.handleSubmit((data) => onNext(data))}
+    >
       <Text mb="8">
-        This is the first step in creating a community. Select a slug and the
-        size of merkle tree you want to use. In future, you will be able to
-        migrate to a larger tree if your forum reaches max capacity.
+        This is the first step in creating a community. Select the size of
+        merkle tree you want to use. In future, you will be able to migrate to a
+        larger tree if your forum reaches max capacity.
       </Text>
-
-      <FormControl mb="4">
-        <FormLabel>Slug</FormLabel>
-        <Input
-          {...methods.register("slug", { required: true })}
-          placeholder="Slug"
-        />
-        <FormHelperText>
-          This is the slug that will be used in the URL. It must be unique.
-        </FormHelperText>
-      </FormControl>
 
       <FormControl>
         <FormLabel>Capacity</FormLabel>
@@ -173,8 +192,54 @@ const Step1 = ({ onNext }: Step1Props) => {
         </Box>
       )}
 
-      <Box display="flex" justifyContent="flex-end">
-        <Button type="submit">Submit</Button>
+      <Divider my="8" />
+
+      <Text mb="8">
+        Optionally select one or more NFT collections or spl-token mints to act
+        as a token gate for the community. Only users who own one of these NFTs
+        or tokens will be able to join the community. For NFTs please enter a
+        verified collection address.
+      </Text>
+
+      <Button
+        width="100%"
+        variant="outline"
+        onClick={() => fieldArray.append({ address: "" })}
+      >
+        Add Token Gate
+      </Button>
+
+      {fieldArray.fields.map((field, index) => (
+        <Box key={field.id} display="flex" alignItems="center" gap="2" my="4">
+          <Input
+            placeholder="Token Address"
+            isInvalid={Boolean(methods.formState.errors.tokens?.[index])}
+            {...methods.register(`tokens.${index}.address`, {
+              required: true,
+              validate: (value) => {
+                try {
+                  new web3.PublicKey(value);
+                  return true;
+                } catch (err) {
+                  return "Invalid address";
+                }
+              },
+            })}
+          />
+          <IconButton
+            aria-label="Remove field"
+            borderRadius="sm"
+            onClick={() => fieldArray.remove(index)}
+          >
+            <IoTrash />
+          </IconButton>
+        </Box>
+      ))}
+
+      <Divider my="8" />
+
+      <Box display="flex" justifyContent="flex-end" gap="2" my="8">
+        <Button type="submit">Next</Button>
       </Box>
     </Box>
   );
@@ -188,66 +253,164 @@ interface Step2Form {
 }
 
 interface Step2Props {
-  onNext: () => void;
+  onNext: (data: Step2Form) => void;
+  onPrev: () => void;
 }
 
-const Step2 = ({ onNext }: Step2Props) => {
+const Step2 = ({ onNext, onPrev }: Step2Props) => {
   const methods = useForm<Step2Form>();
 
   return (
-    <Box noValidate as="form" onSubmit={methods.handleSubmit(() => onNext())}>
+    <Box
+      noValidate
+      as="form"
+      onSubmit={methods.handleSubmit((data) => onNext(data))}
+    >
       <Text mb="8">
-        Add a name and description for your community. You can also upload a
-        logo and banner image.
+        Add a slug, name and description for your community. You can also upload
+        a logo and banner image.
       </Text>
 
-      <FormControl mb="4">
+      <FormControl mb="6">
         <FormLabel>Name</FormLabel>
         <Input
+          placeholder="Enter name"
           {...methods.register("name", { required: true })}
-          placeholder="Name"
         />
       </FormControl>
 
-      <FormControl>
+      <FormControl mb="6">
         <FormLabel>Description</FormLabel>
         <Textarea
+          placeholder="Enter description"
           {...methods.register("description", { required: true })}
-          placeholder="Description"
-          mt="2"
         />
       </FormControl>
 
-      <Box display="flex">
+      <Box
+        display="flex"
+        flexDirection={{
+          base: "column",
+          md: "row",
+        }}
+        gap="4"
+        mt="6"
+      >
         <Box flex={0}>
-          <FormControl mt="6">
+          <FormControl>
             <FormLabel>Logo</FormLabel>
             <Controller
               name="logo"
               control={methods.control}
               render={({ field }) => (
                 <Box height="200px" width="200px">
-                  <ImagePicker {...field} />
+                  <ImagePicker
+                    name={field.name}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
                 </Box>
               )}
             />
           </FormControl>
         </Box>
         <Box flex={1}>
-          <FormControl mt="6">
+          <FormControl>
             <FormLabel>Banner</FormLabel>
             <Controller
               name="banner"
               control={methods.control}
-              render={({ field }) => <ImagePicker {...field} />}
+              render={({ field }) => (
+                <ImagePicker
+                  name={field.name}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
             />
           </FormControl>
         </Box>
       </Box>
 
-      <Box display="flex" justifyContent="flex-end" mt="6">
-        <Button type="submit">Submit</Button>
+      <Divider my="8" />
+
+      <Box display="flex" justifyContent="flex-end" gap="2" my="8">
+        <Button variant="outline" onClick={onPrev}>
+          Back
+        </Button>
+        <Button type="submit">Next</Button>
       </Box>
+    </Box>
+  );
+};
+
+interface Step3Props {
+  config: Step1Form;
+  metadata: Step2Form;
+  onPrev: () => void;
+}
+
+const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
+  const { connection } = useConnection();
+  const anchorWallet = useAnchorWallet();
+
+  const initForumMutation = useMutation(async () => {
+    if (!anchorWallet) {
+      throw new Error("Wallet not connected");
+    }
+    return initForum(connection, anchorWallet);
+  });
+
+  if (initForumMutation.isIdle) {
+    return (
+      <Box>
+        <Heading size="md" mt="12" mb="8">
+          Summary
+        </Heading>
+
+        <Card>
+          <CardBody>
+            <Text fontSize="sm" color="whiteAlpha.500">
+              Name
+            </Text>
+            <Text mb="4">{metadata.name}</Text>
+            <Text fontSize="sm" color="whiteAlpha.500">
+              Description
+            </Text>
+            <Text mb="4">{metadata.description}</Text>
+            <Text fontSize="sm" color="whiteAlpha.500">
+              Capacity
+            </Text>
+            <Text mb="4">{1 << config.size}</Text>
+            <Text fontSize="sm" color="whiteAlpha.500">
+              Token Gates
+            </Text>
+            {config.tokens.length ? (
+              config.tokens.map((token) => (
+                <Text key={token.address}>{token.address}</Text>
+              ))
+            ) : (
+              <Text>None</Text>
+            )}
+          </CardBody>
+        </Card>
+
+        <Box display="flex" justifyContent="flex-end" gap="2" my="8">
+          <Button variant="outline" onClick={onPrev}>
+            Back
+          </Button>
+          <Button variant="solid" onClick={() => initForumMutation.mutate()}>
+            Confirm
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box py="12">
+      <Text mb="2">Initializing Forum&hellip;</Text>
+      <Progress size="xs" isIndeterminate />
     </Box>
   );
 };
