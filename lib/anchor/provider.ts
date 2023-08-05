@@ -3,6 +3,8 @@ import { AnchorWallet } from "@solana/wallet-adapter-react";
 import { OndaBloom, IDL as BloomIDL } from "./idl/onda_bloom";
 import { OndaCompression, IDL as CompressionIDL } from "./idl/onda_compression";
 import { OndaProfile, IDL as ProfileIDL } from "./idl/onda_profile";
+import { OndaModeration, IDL as ModerationIDL } from "./idl/onda_moderation";
+import { OndaNamespace, IDL as NamespaceIDL } from "./idl/onda_namespace";
 import {
   BLOOM_PROGRAM_ID,
   COMPRESSION_PROGRAM_ID,
@@ -37,6 +39,28 @@ export function getProfileProgram(
 ): anchor.Program<OndaProfile> {
   return new anchor.Program<OndaProfile>(
     ProfileIDL,
+    PROFILE_PROGRAM_ID,
+    wallet ? getProvider(connection, wallet) : undefined
+  );
+}
+
+export function getModerationProgram(
+  connection: anchor.web3.Connection,
+  wallet?: AnchorWallet
+): anchor.Program<OndaModeration> {
+  return new anchor.Program<OndaModeration>(
+    ModerationIDL,
+    PROFILE_PROGRAM_ID,
+    wallet ? getProvider(connection, wallet) : undefined
+  );
+}
+
+export function getNamespaceProgram(
+  connection: anchor.web3.Connection,
+  wallet?: AnchorWallet
+): anchor.Program<OndaNamespace> {
+  return new anchor.Program<OndaNamespace>(
+    NamespaceIDL,
     PROFILE_PROGRAM_ID,
     wallet ? getProvider(connection, wallet) : undefined
   );

@@ -3,6 +3,8 @@ import { PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-toke
 import {
   BLOOM_PROGRAM_ID,
   COMPRESSION_PROGRAM_ID,
+  MODERATION_PROGRAM_ID,
+  NAMESPACE_PROGRAM_ID,
   PROFILE_PROGRAM_ID,
   PLANKTON_MINT,
 } from "../lib/anchor/constants";
@@ -64,5 +66,26 @@ export function findProfilePda(author: web3.PublicKey) {
   return web3.PublicKey.findProgramAddressSync(
     [Buffer.from("profile"), author.toBuffer()],
     PROFILE_PROGRAM_ID
+  )[0];
+}
+
+export function findTeamPda(merkleTree: web3.PublicKey) {
+  return web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("team"), merkleTree.toBuffer()],
+    MODERATION_PROGRAM_ID
+  )[0];
+}
+
+export function findNamespacePda(name: string) {
+  return web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("namespace"), Buffer.from(name)],
+    NAMESPACE_PROGRAM_ID
+  )[0];
+}
+
+export function findTreeMarkerPda(merkleTree: web3.PublicKey) {
+  return web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("tree_marker"), merkleTree.toBuffer()],
+    NAMESPACE_PROGRAM_ID
   )[0];
 }

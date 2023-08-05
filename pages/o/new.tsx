@@ -38,10 +38,11 @@ import {
   useConnection,
   useWallet,
 } from "@solana/wallet-adapter-react";
-
-import { ImagePicker } from "components/input/imagePicker";
 import { useMutation } from "@tanstack/react-query";
-import { initForum } from "lib/anchor";
+
+import { createNamepace, initForum } from "lib/anchor";
+import { upload } from "lib/bundlr";
+import { ImagePicker } from "components/input/imagePicker";
 
 const SIZE_OPTIONS = [14, 15, 16, 17, 18, 19, 20];
 
@@ -139,7 +140,7 @@ const Step1 = ({ onNext }: Step1Props) => {
 
   useEffect(() => {
     async function fetchCost() {
-      const canopyDepth = size - 5;
+      const canopyDepth = size - 3;
       const space = getConcurrentMerkleTreeAccountSize(size, 64, canopyDepth);
       const lamports = await connection.getMinimumBalanceForRentExemption(
         space
@@ -352,14 +353,61 @@ interface Step3Props {
 
 const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
   const { connection } = useConnection();
+  const wallet = useWallet();
   const anchorWallet = useAnchorWallet();
 
-  const initForumMutation = useMutation(async () => {
+  const namespaceMutation = useMutation<
+    void,
+    unknown,
+    { merkleTree: web3.PublicKey; uri: string }
+  >(async ({ merkleTree, uri }) => {
     if (!anchorWallet) {
       throw new Error("Wallet not connected");
     }
-    return initForum(connection, anchorWallet);
+
+    return createNamepace(
+      connection,
+      anchorWallet,
+      merkleTree,
+      metadata.name,
+      uri
+    );
   });
+
+  const metadataUploadMutation = useMutation(
+    async (_merkleTree: web3.PublicKey) => {
+      return upload(
+        wallet,
+        null,
+        JSON.stringify({
+          name: metadata.name,
+          description: metadata.description,
+          logo: metadata.logo,
+          banner: metadata.banner,
+        }),
+        "application/json"
+      );
+    },
+    {
+      onSuccess: (uri, merkleTree) => {
+        namespaceMutation.mutate({ merkleTree, uri });
+      },
+    }
+  );
+
+  const initForumMutation = useMutation(
+    async () => {
+      if (!anchorWallet) {
+        throw new Error("Wallet not connected");
+      }
+      return initForum(connection, anchorWallet, config.size, 64);
+    },
+    {
+      onSuccess: (merkleTree) => {
+        metadataUploadMutation.mutate(merkleTree);
+      },
+    }
+  );
 
   if (initForumMutation.isIdle) {
     return (
@@ -410,7 +458,55 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
   return (
     <Box py="12">
       <Text mb="2">Initializing Forum&hellip;</Text>
-      <Progress size="xs" isIndeterminate />
+      <Progress
+        size="xs"
+        isIndeterminate
+        isAnimated={
+          !initForumMutation.error &&
+          !metadataUploadMutation.error &&
+          !namespaceMutation.error
+        }
+      />
+
+      {initForumMutation.error ? (
+        <Box display="flex" justifyContent="center">
+          <Text textAlign="center">Failed to initalize forum</Text>
+          <Button onClick={() => initForumMutation.mutate()}>Retry</Button>
+        </Box>
+      ) : null}
+
+      {metadataUploadMutation.error ? (
+        <Box display="flex" justifyContent="center">
+          <Text textAlign="center">Failed to upload forum metadata</Text>
+          {initForumMutation.data ? (
+            <Button
+              onClick={() =>
+                metadataUploadMutation.mutate(initForumMutation.data)
+              }
+            >
+              Retry
+            </Button>
+          ) : null}
+        </Box>
+      ) : null}
+
+      {namespaceMutation.error ? (
+        <Box display="flex" justifyContent="center">
+          <Text textAlign="center">Failed to create namespace</Text>
+          {metadataUploadMutation.data && initForumMutation.data ? (
+            <Button
+              onClick={() =>
+                namespaceMutation.mutate({
+                  merkleTree: initForumMutation.data,
+                  uri: metadataUploadMutation.data,
+                })
+              }
+            >
+              Retry
+            </Button>
+          ) : null}
+        </Box>
+      ) : null}
     </Box>
   );
 };

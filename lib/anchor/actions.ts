@@ -18,6 +18,8 @@ import {
   findBloomPda,
   findMetadataPda,
   findProfilePda,
+  findNamespacePda,
+  findTreeMarkerPda,
   findEscrowTokenPda,
   findRewardEscrowPda,
   findClaimMarkerPda,
@@ -29,6 +31,7 @@ import {
   getCompressionProgram,
   getBloomProgram,
   getProfileProgram,
+  getNamespaceProgram,
 } from "./provider";
 import { PLANKTON_MINT, PROTOCOL_FEE_PLANKTON_ATA } from "./constants";
 import {
@@ -39,7 +42,9 @@ import {
 
 export async function initForum(
   connection: web3.Connection,
-  wallet: AnchorWallet
+  wallet: AnchorWallet,
+  maxDepth: number,
+  maxBufferSize: number
 ) {
   const program = getCompressionProgram(connection, wallet);
   const payer = program.provider.publicKey;
@@ -48,26 +53,23 @@ export async function initForum(
     throw new Error("Provider not found");
   }
 
-  const maxDepth = 18;
-  const canopyDepth = 12;
-  const maxBufferSize = 64;
   const merkleTreeKeypair = web3.Keypair.generate();
   const merkleTree = merkleTreeKeypair.publicKey;
   const forumConfig = findForumConfigPda(merkleTree);
-  const space = getConcurrentMerkleTreeAccountSize(maxDepth, maxBufferSize);
-  const canopySpace = (Math.pow(2, canopyDepth) - 2) * 32;
-  const totalSpace = space + canopySpace;
-  const lamports = await connection.getMinimumBalanceForRentExemption(
-    totalSpace
+  const space = getConcurrentMerkleTreeAccountSize(
+    maxDepth,
+    maxBufferSize,
+    maxDepth - 3
   );
-  console.log("Allocating ", totalSpace, " bytes for merkle tree");
+  const lamports = await connection.getMinimumBalanceForRentExemption(space);
+  console.log("Allocating ", space, " bytes for merkle tree");
   console.log(
     lamports / web3.LAMPORTS_PER_SOL,
     " SOL required for rent exemption"
   );
   const allocTreeIx = web3.SystemProgram.createAccount({
     lamports,
-    space: totalSpace,
+    space,
     fromPubkey: payer,
     newAccountPubkey: merkleTree,
     programId: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
@@ -100,6 +102,8 @@ export async function initForum(
   console.log("Forum initialized");
   console.log("forumConfig: ", forumConfig.toBase58());
   console.log("merkleTree: ", merkleTree.toBase58());
+
+  return merkleTree;
 }
 
 export async function addEntry(
@@ -276,7 +280,7 @@ export function getDataHash(
           })
         );
       }
-  
+
       case PostType.IMAGE: {
         return pkg.keccak_256.digest(
           program.coder.types.encode<DataV1>("DataV1", {
@@ -464,6 +468,31 @@ export async function updateProfile(
       author: wallet.publicKey,
       profile: profilePda,
       metadata: metadataPda,
+    })
+    .rpc();
+}
+
+export async function createNamepace(
+  connection: web3.Connection,
+  wallet: AnchorWallet,
+  merkleTree: web3.PublicKey,
+  name: string,
+  uri: string
+) {
+  const program = getNamespaceProgram(connection, wallet);
+  const namespacePda = findNamespacePda(name);
+  const treeMarkerPda = findTreeMarkerPda(merkleTree);
+  const forumConfigPda = findForumConfigPda(merkleTree);
+
+  await program.methods
+    .createNamespace(name, uri)
+    .accounts({
+      merkleTree,
+      admin: wallet.publicKey,
+      payer: wallet.publicKey,
+      namespace: namespacePda,
+      treeMarker: treeMarkerPda,
+      forumConfig: forumConfigPda,
     })
     .rpc();
 }
