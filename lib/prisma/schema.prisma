@@ -3,16 +3,50 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("MIGRATE_DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MODERATOR
+}
+
+model Moderator {
+  id      Int    @id @default(autoincrement())
+  address String
+  role    Role
+  Forum   Forum  @relation("ForumToModerator", fields: [forum], references: [id])
+  forum   String
+}
+
+enum GateType {
+  COLLECTION
+  MINT
+}
+
+model Gate {
+  id      Int      @id @default(autoincrement())
+  address String
+  type    GateType
+  Forum   Forum    @relation("ForumToGate", fields: [forum], references: [id])
+  forum   String
 }
 
 model Forum {
-  id String @id @unique
-  config String @unique
-  collections String[]
+  id            String      @id @unique
+  admin         String
+  config        String      @unique
+  name          String?     @unique
+  description   String?
+  avatar        String?
+  banner        String?
   totalCapacity BigInt
-  Posts Post[] @relation("ForumToPost")
+  Gates         Gate[]      @relation("ForumToGate")
+  Moderators    Moderator[] @relation("ForumToModerator")
+  Posts         Post[]      @relation("ForumToPost")
 }
 
 enum PostType {
@@ -22,48 +56,48 @@ enum PostType {
 }
 
 model Post {
-  id String @id @unique
-  author String
-  Author User @relation("UserToPost", fields: [author], references: [id])
-  title String
-  body String?
-  uri String
-  nsfw Boolean @default(false)
-  hash String?
-  postType PostType @default(TEXT)
+  id        String    @id @unique
+  author    String
+  Author    User      @relation("UserToPost", fields: [author], references: [id])
+  title     String
+  body      String?
+  uri       String
+  nsfw      Boolean   @default(false)
+  hash      String?
+  postType  PostType  @default(TEXT)
   createdAt BigInt
-  editedAt BigInt?
-  nonce BigInt
-  likes BigInt @default(0)
-  forum String
-  Forum Forum @relation("ForumToPost", fields: [forum], references: [id])
-  Comments Comment[] @relation("PostToComment")
+  editedAt  BigInt?
+  nonce     BigInt
+  likes     BigInt    @default(0)
+  forum     String
+  Forum     Forum     @relation("ForumToPost", fields: [forum], references: [id])
+  Comments  Comment[] @relation("PostToComment")
 }
 
 model Comment {
-  id String @id @unique
-  author String
-  Author User @relation("UserToComment", fields: [author], references: [id])
-  body String
-  uri String
-  nsfw Boolean @default(false)
-  hash String?
+  id        String    @id @unique
+  author    String
+  Author    User      @relation("UserToComment", fields: [author], references: [id])
+  body      String
+  uri       String
+  nsfw      Boolean   @default(false)
+  hash      String?
   createdAt BigInt
-  editedAt BigInt?
-  nonce BigInt
-  likes BigInt @default(0)
-  post String
-  Post Post @relation("PostToComment", fields: [post], references: [id])
-  parent String?
-  Parent Comment? @relation("CommentToParent", fields: [parent], references: [id])
-  Children Comment[] @relation("CommentToParent")
+  editedAt  BigInt?
+  nonce     BigInt
+  likes     BigInt    @default(0)
+  post      String
+  Post      Post      @relation("PostToComment", fields: [post], references: [id])
+  parent    String?
+  Parent    Comment?  @relation("CommentToParent", fields: [parent], references: [id])
+  Children  Comment[] @relation("CommentToParent")
 }
 
 model User {
-  id String @id @unique
-  name String?
-  mint String?
-  avatar String?
-  Posts Post[] @relation("UserToPost")
+  id       String    @id @unique
+  name     String?
+  mint     String?
+  avatar   String?
+  Posts    Post[]    @relation("UserToPost")
   Comments Comment[] @relation("UserToComment")
 }
