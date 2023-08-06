@@ -40,22 +40,27 @@ import {
   fetchProof,
 } from "lib/api";
 
-export async function initForum(
+export async function initForumAndNamespace(
   connection: web3.Connection,
   wallet: AnchorWallet,
   maxDepth: number,
-  maxBufferSize: number
+  maxBufferSize: number,
+  name: string,
+  uri: string
 ) {
-  const program = getCompressionProgram(connection, wallet);
-  const payer = program.provider.publicKey;
+  const compressionProgram = getCompressionProgram(connection, wallet);
+  const namespaceProgram = getNamespaceProgram(connection, wallet);
+  const payer = wallet.publicKey;
 
-  if (!payer || !program.provider.sendAndConfirm) {
+  if (!compressionProgram.provider.sendAndConfirm) {
     throw new Error("Provider not found");
   }
 
   const merkleTreeKeypair = web3.Keypair.generate();
   const merkleTree = merkleTreeKeypair.publicKey;
   const forumConfig = findForumConfigPda(merkleTree);
+  const namespacePda = findNamespacePda(name);
+  const treeMarkerPda = findTreeMarkerPda(merkleTree);
   const space = getConcurrentMerkleTreeAccountSize(
     maxDepth,
     maxBufferSize,
@@ -75,7 +80,7 @@ export async function initForum(
     programId: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   });
 
-  const initIx = await program.methods
+  const initIx = await compressionProgram.methods
     .initForum(maxDepth, maxBufferSize, null)
     .accounts({
       payer,
@@ -86,12 +91,27 @@ export async function initForum(
     })
     .instruction();
 
-  const tx = new web3.Transaction().add(allocTreeIx).add(initIx);
+  const namespaceIx = await namespaceProgram.methods
+    .createNamespace(name, uri)
+    .accounts({
+      merkleTree,
+      forumConfig,
+      admin: wallet.publicKey,
+      payer: wallet.publicKey,
+      namespace: namespacePda,
+      treeMarker: treeMarkerPda,
+    })
+    .instruction();
+
+  const tx = new web3.Transaction().add(allocTreeIx, initIx, namespaceIx);
+
   tx.feePayer = payer;
+  tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
   try {
-    await program.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
+    await compressionProgram.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
       commitment: "confirmed",
+      skipPreflight: true,
     });
   } catch (err) {
     // @ts-ignore

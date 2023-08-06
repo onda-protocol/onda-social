@@ -8,6 +8,7 @@ import { OndaNamespace, IDL as NamespaceIDL } from "./idl/onda_namespace";
 import {
   BLOOM_PROGRAM_ID,
   COMPRESSION_PROGRAM_ID,
+  NAMESPACE_PROGRAM_ID,
   PROFILE_PROGRAM_ID,
 } from "./constants";
 
@@ -18,7 +19,7 @@ export function getBloomProgram(
   return new anchor.Program<OndaBloom>(
     BloomIDL,
     BLOOM_PROGRAM_ID,
-    wallet ? getProvider(connection, wallet) : undefined
+    getProvider(connection, wallet)
   );
 }
 
@@ -29,7 +30,7 @@ export function getCompressionProgram(
   return new anchor.Program<OndaCompression>(
     CompressionIDL,
     COMPRESSION_PROGRAM_ID,
-    wallet ? getProvider(connection, wallet) : undefined
+    getProvider(connection, wallet)
   );
 }
 
@@ -40,7 +41,7 @@ export function getProfileProgram(
   return new anchor.Program<OndaProfile>(
     ProfileIDL,
     PROFILE_PROGRAM_ID,
-    wallet ? getProvider(connection, wallet) : undefined
+    getProvider(connection, wallet)
   );
 }
 
@@ -51,7 +52,7 @@ export function getModerationProgram(
   return new anchor.Program<OndaModeration>(
     ModerationIDL,
     PROFILE_PROGRAM_ID,
-    wallet ? getProvider(connection, wallet) : undefined
+    getProvider(connection, wallet)
   );
 }
 
@@ -61,17 +62,45 @@ export function getNamespaceProgram(
 ): anchor.Program<OndaNamespace> {
   return new anchor.Program<OndaNamespace>(
     NamespaceIDL,
-    PROFILE_PROGRAM_ID,
-    wallet ? getProvider(connection, wallet) : undefined
+    NAMESPACE_PROGRAM_ID,
+    getProvider(connection, wallet)
   );
+}
+
+class MockWallet implements anchor.Wallet {
+  constructor(readonly payer: anchor.web3.Keypair) {}
+
+  async signTransaction(
+    tx: anchor.web3.Transaction
+  ): Promise<anchor.web3.Transaction> {
+    tx.partialSign(this.payer);
+    return tx;
+  }
+
+  async signAllTransactions(
+    txs: anchor.web3.Transaction[]
+  ): Promise<anchor.web3.Transaction[]> {
+    return txs.map((t) => {
+      t.partialSign(this.payer);
+      return t;
+    });
+  }
+
+  get publicKey(): anchor.web3.PublicKey {
+    return this.payer.publicKey;
+  }
 }
 
 export function getProvider(
   connection: anchor.web3.Connection,
-  wallet: AnchorWallet
+  wallet?: AnchorWallet
 ): anchor.AnchorProvider {
-  return new anchor.AnchorProvider(connection, wallet, {
-    preflightCommitment: "confirmed",
-    commitment: "confirmed",
-  });
+  return new anchor.AnchorProvider(
+    connection,
+    wallet ?? new MockWallet(anchor.web3.Keypair.generate()),
+    {
+      preflightCommitment: "confirmed",
+      commitment: "confirmed",
+    }
+  );
 }

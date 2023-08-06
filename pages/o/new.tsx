@@ -40,9 +40,10 @@ import {
 } from "@solana/wallet-adapter-react";
 import { useMutation } from "@tanstack/react-query";
 
-import { createNamepace, initForum } from "lib/anchor";
+import { createNamepace, initForumAndNamespace } from "lib/anchor";
 import { upload } from "lib/bundlr";
 import { ImagePicker } from "components/input/imagePicker";
+import { findNamespacePda } from "utils/pda";
 
 const SIZE_OPTIONS = [14, 15, 16, 17, 18, 19, 20];
 
@@ -259,6 +260,7 @@ interface Step2Props {
 }
 
 const Step2 = ({ onNext, onPrev }: Step2Props) => {
+  const { connection } = useConnection();
   const methods = useForm<Step2Form>();
 
   return (
@@ -276,8 +278,37 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
         <FormLabel>Name</FormLabel>
         <Input
           placeholder="Enter name"
-          {...methods.register("name", { required: true })}
+          isInvalid={Boolean(methods.formState.errors.name)}
+          {...methods.register("name", {
+            required: true,
+            pattern: /^[a-z0-9]+$/,
+            validate: {
+              maxLength: (value) => {
+                if (Buffer.from(value).byteLength > 32) {
+                  return "Name is too long";
+                }
+                return true;
+              },
+              async unique(value) {
+                const namespacePda = await findNamespacePda(value);
+                const accountInfo = await connection.getAccountInfo(
+                  namespacePda
+                );
+                console.log(accountInfo);
+                if (accountInfo) {
+                  return `${value} is already taken`;
+                }
+                return true;
+              },
+            },
+          })}
         />
+        <FormHelperText>
+          {typeof methods.formState.errors.name?.message === "string" &&
+          methods.formState.errors.name.message.length
+            ? methods.formState.errors.name?.message
+            : "No spaces or symbols"}
+        </FormHelperText>
       </FormControl>
 
       <FormControl mb="6">
@@ -356,60 +387,47 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet();
 
-  const namespaceMutation = useMutation<
-    void,
-    unknown,
-    { merkleTree: web3.PublicKey; uri: string }
-  >(async ({ merkleTree, uri }) => {
-    if (!anchorWallet) {
-      throw new Error("Wallet not connected");
+  const initMutation = useMutation(
+    async (uri: string) => {
+      if (!anchorWallet) {
+        throw new Error("Wallet not connected");
+      }
+      return initForumAndNamespace(
+        connection,
+        anchorWallet,
+        config.size,
+        64,
+        metadata.name,
+        uri
+      );
+    },
+    {
+      onSuccess: () => {},
     }
-
-    return createNamepace(
-      connection,
-      anchorWallet,
-      merkleTree,
-      metadata.name,
-      uri
-    );
-  });
+  );
 
   const metadataUploadMutation = useMutation(
-    async (_merkleTree: web3.PublicKey) => {
+    async () => {
       return upload(
         wallet,
         null,
         JSON.stringify({
           name: metadata.name,
           description: metadata.description,
-          logo: metadata.logo,
-          banner: metadata.banner,
+          // logo: metadata.logo,
+          // banner: metadata.banner,
         }),
         "application/json"
       );
     },
     {
-      onSuccess: (uri, merkleTree) => {
-        namespaceMutation.mutate({ merkleTree, uri });
+      onSuccess: (uri) => {
+        initMutation.mutate(uri);
       },
     }
   );
 
-  const initForumMutation = useMutation(
-    async () => {
-      if (!anchorWallet) {
-        throw new Error("Wallet not connected");
-      }
-      return initForum(connection, anchorWallet, config.size, 64);
-    },
-    {
-      onSuccess: (merkleTree) => {
-        metadataUploadMutation.mutate(merkleTree);
-      },
-    }
-  );
-
-  if (initForumMutation.isIdle) {
+  if (metadataUploadMutation.isIdle) {
     return (
       <Box>
         <Heading size="md" mt="12" mb="8">
@@ -447,7 +465,10 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
           <Button variant="outline" onClick={onPrev}>
             Back
           </Button>
-          <Button variant="solid" onClick={() => initForumMutation.mutate()}>
+          <Button
+            variant="solid"
+            onClick={() => metadataUploadMutation.mutate()}
+          >
             Confirm
           </Button>
         </Box>
@@ -455,56 +476,41 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
     );
   }
 
+  function getMessage() {
+    if (metadataUploadMutation.isLoading) {
+      return "Uploading metadata";
+    }
+    if (initMutation.isLoading) {
+      return "Initializing forum";
+    }
+  }
+
   return (
     <Box py="12">
-      <Text mb="2">Initializing Forum&hellip;</Text>
+      <Text mb="2">{getMessage()}&hellip;</Text>
       <Progress
         size="xs"
         isIndeterminate
-        isAnimated={
-          !initForumMutation.error &&
-          !metadataUploadMutation.error &&
-          !namespaceMutation.error
-        }
+        isAnimated={!initMutation.error && !metadataUploadMutation.error}
       />
 
-      {initForumMutation.error ? (
+      {initMutation.error ? (
         <Box display="flex" justifyContent="center">
           <Text textAlign="center">Failed to initalize forum</Text>
-          <Button onClick={() => initForumMutation.mutate()}>Retry</Button>
+          {metadataUploadMutation.data ? (
+            <Button
+              onClick={() => initMutation.mutate(metadataUploadMutation.data)}
+            >
+              Retry
+            </Button>
+          ) : null}
         </Box>
       ) : null}
 
       {metadataUploadMutation.error ? (
         <Box display="flex" justifyContent="center">
           <Text textAlign="center">Failed to upload forum metadata</Text>
-          {initForumMutation.data ? (
-            <Button
-              onClick={() =>
-                metadataUploadMutation.mutate(initForumMutation.data)
-              }
-            >
-              Retry
-            </Button>
-          ) : null}
-        </Box>
-      ) : null}
-
-      {namespaceMutation.error ? (
-        <Box display="flex" justifyContent="center">
-          <Text textAlign="center">Failed to create namespace</Text>
-          {metadataUploadMutation.data && initForumMutation.data ? (
-            <Button
-              onClick={() =>
-                namespaceMutation.mutate({
-                  merkleTree: initForumMutation.data,
-                  uri: metadataUploadMutation.data,
-                })
-              }
-            >
-              Retry
-            </Button>
-          ) : null}
+          <Button onClick={() => metadataUploadMutation.mutate()}>Retry</Button>
         </Box>
       ) : null}
     </Box>

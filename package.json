@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "generate": "npx prisma generate --schema ./lib/prisma/schema.prisma --data-proxy",
-    "postinstall": "npm run generate",
+    "postinstall": "npm run generate --data-proxy",
     "replay": "ts-node ./scripts/replay.ts"
   },
   "dependencies": {
@@ -40,6 +40,7 @@
     "eslint": "8.38.0",
     "eslint-config-next": "13.3.0",
     "framer-motion": "^10.12.7",
+    "helius-sdk": "^1.0.13",
     "js-sha256": "^0.9.0",
     "js-sha3": "^0.8.0",
     "next": "13.3.0",
