@@ -11,9 +11,7 @@ import {
   Link as ChakraLink,
 } from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
-import { useMutation } from "@tanstack/react-query";
 
-import { initForum } from "lib/anchor/actions";
 import { Avatar } from "../avatar";
 import { Panel } from "../panel";
 
@@ -56,7 +54,7 @@ export const SidebarSection: React.FC<SectionProps> = ({ title, children }) => {
 interface SidebarItemProps {
   active: boolean;
   href: string;
-  image: string;
+  image: string | null;
   label: string;
 }
 
@@ -80,7 +78,16 @@ export const SidebarItem = ({
           }}
         >
           <Box minW="24px" mr="2">
-            <Avatar name={label} image={image} size={24} />
+            {image ? (
+              <Avatar name={label} image={image} size={24} />
+            ) : (
+              <Box
+                height="24px"
+                width="24px"
+                borderRadius="100%"
+                bgColor="whiteAlpha.200"
+              />
+            )}
           </Box>
           <Text as="span" fontSize="sm" wordBreak="break-word">
             {label}
@@ -110,7 +117,7 @@ export const SidebarButtons: React.FC<SidebarButtonsProps> = ({ forum }) => {
       </Button>
       <Button
         as={Link}
-        href="/o/new"
+        href="/new"
         width="100%"
         borderRadius="lg"
         variant="outline"

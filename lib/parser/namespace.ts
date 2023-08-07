@@ -37,7 +37,7 @@ export async function namespaceParser(ix: Instruction) {
 
   const merkleTreeIndex = ixAccounts.findIndex((a) => a.name === "merkleTree");
   const merkleTreeAddress = ix.accounts[merkleTreeIndex];
-  const layout = borsh.struct([borsh.str("name"), borsh.str("uri")]);
+  const layout = borsh.struct([borsh.str("namespace"), borsh.str("uri")]);
   const decoded = layout.decode(Buffer.from(ixData.slice(8)));
   const metadata = await axios.get(decoded.uri).then((res) => res.data);
 
@@ -46,8 +46,11 @@ export async function namespaceParser(ix: Instruction) {
       id: merkleTreeAddress,
     },
     data: {
-      name: metadata.name,
-      description: metadata.description,
+      namespace: decoded.namespace,
+      displayName: metadata?.displayName,
+      description: metadata?.description,
+      icon: metadata?.icon,
+      banner: metadata?.banner,
     },
   });
 }

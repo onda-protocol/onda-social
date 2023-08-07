@@ -10,7 +10,7 @@ import {
 import { Box, Spinner, Text } from "@chakra-ui/react";
 
 import { getProfiles } from "utils/profile";
-import { fetchPosts } from "lib/api";
+import { fetchFora, fetchPosts } from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import {
   Sidebar,
@@ -26,28 +26,37 @@ interface PageProps {
 
 const Home: NextPage<PageProps> = () => {
   const queryClient = useQueryClient();
-  const query = useQuery(["posts"], fetchPosts);
+  const postsQuery = useQuery(["posts"], fetchPosts);
+  const foraQuery = useQuery(["fora"], fetchFora);
 
   // Seed posts to cache
   useEffect(() => {
-    if (query.data) {
-      for (const post of query.data) {
+    if (postsQuery.data) {
+      for (const post of postsQuery.data) {
         queryClient.setQueryData(["post", post.id], post);
       }
     }
-  }, [queryClient, query.data]);
+  }, [queryClient, postsQuery.data]);
+
+  useEffect(() => {
+    if (foraQuery.data) {
+      for (const forum of foraQuery.data) {
+        queryClient.setQueryData(["forum", forum.id], forum);
+      }
+    }
+  }, [queryClient, foraQuery.data]);
 
   return (
     <Box mt="4">
       <GridLayout
         leftColumn={
           <Box mt="2">
-            {query.isLoading ? (
+            {postsQuery.isLoading ? (
               <Box display="flex" alignItems="center" justifyContent="center">
                 <Spinner />
               </Box>
             ) : (
-              query.data?.map((post) => (
+              postsQuery.data?.map((post) => (
                 <PostListItem key={post.id} post={post} />
               )) ?? null
             )}
@@ -66,13 +75,13 @@ const Home: NextPage<PageProps> = () => {
                 <SidebarButtons />
               </SidebarSection>
               <SidebarSection title="Communities">
-                {getProfiles().map((profile) => (
+                {foraQuery.data?.map((forum) => (
                   <SidebarItem
-                    key={profile.id}
+                    key={forum.id}
                     active={false}
-                    href={`/o/${profile.id}`}
-                    label={profile.name}
-                    image={profile.image}
+                    href={`/o/${forum.id}`}
+                    label={forum.name ?? "anonymous"}
+                    image={forum.logo}
                   />
                 ))}
               </SidebarSection>

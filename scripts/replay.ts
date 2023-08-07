@@ -10,7 +10,7 @@ async function main() {
     `https://api-devnet.helius.xyz/v0/transactions/?api-key=${apiKey}`,
     {
       transactions: [
-        "389pRGXk4hugKXC9kYtzK6bv9shrQnVLmfC6AfzRitcEPHfrRR8PFXq1CpSHZCT2eXtbdev9UYJP8T7PjgEbgJ7r",
+        "bnPeiR7VKaLwwXGd4bBN4kSPKgvr2nZxnaeDaAPssRkWpDJEs4ERerya3LDFouiovN44YRCKfN9jLELXi8szsV3",
       ],
     },
     {

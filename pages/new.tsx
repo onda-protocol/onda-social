@@ -40,8 +40,8 @@ import {
 } from "@solana/wallet-adapter-react";
 import { useMutation } from "@tanstack/react-query";
 
-import { createNamepace, initForumAndNamespace } from "lib/anchor";
-import { upload } from "lib/bundlr";
+import { initForumAndNamespace } from "lib/anchor";
+import { ContentType, upload } from "lib/bundlr";
 import { ImagePicker } from "components/input/imagePicker";
 import { findNamespacePda } from "utils/pda";
 
@@ -248,9 +248,10 @@ const Step1 = ({ onNext }: Step1Props) => {
 };
 
 interface Step2Form {
-  name: string;
+  namespace: string;
+  displayName: string;
   description: string;
-  logo: File | null;
+  icon: File | null;
   banner: File | null;
 }
 
@@ -270,22 +271,22 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
       onSubmit={methods.handleSubmit((data) => onNext(data))}
     >
       <Text mb="8">
-        Add a slug, name and description for your community. You can also upload
-        a logo and banner image.
+        Add a namespace, display name and description for your community. You
+        can also upload a logo and banner image.
       </Text>
 
       <FormControl mb="6">
-        <FormLabel>Name</FormLabel>
+        <FormLabel>Namespace</FormLabel>
         <Input
-          placeholder="Enter name"
-          isInvalid={Boolean(methods.formState.errors.name)}
-          {...methods.register("name", {
+          placeholder="Enter namespace"
+          isInvalid={Boolean(methods.formState.errors.namespace)}
+          {...methods.register("namespace", {
             required: true,
             pattern: /^[a-z0-9]+$/,
             validate: {
               maxLength: (value) => {
                 if (Buffer.from(value).byteLength > 32) {
-                  return "Name is too long";
+                  return "Namespace is too long";
                 }
                 return true;
               },
@@ -294,7 +295,6 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
                 const accountInfo = await connection.getAccountInfo(
                   namespacePda
                 );
-                console.log(accountInfo);
                 if (accountInfo) {
                   return `${value} is already taken`;
                 }
@@ -304,17 +304,27 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
           })}
         />
         <FormHelperText>
-          {typeof methods.formState.errors.name?.message === "string" &&
-          methods.formState.errors.name.message.length
-            ? methods.formState.errors.name?.message
-            : "No spaces or symbols"}
+          {typeof methods.formState.errors.namespace?.message === "string" &&
+          methods.formState.errors.namespace.message.length
+            ? methods.formState.errors.namespace?.message
+            : "No spaces or symbols allowed"}
         </FormHelperText>
+      </FormControl>
+
+      <FormControl mb="6">
+        <FormLabel>Display Name</FormLabel>
+        <Input
+          placeholder="Enter display name"
+          isInvalid={Boolean(methods.formState.errors.displayName)}
+          {...methods.register("displayName", { required: true })}
+        />
       </FormControl>
 
       <FormControl mb="6">
         <FormLabel>Description</FormLabel>
         <Textarea
           placeholder="Enter description"
+          isInvalid={Boolean(methods.formState.errors.description)}
           {...methods.register("description", { required: true })}
         />
       </FormControl>
@@ -330,9 +340,9 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
       >
         <Box flex={0}>
           <FormControl>
-            <FormLabel>Logo</FormLabel>
+            <FormLabel>Icon</FormLabel>
             <Controller
-              name="logo"
+              name="icon"
               control={methods.control}
               render={({ field }) => (
                 <Box height="200px" width="200px">
@@ -370,7 +380,9 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
         <Button variant="outline" onClick={onPrev}>
           Back
         </Button>
-        <Button type="submit">Next</Button>
+        <Button type="submit" isLoading={methods.formState.isValidating}>
+          Next
+        </Button>
       </Box>
     </Box>
   );
@@ -382,7 +394,16 @@ interface Step3Props {
   onPrev: () => void;
 }
 
+interface ForumJsonMetadata {
+  namespace: string;
+  displayName: string;
+  description: string;
+  icon?: string;
+  banner?: string;
+}
+
 const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
+  const router = useRouter();
   const { connection } = useConnection();
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet();
@@ -397,28 +418,54 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
         anchorWallet,
         config.size,
         64,
-        metadata.name,
+        metadata.namespace,
         uri
       );
     },
     {
-      onSuccess: () => {},
+      async onSuccess() {
+        router.push(`/o/${metadata.namespace}`);
+      },
     }
   );
 
   const metadataUploadMutation = useMutation(
     async () => {
-      return upload(
-        wallet,
-        null,
-        JSON.stringify({
-          name: metadata.name,
-          description: metadata.description,
-          // logo: metadata.logo,
-          // banner: metadata.banner,
-        }),
-        "application/json"
-      );
+      if (!wallet.publicKey) {
+        throw new Error("Wallet not connected");
+      }
+
+      const json: ForumJsonMetadata = {
+        namespace: metadata.namespace,
+        displayName: metadata.displayName,
+        description: metadata.description,
+      };
+
+      if (metadata.icon) {
+        const buffer = Buffer.from(await metadata.icon.arrayBuffer());
+
+        const iconUri = await upload(
+          wallet,
+          null,
+          buffer,
+          metadata.icon.type as ContentType
+        );
+        json.icon = iconUri;
+      }
+
+      if (metadata.banner) {
+        const buffer = Buffer.from(await metadata.banner.arrayBuffer());
+
+        const bannerUri = await upload(
+          wallet,
+          null,
+          buffer,
+          metadata.banner.type as ContentType
+        );
+        json.banner = bannerUri;
+      }
+
+      return upload(wallet, null, JSON.stringify(json), "application/json");
     },
     {
       onSuccess: (uri) => {
@@ -437,9 +484,9 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
         <Card>
           <CardBody>
             <Text fontSize="sm" color="whiteAlpha.500">
-              Name
+              Namespace
             </Text>
-            <Text mb="4">{metadata.name}</Text>
+            <Text mb="4">{metadata.namespace}</Text>
             <Text fontSize="sm" color="whiteAlpha.500">
               Description
             </Text>
