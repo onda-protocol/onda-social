@@ -5,7 +5,7 @@ import {
   useConnection,
   useWallet,
 } from "@solana/wallet-adapter-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
 import { useSessionWallet } from "@gumhq/react-sdk";
@@ -14,11 +14,11 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { fetchFora } from "lib/api";
 import { addEntry } from "lib/anchor/actions";
-import { getNameFromAddress, getProfiles } from "utils/profile";
 import { ContentType, upload } from "lib/bundlr";
 import { RadioCardMenu } from "components/input";
 import { ImagePicker } from "components/input/imagePicker";
 import { getOrCreateSession } from "lib/gum";
+import { useRouter } from "next/router";
 
 export interface EntryForm {
   title: string;
@@ -58,18 +58,23 @@ export const Editor = ({
   onRequestClose,
   onSuccess,
 }: EditorProps) => {
+  const router = useRouter();
+  const forum = router.query.o as string | undefined;
   const { connection } = useConnection();
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet();
   const sessionWallet = useSessionWallet();
   const queryClient = useQueryClient();
+  const foraQuery = useQuery(["fora"], fetchFora, {
+    enabled: Boolean(config.type === "post"),
+  });
 
   const methods = useForm<EntryForm>({
     defaultValues: {
       title: "",
       body: "",
       image: null,
-      forum: "",
+      forum: forum || "",
       postType: "textPost",
     },
   });
@@ -82,10 +87,12 @@ export const Editor = ({
   useEffect(() => {
     const setValue = methods.setValue;
 
-    if (config.forum) {
+    if (forum) {
+      setValue("forum", forum);
+    } else if (config.forum) {
       setValue("forum", config.forum);
     }
-  }, [methods.setValue, config.forum]);
+  }, [methods.setValue, forum, config.forum]);
 
   const mutation = useMutation<
     { signature: string; uri: string },
@@ -164,7 +171,7 @@ export const Editor = ({
         data: dataArgs,
         forumId: forum.id,
         forumConfig: forum.config,
-        collections: forum.collections,
+        collections: null, // forum.Gates, TODO
       });
 
       return {
@@ -279,11 +286,17 @@ export const Editor = ({
       as="form"
       onSubmit={methods.handleSubmit((data) => mutation.mutate(data))}
     >
-      <SelectForum
-        defaultValue={config.forum}
-        {...methods.register("forum", {
-          required: true,
-        })}
+      <Controller
+        name="forum"
+        control={methods.control}
+        rules={{ required: true }}
+        render={({ field }) => (
+          <SelectForum
+            {...field}
+            options={foraQuery.data}
+            defaultValue={forum || config.forum}
+          />
+        )}
       />
       <Box my="6">
         <Controller
@@ -358,13 +371,18 @@ export const Editor = ({
 
 const SelectForum = React.forwardRef<
   HTMLSelectElement,
-  React.ComponentPropsWithoutRef<typeof Select>
->(function SelectForum(props, ref) {
+  {
+    options: Awaited<ReturnType<typeof fetchFora>>;
+    selected: string;
+  } & React.ComponentPropsWithoutRef<typeof Select>
+>(function SelectForum({ options, selected, ...other }, ref) {
+  console.log("props: ", other);
+
   return (
-    <Select mt="6" placeholder="Choose a community" ref={ref} {...props}>
-      {getProfiles().map((forum) => (
+    <Select mt="6" placeholder="Choose a community" ref={ref} {...other}>
+      {options?.map((forum) => (
         <option key={forum.id} value={forum.id}>
-          {getNameFromAddress(forum.id)}
+          {forum.displayName}
         </option>
       ))}
     </Select>

@@ -79,9 +79,9 @@ const Home: NextPage<PageProps> = () => {
                   <SidebarItem
                     key={forum.id}
                     active={false}
-                    href={`/o/${forum.id}`}
-                    label={forum.name ?? "anonymous"}
-                    image={forum.logo}
+                    href={`/o/${forum.namespace}`}
+                    label={forum.displayName!}
+                    image={forum.icon}
                   />
                 ))}
               </SidebarSection>
