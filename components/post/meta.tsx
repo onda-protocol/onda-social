@@ -16,6 +16,7 @@ interface PostMetaProps {
   forum: string;
   forumNamespace: string | null;
   forumIcon: string | null;
+  displayIcon?: boolean;
   showRewards?: boolean;
   displayAvatar?: boolean;
 }
@@ -34,6 +35,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
   forum,
   forumNamespace,
   forumIcon,
+  displayIcon = true,
   showRewards = false,
   displayAvatar = false,
 }) => {
@@ -69,7 +71,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
         >
           <Link href={`/o/${forum}`} onClick={handleClick}>
             <Box as="span" display="flex" alignItems="center" color="inherit">
-              {forumIcon && (
+              {displayIcon && forumIcon && (
                 <Box mr="2">
                   <Image
                     height={24}

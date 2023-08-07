@@ -1,7 +1,6 @@
 import type { NextPage } from "next";
 import Image from "next/image";
 import { useRouter } from "next/router";
-import { useMemo } from "react";
 import {
   QueryClient,
   DehydratedState,
@@ -21,7 +20,6 @@ import {
   TabPanel,
 } from "@chakra-ui/react";
 
-import { shortenAddress } from "utils/format";
 import { fetchForumByNamespace, fetchPostsByForumNamespace } from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import {
@@ -105,7 +103,11 @@ const Community: NextPage<PageProps> = () => {
                     </Box>
                   ) : (
                     postsQuery.data?.map((post) => (
-                      <PostListItem key={post.id} post={post} />
+                      <PostListItem
+                        key={post.id}
+                        displayIcon={false}
+                        post={post}
+                      />
                     ))
                   )}
                 </Box>

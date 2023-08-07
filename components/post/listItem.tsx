@@ -8,10 +8,11 @@ import { PostButtons } from "components/post/buttons";
 import { PostContent } from "components/post/content";
 
 interface PostListItemProps {
+  displayIcon?: boolean;
   post: PostWithCommentsCountAndForum;
 }
 
-export const PostListItem = ({ post }: PostListItemProps) => {
+export const PostListItem = ({ displayIcon, post }: PostListItemProps) => {
   const router = useRouter();
 
   return (
@@ -23,6 +24,7 @@ export const PostListItem = ({ post }: PostListItemProps) => {
       onClick={() => router.push(`/comments/${post.id}`)}
     >
       <PostMeta
+        displayIcon={displayIcon}
         author={post.Author}
         likes={Number(post.likes)}
         forum={post.forum}
