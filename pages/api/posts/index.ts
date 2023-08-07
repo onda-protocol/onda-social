@@ -19,6 +19,8 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
       "User".avatar AS "Author.avatar",
       "Forum".id AS "Forum.id",
       "Forum".config AS "Forum.config",
+      "Forum".namespace AS "Forum.namespace",
+      "Forum".icon AS "Forum.icon",
       (
         SELECT COUNT(*)
         FROM "Comment"
@@ -41,6 +43,8 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
     const authorAvatar = post["Author.avatar"];
     const forumId = post["Forum.id"];
     const forumConfig = post["Forum.config"];
+    const forumNamespace = post["Forum.namespace"];
+    const forumIcon = post["Forum.icon"];
     const commentsCount = post["_count.Comments"];
 
     delete post["Author.id"];
@@ -62,6 +66,8 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
       Forum: {
         id: forumId,
         config: forumConfig,
+        namespace: forumNamespace,
+        icon: forumIcon,
       },
       _count: {
         Comments: commentsCount,

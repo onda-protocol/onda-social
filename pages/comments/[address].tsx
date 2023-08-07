@@ -38,7 +38,6 @@ const Comments: NextPage<PageProps> = () => {
     enabled: true,
     refetchOnMount: false,
   });
-  console.log(postQuery.data);
   const commentsQueryKey = useMemo(() => ["comments", id], [id]);
   const commentsQuery = useQuery({
     queryKey: commentsQueryKey,
@@ -127,6 +126,8 @@ const Comments: NextPage<PageProps> = () => {
         postType={postQuery.data.postType}
         author={postQuery.data.Author}
         forum={postQuery.data.forum}
+        forumNamespace={postQuery.data.Forum.namespace}
+        forumIcon={postQuery.data.Forum.icon}
         createdAt={postQuery.data.createdAt}
         editedAt={postQuery.data.editedAt}
       />
@@ -141,7 +142,7 @@ const Comments: NextPage<PageProps> = () => {
 
       <Editor
         buttonLabel="Comment"
-        placeholder="Got some thinky thoughts?"
+        placeholder="Got some thoughts?"
         successMessage="Reply added"
         config={{
           type: "comment",

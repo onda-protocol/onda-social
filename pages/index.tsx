@@ -41,7 +41,7 @@ const Home: NextPage<PageProps> = () => {
   useEffect(() => {
     if (foraQuery.data) {
       for (const forum of foraQuery.data) {
-        queryClient.setQueryData(["forum", forum.id], forum);
+        queryClient.setQueryData(["forum", forum.namespace], forum);
       }
     }
   }, [queryClient, foraQuery.data]);

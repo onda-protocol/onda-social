@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Text, useQuery } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { User } from "@prisma/client";
 
@@ -13,7 +13,9 @@ interface PostMetaProps {
   likes: number;
   createdAt?: string;
   editedAt?: string | null;
-  forum?: string;
+  forum: string;
+  forumNamespace: string | null;
+  forumIcon: string | null;
   showRewards?: boolean;
   displayAvatar?: boolean;
 }
@@ -27,23 +29,17 @@ const Dot = () => (
 export const PostMeta: React.FC<PostMetaProps> = ({
   author,
   likes,
-  forum,
   createdAt,
   editedAt,
+  forum,
+  forumNamespace,
+  forumIcon,
   showRewards = false,
   displayAvatar = false,
 }) => {
   const authorAddress = useMemo(
     () => (author?.id ? shortenAddress(author.id) : null),
     [author]
-  );
-  const forumName = useMemo(
-    () => (forum ? getNameFromAddress(forum) : null),
-    [forum]
-  );
-  const forumImage = useMemo(
-    () => (forum ? getImageFromAddress(forum) : null),
-    [forum]
   );
   const time = useMemo(
     () => (createdAt ? dayjs.unix(Number(createdAt)).fromNow() : null),
@@ -73,13 +69,13 @@ export const PostMeta: React.FC<PostMetaProps> = ({
         >
           <Link href={`/o/${forum}`} onClick={handleClick}>
             <Box as="span" display="flex" alignItems="center" color="inherit">
-              {forumName && forumImage && (
+              {forumIcon && (
                 <Box mr="2">
                   <Image
                     height={24}
                     width={24}
-                    alt={forumName}
-                    src={forumImage}
+                    alt="forum icon"
+                    src={forumIcon}
                     style={{
                       borderRadius: "100%",
                       objectFit: "cover",
@@ -89,7 +85,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
               )}
               <Text as="span" color="inherit">
                 <Text as="span" color="inherit">
-                  o/{forumName}
+                  o/{forumNamespace ?? shortenAddress(forum)}
                 </Text>
                 <Dot />
               </Text>
@@ -97,43 +93,54 @@ export const PostMeta: React.FC<PostMetaProps> = ({
           </Link>
         </Text>
       )}
-      <Text
-        as="span"
-        fontSize="sm"
-        color="gray.500"
-        _hover={{
-          color: "gray.400",
-        }}
-      >
-        <Link href={`/u/${author?.id}`} onClick={handleClick}>
-          <Box as="span" display="flex" flexDirection="row" alignItems="center">
-            {displayAvatar && author.avatar && author.name && (
-              <Box as="span" mr="2">
-                <Image
-                  height={28}
-                  width={28}
-                  alt={author.name}
-                  src={author.avatar}
-                  style={{
-                    borderRadius: "100%",
-                  }}
-                />
-              </Box>
-            )}
-            <Text as="span" color="gray.300">
-              {forum ? "Posted by " : ""} {author?.name ?? authorAddress}
-            </Text>
-            {forum ? <>&nbsp;</> : <Dot />}
+      <Text as="span" fontSize="sm">
+        <Box
+          as="span"
+          display="flex"
+          flexDirection="row"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Box
+            as="span"
+            color="gray.300"
+            _hover={{
+              color: "gray.400",
+            }}
+          >
+            <Link href={`/u/${author?.id}`} onClick={handleClick}>
+              {displayAvatar && author.avatar && author.name && (
+                <Box as="span" mr="2">
+                  <Image
+                    height={28}
+                    width={28}
+                    alt={author.name}
+                    src={author.avatar}
+                    style={{
+                      borderRadius: "100%",
+                    }}
+                  />
+                </Box>
+              )}
+              <Text as="span" color="inherit">
+                {forum ? "Posted by " : ""} {author?.name ?? authorAddress}
+              </Text>
+            </Link>
+          </Box>
+          <>&nbsp;&nbsp;</>
+          <Text as="span" color="gray.500">
             {time}
-            {lastEdited ? (
-              <>
-                <Dot />
+          </Text>
+          {lastEdited ? (
+            <>
+              <Dot />
+              <Text as="span" color="gray.500">
                 last edited&nbsp;
                 {lastEdited}
-              </>
-            ) : null}
-          </Box>
-        </Link>
+              </Text>
+            </>
+          ) : null}
+        </Box>
       </Text>
       {showRewards && likes >= 10 && (
         <Box ml="2">

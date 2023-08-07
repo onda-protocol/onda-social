@@ -13,6 +13,8 @@ interface PostHeadProps {
   createdAt: string;
   editedAt: string | null;
   forum: string;
+  forumNamespace: string | null;
+  forumIcon: string | null;
   postType: PostType;
 }
 
@@ -25,6 +27,8 @@ export const PostHead = ({
   createdAt,
   editedAt,
   forum,
+  forumNamespace,
+  forumIcon,
   postType,
 }: PostHeadProps) => {
   return (
@@ -35,6 +39,8 @@ export const PostHead = ({
           likes={Number(likes)}
           author={author}
           forum={forum}
+          forumNamespace={forumNamespace}
+          forumIcon={forumIcon}
           createdAt={createdAt}
           editedAt={editedAt}
         />

@@ -26,6 +26,8 @@ export const PostListItem = ({ post }: PostListItemProps) => {
         author={post.Author}
         likes={Number(post.likes)}
         forum={post.forum}
+        forumNamespace={post.Forum.namespace}
+        forumIcon={post.Forum.icon}
         createdAt={String(post.createdAt)}
       />
       <Box overflow="hidden">
