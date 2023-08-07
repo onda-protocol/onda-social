@@ -39,9 +39,10 @@ model Forum {
   id            String      @id @unique
   admin         String
   config        String      @unique
-  name          String?     @unique
+  namespace     String?     @unique
+  displayName   String?
   description   String?
-  avatar        String?
+  logo          String?
   banner        String?
   totalCapacity BigInt
   Gates         Gate[]      @relation("ForumToGate")
