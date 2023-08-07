@@ -42,7 +42,7 @@ model Forum {
   namespace     String?     @unique
   displayName   String?
   description   String?
-  logo          String?
+  icon          String?
   banner        String?
   totalCapacity BigInt
   Gates         Gate[]      @relation("ForumToGate")
