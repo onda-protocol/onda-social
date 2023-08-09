@@ -22,17 +22,26 @@ model Moderator {
   forum   String
 }
 
-enum GateType {
-  COLLECTION
-  MINT
+enum Rule {
+  Token
+  NFT
+  Pass
+  AdditionalSigner
+}
+
+enum Operator {
+  AND
+  OR
+  NOT
 }
 
 model Gate {
-  id      Int      @id @default(autoincrement())
-  address String
-  type    GateType
-  Forum   Forum    @relation("ForumToGate", fields: [forum], references: [id])
-  forum   String
+  id       Int      @id @default(autoincrement())
+  address  String[] 
+  ruleType Rule
+  operator Operator
+  Forum    Forum    @relation("ForumToGate", fields: [forum], references: [id])
+  forum    String
 }
 
 model Forum {

@@ -1,5 +1,5 @@
 import { BN, web3 } from "@project-serum/anchor";
-import { GateType, PostType } from "@prisma/client";
+import { Rule, PostType, Operator } from "@prisma/client";
 import axios from "axios";
 import base58 from "bs58";
 import { Instruction } from "helius-sdk";
@@ -8,7 +8,7 @@ import { findEntryId } from "../../utils/pda";
 import { trimNullChars } from "../../utils/format";
 import { parseDataV1Fields } from "../../utils/parse";
 import { IDL as CompressionIDL } from "../anchor/idl/onda_compression";
-import { DataV1, LeafSchemaV1, RestrictionType } from "../anchor/types";
+import { DataV1, LeafSchemaV1, Gate } from "../anchor/types";
 import { getCompressionProgram } from "../anchor/provider";
 import prisma from "../prisma";
 import { genIxIdentifier } from "./helpers";
@@ -61,7 +61,7 @@ export async function compressionParser(ix: Instruction) {
       const forumConfig = await compressionProgram.account.forumConfig.fetch(
         forumConfigAddress
       );
-      const gate = forumConfig.gate as Array<RestrictionType> | null;
+      const gates = forumConfig.gate as Array<Gate>;
 
       await prisma.forum.create({
         data: {
@@ -72,27 +72,14 @@ export async function compressionParser(ix: Instruction) {
         },
       });
 
-      if (gate) {
+      if (gates.length) {
         await prisma.gate.createMany({
-          data: gate.map((restrictionType) => {
-            if (restrictionType.collection) {
-              return {
-                forum: merkleTreeAddress.toBase58(),
-                address: restrictionType.collection.address.toBase58(),
-                type: GateType.COLLECTION,
-              };
-            }
-
-            if (restrictionType.mint) {
-              return {
-                forum: merkleTreeAddress.toBase58(),
-                address: restrictionType.mint.address.toBase58(),
-                type: GateType.MINT,
-              };
-            }
-
-            throw new Error("Unknown restriction type");
-          }),
+          data: gates.map((gate) => ({
+            forum: merkleTreeAddress.toBase58(),
+            address: gate.address.map((a) => a.toBase58()),
+            ruleType: getRuleType(gate),
+            operator: getOperator(gate),
+          })),
         });
       }
 
@@ -307,4 +294,40 @@ function createPostV1({
       },
     },
   });
+}
+
+function getRuleType(gate: Gate) {
+  if (gate.ruleType.nFT) {
+    return Rule.NFT;
+  }
+
+  if (gate.ruleType.token) {
+    return Rule.Token;
+  }
+
+  if (gate.ruleType.additionalSigner) {
+    return Rule.AdditionalSigner;
+  }
+
+  if (gate.ruleType.pass) {
+    return Rule.Pass;
+  }
+
+  throw new Error("Unknown rule type");
+}
+
+function getOperator(gate: Gate) {
+  if (gate.operator.aND) {
+    return Operator.AND;
+  }
+
+  if (gate.operator.oR) {
+    return Operator.OR;
+  }
+
+  if (gate.operator.nOT) {
+    return Operator.NOT;
+  }
+
+  throw new Error("Unknown operator");
 }
