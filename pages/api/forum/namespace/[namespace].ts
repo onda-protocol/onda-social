@@ -15,6 +15,9 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
     where: {
       namespace,
     },
+    include: {
+      Gates: true,
+    },
   });
 
   return NextResponse.json(parseBigInt(result));

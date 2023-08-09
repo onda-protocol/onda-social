@@ -26,7 +26,7 @@ import {
 } from "utils/pda";
 import { parseDataV1Fields } from "utils/parse";
 import { fetchAllAccounts } from "utils/web3";
-import { DataV1, LeafSchemaV1 } from "./types";
+import { DataV1, Gate, LeafSchemaV1 } from "./types";
 import {
   getCompressionProgram,
   getBloomProgram,
@@ -46,7 +46,8 @@ export async function initForumAndNamespace(
   maxDepth: number,
   maxBufferSize: number,
   name: string,
-  uri: string
+  uri: string,
+  gates: Gate[] = []
 ) {
   const compressionProgram = getCompressionProgram(connection, wallet);
   const namespaceProgram = getNamespaceProgram(connection, wallet);
@@ -81,7 +82,7 @@ export async function initForumAndNamespace(
   });
 
   const initIx = await compressionProgram.methods
-    .initForum(maxDepth, maxBufferSize, null)
+    .initForum(maxDepth, maxBufferSize, gates)
     .accounts({
       payer,
       forumConfig,

@@ -3,9 +3,15 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import {
+  Controller,
+  UseFormReturn,
+  useFieldArray,
+  useForm,
+  useWatch,
+} from "react-hook-form";
 import { IoTrash } from "react-icons/io5";
-import { web3 } from "@project-serum/anchor";
+import { BN, web3 } from "@project-serum/anchor";
 import {
   Box,
   Container,
@@ -17,7 +23,6 @@ import {
   FormHelperText,
   Text,
   Textarea,
-  Tooltip,
   Select,
   Stepper,
   Step,
@@ -31,6 +36,8 @@ import {
   IconButton,
   CardBody,
   Card,
+  ListItem,
+  List,
 } from "@chakra-ui/react";
 import { getConcurrentMerkleTreeAccountSize } from "@solana/spl-account-compression";
 import {
@@ -40,7 +47,7 @@ import {
 } from "@solana/wallet-adapter-react";
 import { useMutation } from "@tanstack/react-query";
 
-import { initForumAndNamespace } from "lib/anchor";
+import { Gate, initForumAndNamespace } from "lib/anchor";
 import { ContentType, upload } from "lib/bundlr";
 import { ImagePicker } from "components/input/imagePicker";
 import { findNamespacePda } from "utils/pda";
@@ -120,8 +127,10 @@ const New: NextPage = () => {
 
 interface Step1Form {
   size: number;
-  tokens: {
+  gates: {
+    type: "token" | "nft";
     address: string;
+    amount?: number;
   }[];
 }
 
@@ -135,7 +144,7 @@ const Step1 = ({ onNext }: Step1Props) => {
   const methods = useForm<Step1Form>({});
   const fieldArray = useFieldArray({
     control: methods.control,
-    name: "tokens",
+    name: "gates",
   });
   const size = methods.watch("size");
 
@@ -206,7 +215,9 @@ const Step1 = ({ onNext }: Step1Props) => {
       <Button
         width="100%"
         variant="outline"
-        onClick={() => fieldArray.append({ address: "" })}
+        onClick={() =>
+          fieldArray.append({ address: "", type: "nft", amount: 1 })
+        }
       >
         Add Token Gate
       </Button>
@@ -215,8 +226,10 @@ const Step1 = ({ onNext }: Step1Props) => {
         <Box key={field.id} display="flex" alignItems="center" gap="2" my="4">
           <Input
             placeholder="Token Address"
-            isInvalid={Boolean(methods.formState.errors.tokens?.[index])}
-            {...methods.register(`tokens.${index}.address`, {
+            isInvalid={Boolean(
+              methods.formState.errors.gates?.[index]?.address
+            )}
+            {...methods.register(`gates.${index}.address`, {
               required: true,
               validate: (value) => {
                 try {
@@ -228,6 +241,18 @@ const Step1 = ({ onNext }: Step1Props) => {
               },
             })}
           />
+          <GateAmountInput index={index} methods={methods} />
+          <Select
+            placeholder="Type"
+            width="100px"
+            minWidth="100px"
+            {...methods.register(`gates.${index}.type`, {
+              required: true,
+            })}
+          >
+            <option value="nft">NFT</option>
+            <option value="token">Token</option>
+          </Select>
           <IconButton
             aria-label="Remove field"
             borderRadius="sm"
@@ -244,6 +269,43 @@ const Step1 = ({ onNext }: Step1Props) => {
         <Button type="submit">Next</Button>
       </Box>
     </Box>
+  );
+};
+
+interface GateAmountInput {
+  index: number;
+  methods: UseFormReturn<Step1Form>;
+}
+
+const GateAmountInput = ({ index, methods }: GateAmountInput) => {
+  const typeValue = useWatch({
+    control: methods.control,
+    name: `gates.${index}.type`,
+  });
+
+  useEffect(() => {
+    if (typeValue === "nft") {
+      methods.setValue(`gates.${index}.amount`, 1);
+    }
+  }, [index, methods, typeValue]);
+
+  if (typeValue !== "token") {
+    return null;
+  }
+
+  return (
+    <Input
+      type="number"
+      width="120px"
+      minWidth="120px"
+      placeholder="Amount"
+      disabled={typeValue !== "token"}
+      isInvalid={Boolean(methods.formState.errors.gates?.[index]?.amount)}
+      {...methods.register(`gates.${index}.amount`, {
+        required: true,
+        validate: (value) => !isNaN(Number(value)) && Number(value) > 0,
+      })}
+    />
   );
 };
 
@@ -307,7 +369,7 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
           {typeof methods.formState.errors.namespace?.message === "string" &&
           methods.formState.errors.namespace.message.length
             ? methods.formState.errors.namespace?.message
-            : "No spaces or symbols allowed"}
+            : "Lowercase only, no spaces or symbols allowed"}
         </FormHelperText>
       </FormControl>
 
@@ -413,17 +475,45 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
       if (!anchorWallet) {
         throw new Error("Wallet not connected");
       }
+
+      const gates: Gate[] = config.gates.map((gate) => {
+        if (gate.type === "nft") {
+          return {
+            amount: new BN(1),
+            address: [new web3.PublicKey(gate.address)],
+            ruleType: {
+              nft: {},
+            },
+            operator: {
+              oR: {},
+            },
+          };
+        }
+        return {
+          amount: new BN(gate.amount!),
+          address: [new web3.PublicKey(gate.address)],
+          ruleType: {
+            token: {},
+          },
+          operator: {
+            oR: {},
+          },
+        };
+      });
+
       return initForumAndNamespace(
         connection,
         anchorWallet,
         config.size,
-        64,
+        64, // buffer size
         metadata.namespace,
-        uri
+        uri,
+        gates
       );
     },
     {
       async onSuccess() {
+        // TODO wait for forum
         router.push(`/o/${metadata.namespace}`);
       },
     }
@@ -483,25 +573,49 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
 
         <Card>
           <CardBody>
-            <Text fontSize="sm" color="whiteAlpha.500">
+            <Text fontSize="md" color="whiteAlpha.500">
               Namespace
             </Text>
             <Text mb="4">{metadata.namespace}</Text>
-            <Text fontSize="sm" color="whiteAlpha.500">
+            <Text fontSize="md" color="whiteAlpha.500">
               Description
             </Text>
             <Text mb="4">{metadata.description}</Text>
-            <Text fontSize="sm" color="whiteAlpha.500">
+            <Text fontSize="md" color="whiteAlpha.500">
               Capacity
             </Text>
             <Text mb="4">{1 << config.size}</Text>
-            <Text fontSize="sm" color="whiteAlpha.500">
+
+            <Text fontSize="md" color="whiteAlpha.500">
               Token Gates
             </Text>
-            {config.tokens.length ? (
-              config.tokens.map((token) => (
-                <Text key={token.address}>{token.address}</Text>
-              ))
+            {config.gates.length ? (
+              <List mt="4" px="1">
+                {config.gates.map((gate, index) => (
+                  <ListItem key={gate.address}>
+                    <Text fontSize="sm" color="whiteAlpha.500">
+                      {index + 1}.&nbsp;
+                      {gate.type === "nft" ? "NFT Collection" : "SPL Token"}
+                    </Text>
+                    <Text mb="2" pl="3">
+                      {gate.address}
+                    </Text>
+                    {gate.type === "token" && (
+                      <Box pl="3">
+                        <Text fontSize="sm" color="whiteAlpha.500">
+                          Token Amount
+                        </Text>
+                        <Text mb="2">{gate.amount}</Text>
+                      </Box>
+                    )}
+                    {index !== config.gates.length - 1 && (
+                      <Box my="4" mx="3">
+                        <Divider borderColor="whiteAlpha.200" />
+                      </Box>
+                    )}
+                  </ListItem>
+                ))}
+              </List>
             ) : (
               <Text>None</Text>
             )}
