@@ -75,6 +75,7 @@ export async function compressionParser(ix: Instruction) {
       if (gates.length) {
         await prisma.gate.createMany({
           data: gates.map((gate) => ({
+            amount: gate.amount.toNumber(),
             forum: merkleTreeAddress.toBase58(),
             address: gate.address.map((a) => a.toBase58()),
             ruleType: getRuleType(gate),
