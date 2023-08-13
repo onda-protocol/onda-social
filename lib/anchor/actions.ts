@@ -80,6 +80,7 @@ export async function initForumAndNamespace(
     newAccountPubkey: merkleTree,
     programId: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   });
+  console.log("Gates", gates);
 
   const initIx = await compressionProgram.methods
     .initForum(maxDepth, maxBufferSize, gates)
@@ -92,6 +93,7 @@ export async function initForumAndNamespace(
     })
     .instruction();
 
+  console.log("namespace: ", name, uri);
   const namespaceIx = await namespaceProgram.methods
     .createNamespace(name, uri)
     .accounts({

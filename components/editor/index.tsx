@@ -94,6 +94,14 @@ export const Editor = ({
     }
   }, [methods.setValue, forum, config.forum]);
 
+  useEffect(() => {
+    if (foraQuery.data) {
+      foraQuery.data.forEach((forum) =>
+        queryClient.setQueryData(["forum", forum.namespace], forum)
+      );
+    }
+  }, [queryClient, foraQuery.data]);
+
   const mutation = useMutation<
     { signature: string; uri: string },
     Error,

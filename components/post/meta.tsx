@@ -13,9 +13,9 @@ interface PostMetaProps {
   likes: number;
   createdAt?: string;
   editedAt?: string | null;
-  forum: string;
-  forumNamespace: string | null;
-  forumIcon: string | null;
+  forum?: string;
+  forumNamespace?: string | null;
+  forumIcon?: string | null;
   displayIcon?: boolean;
   showRewards?: boolean;
   displayAvatar?: boolean;

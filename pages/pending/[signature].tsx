@@ -3,14 +3,19 @@ import axios from "axios";
 import { useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
-import { PostType, User } from "@prisma/client";
+import { PostType } from "@prisma/client";
 import { Box, Container, Divider, Spinner } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 
 import { getEventFromSignature } from "lib/anchor/actions";
 import { getPrismaPostType } from "utils/parse";
-import { PostWithCommentsCountAndForum, fetchUser } from "lib/api";
+import {
+  PostWithCommentsCountAndForum,
+  fetchForum,
+  fetchForumByNamespace,
+  fetchUser,
+} from "lib/api";
 import { PostHead } from "components/post/head";
 import { DummyCommentEditor } from "components/editor";
 import { DummyPostButtons } from "components/post/buttons";
@@ -36,9 +41,20 @@ const Pending: NextPage = () => {
       result: Awaited<ReturnType<typeof getEventFromSignature>>
     ) {
       const postType = getPrismaPostType(result.data.type);
-      const [author, response] = await Promise.all([
-        queryClient.fetchQuery(["user", result.author], () =>
-          fetchUser(result.author)
+      const [author, forum, response] = await Promise.all([
+        queryClient.fetchQuery(
+          ["user", result.author],
+          () => fetchUser(result.author),
+          {
+            staleTime: 300_000,
+          }
+        ),
+        queryClient.fetchQuery(
+          ["forum", result.forum],
+          () => fetchForum(result.forum),
+          {
+            staleTime: 300_000,
+          }
         ),
         postType === PostType.TEXT ? axios.get<string>(result.data.uri) : null,
       ]);
@@ -67,10 +83,7 @@ const Pending: NextPage = () => {
             },
             forum: result.forum,
             Forum: {
-              id: result.forum,
-              config: result.forumConfig,
-              collections: [],
-              totalCapacity: BigInt(0).toString(),
+              ...forum,
             },
             _count: {
               Comments: 0,
@@ -98,24 +111,36 @@ const Pending: NextPage = () => {
     uri: string;
     title: string;
     body: string | null;
-    forum: string;
+    forumNamespace: string;
     createdAt: string;
-    // Serialized User object
     author: string;
     postType: PostType;
   };
 
-  const user = useMemo(() => {
-    try {
-      return JSON.parse(data.author) as User;
-    } catch (err) {
-      return null;
+  const authorQuery = useQuery(
+    ["user", data.author],
+    () => fetchUser(data.author),
+    {
+      staleTime: 300_000,
     }
-  }, [data.author]);
+  );
 
-  if (!user) {
-    // TODO: 404 error
-    return null;
+  const forumQuery = useQuery(
+    ["forum", data.forumNamespace],
+    () => fetchForumByNamespace(data.forumNamespace),
+    {
+      staleTime: 300_000,
+    }
+  );
+
+  if (!authorQuery.data || !forumQuery.data) {
+    return (
+      <Box pb="12" mx="-2">
+        <Box display="flex" alignItems="center" justifyContent="center" pt="12">
+          <Spinner />
+        </Box>
+      </Box>
+    );
   }
 
   return (
@@ -126,8 +151,10 @@ const Pending: NextPage = () => {
         uri={data.uri}
         likes={0}
         postType={data.postType}
-        author={user}
-        forum={data.forum}
+        author={authorQuery.data}
+        forum={forumQuery.data.id}
+        forumNamespace={forumQuery.data.namespace}
+        forumIcon={forumQuery.data?.icon}
         createdAt={data.createdAt}
         editedAt={null}
       />

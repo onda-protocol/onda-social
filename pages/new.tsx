@@ -496,7 +496,7 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
             token: {},
           },
           operator: {
-            oR: {},
+            or: {},
           },
         };
       });

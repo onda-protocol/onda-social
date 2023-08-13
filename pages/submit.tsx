@@ -5,14 +5,13 @@ import { Container, Heading } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
 
-import { fetchUser } from "lib/api";
+import { fetchForum, fetchForumByNamespace, fetchUser } from "lib/api";
 import { getPrismaPostType } from "utils/parse";
 import { Editor, EntryForm } from "components/editor";
 
 const Submit: NextPage = () => {
   const router = useRouter();
   const wallet = useWallet();
-  const queryClient = useQueryClient();
   const forum = router.query.o as string | undefined;
 
   useQuery(
@@ -25,11 +24,6 @@ const Submit: NextPage = () => {
 
   const onSuccess = useCallback(
     async (signature: string, uri: string, variables: EntryForm) => {
-      let user = queryClient.getQueryData([
-        "user",
-        wallet.publicKey?.toBase58(),
-      ]);
-
       router.push({
         pathname: `/pending/${signature}`,
         query: {
@@ -37,16 +31,12 @@ const Submit: NextPage = () => {
           title: variables.title,
           body: variables.body,
           forum: variables.forum,
-          author: JSON.stringify(
-            user ?? {
-              id: wallet.publicKey?.toBase58(),
-            }
-          ),
+          author: wallet.publicKey?.toBase58(),
           postType: getPrismaPostType(variables.postType),
         },
       });
     },
-    [queryClient, router, wallet]
+    [router, wallet]
   );
 
   return (

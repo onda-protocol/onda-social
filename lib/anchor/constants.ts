@@ -13,7 +13,7 @@ export const MODERATION_PROGRAM_ID = new web3.PublicKey(
 );
 
 export const NAMESPACE_PROGRAM_ID = new web3.PublicKey(
-  "GCZ4prh8BBkoTePCNF7VfWuNPhRVgwDKfxy8Uv4ERC8V"
+  "Ds9mPCckK2axyP9EVM6MhSruHG9S2qDoDeZdVdCqUtst"
 );
 
 export const PROFILE_PROGRAM_ID = new web3.PublicKey(

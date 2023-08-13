@@ -8,8 +8,6 @@ import { BsArrowsExpand } from "react-icons/bs";
 
 import { SerializedCommentNested, fetchReplies, fetchUser } from "lib/api";
 import { likeEntry } from "lib/anchor";
-import { BLOOM_PROGRAM_ID } from "lib/anchor/constants";
-import { getOrCreateSession } from "lib/gum";
 import { Markdown } from "../markdown";
 import { Editor, EntryForm } from "../editor";
 import { PostMeta } from "../post/meta";

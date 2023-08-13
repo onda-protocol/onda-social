@@ -297,7 +297,8 @@ function createPostV1({
 }
 
 function getRuleType(gate: Gate) {
-  if (gate.ruleType.nFT) {
+  // @ts-ignore
+  if (gate.ruleType.nft) {
     return Rule.NFT;
   }
 
@@ -317,15 +318,16 @@ function getRuleType(gate: Gate) {
 }
 
 function getOperator(gate: Gate) {
-  if (gate.operator.aND) {
+  // @ts-ignore
+  if (gate.operator.and) {
     return Operator.AND;
   }
-
-  if (gate.operator.oR) {
+  // @ts-ignore
+  if (gate.operator.or) {
     return Operator.OR;
   }
-
-  if (gate.operator.nOT) {
+  // @ts-ignore
+  if (gate.operator.not) {
     return Operator.NOT;
   }
 
