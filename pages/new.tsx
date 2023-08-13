@@ -476,6 +476,7 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
         throw new Error("Wallet not connected");
       }
 
+      // @ts-expect-error
       const gates: Gate[] = config.gates.map((gate) => {
         if (gate.type === "nft") {
           return {
@@ -485,7 +486,7 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
               nft: {},
             },
             operator: {
-              oR: {},
+              or: {},
             },
           };
         }

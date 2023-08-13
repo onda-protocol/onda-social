@@ -4,6 +4,7 @@ import { web3 } from "@project-serum/anchor";
 import { AccountLayout } from "@solana/spl-token";
 
 import prisma from "lib/prisma";
+import { findMetadataPda } from "utils/pda";
 
 export default async function handler(
   req: NextApiRequest,
@@ -48,7 +49,7 @@ export default async function handler(
 }
 
 async function searchCollection(owner: string, collection: string) {
-  const response = await fetch(process.env.HELIUS_API_URL!, {
+  const response = await fetch(process.env.HELIUS_RPC_URL!, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -67,12 +68,27 @@ async function searchCollection(owner: string, collection: string) {
     }),
   });
   const { result } = await response.json();
-  console.log("Collection assets: ", result);
-  return result;
+
+  if (result.items[0]) {
+    const mint = result.items[0].id;
+    const tokenResult = await searchToken(owner, mint, BigInt(1));
+
+    if (tokenResult) {
+      const metadata = findMetadataPda(new web3.PublicKey(mint));
+
+      return {
+        mint,
+        metadata,
+        tokenAccount: tokenResult.tokenAccount,
+      };
+    }
+  }
+
+  return null;
 }
 
 async function searchToken(owner: string, mint: string, amount: bigint) {
-  const connection = new web3.Connection(process.env.NEXT_PUBLIC_RPC_ENDPOINT!);
+  const connection = new web3.Connection(process.env.HELIUS_RPC_URL!);
   const ownerAddress = new web3.PublicKey(owner);
   const mintAddress = new web3.PublicKey(mint);
 
