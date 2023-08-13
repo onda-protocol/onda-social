@@ -1,5 +1,5 @@
 import { PostType, User } from "@prisma/client";
-import { Box, Heading } from "@chakra-ui/react";
+import { Box, Heading, TypographyProps } from "@chakra-ui/react";
 
 import { PostMeta } from "components/post/meta";
 import { PostContent } from "components/post/content";
@@ -15,6 +15,7 @@ interface PostHeadProps {
   forum: string;
   forumNamespace: string | null;
   forumIcon: string | null;
+  titleSize?: TypographyProps["fontSize"];
   postType: PostType;
 }
 
@@ -30,6 +31,7 @@ export const PostHead = ({
   forumNamespace,
   forumIcon,
   postType,
+  titleSize,
 }: PostHeadProps) => {
   return (
     <>
@@ -46,7 +48,13 @@ export const PostHead = ({
         />
       </Box>
       <Box mb="6">
-        <PostContent type={postType} title={title} body={body} uri={uri} />
+        <PostContent
+          type={postType}
+          titleSize={titleSize}
+          title={title}
+          body={body}
+          uri={uri}
+        />
       </Box>
     </>
   );

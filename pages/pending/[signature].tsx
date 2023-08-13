@@ -142,6 +142,7 @@ const Pending: NextPage = () => {
     <Container maxW="container.md">
       <PostHead
         title={data.title}
+        titleSize="3xl"
         body={data.body}
         uri={data.uri}
         likes={0}

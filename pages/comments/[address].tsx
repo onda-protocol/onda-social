@@ -122,6 +122,7 @@ const Comments: NextPage<PageProps> = () => {
     <Container maxW="container.md">
       <PostHead
         title={postQuery.data?.title}
+        titleSize="3xl"
         body={postQuery.data?.body}
         uri={postQuery.data?.uri}
         likes={Number(postQuery.data.likes)}

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { PostType } from "@prisma/client";
-import { Box, Heading, Link as CLink } from "@chakra-ui/react";
+import { Box, Heading, Link as CLink, TypographyProps } from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
 import React, { memo } from "react";
 import { Tweet } from "react-tweet";
@@ -22,6 +22,7 @@ const MAX_URI_DISPLAY_LENGTH = 48;
 interface PostContentProps {
   type: PostType;
   title: string;
+  titleSize?: TypographyProps["fontSize"];
   body: string | null;
   uri: string;
 }
@@ -29,6 +30,7 @@ interface PostContentProps {
 export const PostContent = memo(function PostContent({
   type,
   title,
+  titleSize = "2xl",
   body,
   uri,
 }: PostContentProps) {
@@ -36,7 +38,7 @@ export const PostContent = memo(function PostContent({
     case PostType.TEXT: {
       return (
         <>
-          <Heading my="6" as="h1">
+          <Heading my="6" as="h1" fontSize={titleSize}>
             {title}
           </Heading>
           <Markdown>{body ?? ""}</Markdown>

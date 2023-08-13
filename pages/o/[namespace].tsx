@@ -54,8 +54,6 @@ const Community: NextPage<PageProps> = () => {
     return forum;
   });
 
-  console.log(forumQuery);
-
   const postsQuery = useQuery(["posts", "o", namespace], () =>
     fetchPostsByForumNamespace(namespace)
   );
