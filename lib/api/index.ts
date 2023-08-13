@@ -31,10 +31,18 @@ export type SerializedCommentNested = SerializedComment & {
   Children?: SerializedCommentNested[];
 };
 
-export function fetchForum(namespace: string): Promise<SerializedForum> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/forum/${namespace}`).then(
+export function fetchForum(address: string): Promise<SerializedForum> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/forum/${address}`).then(
     (res) => res.json()
   );
+}
+
+export function fetchForumByNamespace(
+  namespace: string
+): Promise<SerializedForum> {
+  return fetch(
+    `${process.env.NEXT_PUBLIC_HOST}/api/forum/${namespace}/namespace`
+  ).then((res) => res.json());
 }
 
 export function fetchFora(): Promise<SerializedForum[]> {
@@ -110,16 +118,19 @@ export function fetchProof(address: string): Promise<{
   );
 }
 
-export function fetchForumPass(
-  namespace: string,
-  owner: string
-): Promise<{
+interface ForumPassResponse {
   mint: string;
   tokenAccount: string;
   metadata: string | null;
-}> {
+  error?: string;
+}
+
+export function fetchForumPass(
+  address: string,
+  owner: string
+): Promise<ForumPassResponse> {
   return fetch(
-    `${process.env.NEXT_PUBLIC_HOST}/api/forum/${namespace}/pass/${owner}`
+    `${process.env.NEXT_PUBLIC_HOST}/api/pass/${address}/${owner}`
   ).then((res) => res.json());
 }
 

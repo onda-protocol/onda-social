@@ -64,10 +64,27 @@ export const Editor = ({
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet();
   const sessionWallet = useSessionWallet();
+
   const queryClient = useQueryClient();
-  const foraQuery = useQuery(["fora"], fetchFora, {
-    enabled: Boolean(config.type === "post"),
-  });
+  const foraQuery = useQuery(
+    ["fora"],
+    async () => {
+      const fora = await fetchFora();
+
+      fora.forEach((forum) => {
+        queryClient.setQueryData(["forum", forum.id], forum);
+        queryClient.setQueryData(
+          ["forum", "namespace", forum.namespace],
+          forum
+        );
+      });
+
+      return fora;
+    },
+    {
+      enabled: Boolean(config.type === "post"),
+    }
+  );
 
   const methods = useForm<EntryForm>({
     defaultValues: {
@@ -94,14 +111,6 @@ export const Editor = ({
     }
   }, [methods.setValue, forum, config.forum]);
 
-  useEffect(() => {
-    if (foraQuery.data) {
-      foraQuery.data.forEach((forum) =>
-        queryClient.setQueryData(["forum", forum.namespace], forum)
-      );
-    }
-  }, [queryClient, foraQuery.data]);
-
   const mutation = useMutation<
     { signature: string; uri: string },
     Error,
@@ -114,11 +123,12 @@ export const Editor = ({
 
       const session = await getOrCreateSession(sessionWallet);
 
-      const forumNamespace =
+      const forumAddress =
         config.type === "comment" ? config.forum : data.forum;
+
       const forum = await queryClient.fetchQuery(
-        ["forum", forumNamespace],
-        () => fetchForum(forumNamespace),
+        ["forum", forumAddress],
+        () => fetchForum(forumAddress),
         {
           staleTime: 300_000,
         }
@@ -391,7 +401,7 @@ const SelectForum = React.forwardRef<
     <Select mt="6" placeholder="Choose a community" ref={ref} {...other}>
       {options?.map((forum) =>
         forum.namespace ? (
-          <option key={forum.id} value={forum.namespace!}>
+          <option key={forum.id} value={forum.id}>
             {forum.displayName}
           </option>
         ) : null

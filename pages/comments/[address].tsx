@@ -1,9 +1,11 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useCallback, useMemo } from "react";
-import { Box, Container, Divider, IconButton, Spinner } from "@chakra-ui/react";
+import { Box, Container, Divider, Spinner } from "@chakra-ui/react";
 import {
   DehydratedState,
+  QueryClient,
+  dehydrate,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -181,24 +183,24 @@ const Comments: NextPage<PageProps> = () => {
   );
 };
 
-// Comments.getInitialProps = async (ctx) => {
-//   if (typeof window === "undefined") {
-//     try {
-//       const queryClient = new QueryClient();
-//       const id = ctx.query.address as string;
-//       await queryClient.prefetchQuery(["post", id], () => fetchPost(id));
+Comments.getInitialProps = async (ctx) => {
+  if (typeof window === "undefined") {
+    try {
+      const queryClient = new QueryClient();
+      const id = ctx.query.address as string;
+      await queryClient.prefetchQuery(["post", id], () => fetchPost(id));
 
-//       return {
-//         dehydratedState: dehydrate(queryClient),
-//       };
-//     } catch (err) {
-//       console.log(err);
-//     }
-//   }
+      return {
+        dehydratedState: dehydrate(queryClient),
+      };
+    } catch (err) {
+      console.log(err);
+    }
+  }
 
-//   return {
-//     dehydratedState: undefined,
-//   };
-// };
+  return {
+    dehydratedState: undefined,
+  };
+};
 
 export default Comments;

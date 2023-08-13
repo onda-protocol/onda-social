@@ -11,12 +11,12 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const params = req.query;
-  const namespace = params.namespace as string;
+  const forumId = params.address as string;
   const owner = params.owner as string;
 
   const result = await prisma.forum.findUnique({
     where: {
-      namespace,
+      id: forumId,
     },
     include: {
       Gates: true,
@@ -24,19 +24,25 @@ export default async function handler(
   });
 
   if (!result) {
-    return res.status(400).send("Forum not found");
+    return res.status(400).json({ error: "Forum not found" });
   }
 
   for (let gate of result.Gates) {
     switch (gate.ruleType) {
       case Rule.Token: {
         const result = await searchToken(owner, gate.address[0], gate.amount);
-        return res.json(result);
+
+        if (result) {
+          return res.json(result);
+        }
       }
 
       case Rule.NFT: {
         const result = await searchCollection(owner, gate.address[0]);
-        return res.json(result);
+
+        if (result) {
+          return res.json(result);
+        }
       }
 
       default: {
@@ -45,7 +51,7 @@ export default async function handler(
     }
   }
 
-  return res.status(404).send("Forum pass not found");
+  return res.status(404).json({ error: "Forum pass not found" });
 }
 
 async function searchCollection(owner: string, collection: string) {

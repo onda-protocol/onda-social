@@ -6,6 +6,7 @@ import {
   DehydratedState,
   dehydrate,
   useQuery,
+  useQueryClient,
 } from "@tanstack/react-query";
 import {
   Box,
@@ -20,14 +21,17 @@ import {
   TabPanel,
 } from "@chakra-ui/react";
 
-import { fetchForum, fetchPostsByForumNamespace } from "lib/api";
+import {
+  fetchForum,
+  fetchForumByNamespace,
+  fetchPostsByForumNamespace,
+} from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import {
   Sidebar,
   SidebarSection,
   SidebarButtons,
   SidebarList,
-  SidebarLink,
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
 
@@ -38,9 +42,20 @@ interface PageProps {
 const Community: NextPage<PageProps> = () => {
   const router = useRouter();
   const namespace = router.query.namespace as string;
-  const forumQuery = useQuery(["forum", namespace], () =>
-    fetchForum(namespace)
-  );
+  const queryClient = useQueryClient();
+
+  const forumQuery = useQuery(["forum", "namespace", namespace], async () => {
+    const forum = await fetchForumByNamespace(namespace);
+
+    if (forum) {
+      queryClient.setQueryData(["forum", forum.id], forum);
+    }
+
+    return forum;
+  });
+
+  console.log(forumQuery);
+
   const postsQuery = useQuery(["posts", "o", namespace], () =>
     fetchPostsByForumNamespace(namespace)
   );
@@ -118,7 +133,7 @@ const Community: NextPage<PageProps> = () => {
                     <Box px="4">
                       <Text>{forumQuery.data?.description}</Text>
                     </Box>
-                    <SidebarButtons namespace={forumQuery.data?.namespace!} />
+                    <SidebarButtons forum={forumQuery.data?.id} />
                   </SidebarSection>
                   <SidebarSection title="Links">
                     <SidebarList>

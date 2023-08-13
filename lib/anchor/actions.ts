@@ -80,7 +80,6 @@ export async function initForumAndNamespace(
     newAccountPubkey: merkleTree,
     programId: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   });
-  console.log("Gates", gates);
 
   const initIx = await compressionProgram.methods
     .initForum(maxDepth, maxBufferSize, gates)
@@ -93,7 +92,6 @@ export async function initForumAndNamespace(
     })
     .instruction();
 
-  console.log("namespace: ", name, uri);
   const namespaceIx = await namespaceProgram.methods
     .createNamespace(name, uri)
     .accounts({
@@ -123,10 +121,10 @@ export async function initForumAndNamespace(
   }
 
   console.log("Forum initialized");
-  console.log("forumConfig: ", forumConfig.toBase58());
   console.log("merkleTree: ", merkleTree.toBase58());
+  console.log("forumConfig: ", forumConfig.toBase58());
 
-  return merkleTree;
+  return merkleTree.toBase58();
 }
 
 export async function addEntry(
@@ -144,13 +142,24 @@ export async function addEntry(
   const merkleTree = new web3.PublicKey(options.forum.id);
   const forumConfig = findForumConfigPda(merkleTree);
 
-  const result = await fetchForumPass(
-    options.forum.namespace!,
-    wallet.publicKey.toBase58()
-  );
-  const mint = new web3.PublicKey(result.mint);
-  const tokenAccount = new web3.PublicKey(result.tokenAccount);
-  const metadata = result.metadata ? new web3.PublicKey(result.metadata) : null;
+  let mint = null;
+  let tokenAccount = null;
+  let metadata = null;
+
+  if (options.forum.gates?.length) {
+    const result = await fetchForumPass(
+      options.forum.id,
+      wallet.publicKey.toBase58()
+    );
+
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    mint = new web3.PublicKey(result.mint);
+    tokenAccount = new web3.PublicKey(result.tokenAccount);
+    metadata = result.metadata ? new web3.PublicKey(result.metadata) : null;
+  }
 
   const transaction = await program.methods
     .addEntry(options.data)

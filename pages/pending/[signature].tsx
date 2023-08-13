@@ -46,7 +46,7 @@ const Pending: NextPage = () => {
         ),
         queryClient.fetchQuery(
           ["forum", result.forum],
-          () => fetchForum(router.query.forum as string),
+          () => fetchForum(result.forum as string),
           {
             staleTime: 300_000,
           }

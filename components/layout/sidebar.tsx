@@ -99,17 +99,17 @@ export const SidebarItem = ({
 };
 
 interface SidebarButtonsProps {
-  namespace?: string;
+  forum?: string;
 }
 
-export const SidebarButtons: React.FC<SidebarButtonsProps> = ({
-  namespace,
-}) => {
+export const SidebarButtons: React.FC<SidebarButtonsProps> = ({ forum }) => {
+  console.log("forum: ", forum);
+
   return (
     <Box my="6" mx="4">
       <Button
         as={Link}
-        href={`/submit${namespace ? `?o=${namespace}` : ""}`}
+        href={`/submit${forum ? `?o=${forum}` : ""}`}
         width="100%"
         borderRadius="lg"
         variant="solid"

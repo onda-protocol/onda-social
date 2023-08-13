@@ -10,10 +10,10 @@ export const config = {
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const params = new URL(req.url).searchParams;
-  const namespace = params.get("namespace")!;
+  const namespace = params.get("address")!;
   const result = await prisma.forum.findUnique({
     where: {
-      namespace,
+      id: namespace,
     },
     include: {
       Gates: true,
