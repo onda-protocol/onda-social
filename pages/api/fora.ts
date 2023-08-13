@@ -9,7 +9,11 @@ export const config = {
 };
 
 export default async function handler(_req: NextRequest, _ctx: NextFetchEvent) {
-  const result = await prisma.forum.findMany();
+  const result = await prisma.forum.findMany({
+    include: {
+      Gates: true,
+    },
+  });
 
   return NextResponse.json(parseBigInt(result));
 }

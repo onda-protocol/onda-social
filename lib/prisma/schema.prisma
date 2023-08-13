@@ -37,6 +37,7 @@ enum Operator {
 
 model Gate {
   id       Int      @id @default(autoincrement())
+  amount   BigInt
   address  String[] 
   ruleType Rule
   operator Operator

@@ -1,7 +1,6 @@
 import { web3, BN } from "@project-serum/anchor";
 import { PostType } from "@prisma/client";
-import { AccountLayout, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
   ConcurrentMerkleTreeAccount,
@@ -25,8 +24,7 @@ import {
   findClaimMarkerPda,
 } from "utils/pda";
 import { parseDataV1Fields } from "utils/parse";
-import { fetchAllAccounts } from "utils/web3";
-import { DataV1, Gate, LeafSchemaV1 } from "./types";
+import { DataV1, LeafSchemaV1, Gate } from "./types";
 import {
   getCompressionProgram,
   getBloomProgram,
@@ -37,6 +35,8 @@ import { PLANKTON_MINT, PROTOCOL_FEE_PLANKTON_ATA } from "./constants";
 import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
+  SerializedForum,
+  fetchForumPass,
   fetchProof,
 } from "lib/api";
 
@@ -134,32 +134,23 @@ export async function addEntry(
   wallet: AnchorWallet,
   session: SessionWalletInterface,
   options: {
-    forumId: string;
-    forumConfig: string;
-    collections: string[] | null;
+    forum: SerializedForum;
     data: DataV1;
   }
 ): Promise<string> {
   assertSessionIsValid(session);
   // @ts-ignore
   const program = getCompressionProgram(connection, wallet);
-  const merkleTree = new web3.PublicKey(options.forumId);
-  const forumConfig = new web3.PublicKey(options.forumConfig);
-  const collections = options.collections
-    ? options.collections.map((collection) => new web3.PublicKey(collection))
-    : undefined;
+  const merkleTree = new web3.PublicKey(options.forum.id);
+  const forumConfig = findForumConfigPda(merkleTree);
 
-  let mint = null;
-  let metadata = null;
-  let tokenAccount = null;
-
-  if (collections?.length) {
-    [mint, metadata, tokenAccount] = await fetchTokenAccounts(
-      connection,
-      wallet.publicKey,
-      collections
-    );
-  }
+  const result = await fetchForumPass(
+    options.forum.namespace!,
+    wallet.publicKey.toBase58()
+  );
+  const mint = new web3.PublicKey(result.mint);
+  const tokenAccount = new web3.PublicKey(result.tokenAccount);
+  const metadata = result.metadata ? new web3.PublicKey(result.metadata) : null;
 
   const transaction = await program.methods
     .addEntry(options.data)
@@ -171,6 +162,7 @@ export async function addEntry(
       metadata,
       author: wallet.publicKey,
       sessionToken: new web3.PublicKey(session.sessionToken!),
+      additionalSigner: null,
       signer: session.publicKey!,
       logWrapper: SPL_NOOP_PROGRAM_ID,
       compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
@@ -518,65 +510,6 @@ export async function createNamepace(
       forumConfig: forumConfigPda,
     })
     .rpc();
-}
-
-async function fetchTokenAccounts(
-  connection: web3.Connection,
-  owner: web3.PublicKey,
-  collections: web3.PublicKey[]
-) {
-  const tokenAccounts = await connection.getTokenAccountsByOwner(owner, {
-    programId: TOKEN_PROGRAM_ID,
-  });
-  const decodedTokenAccounts = tokenAccounts.value.map((value) => ({
-    ...AccountLayout.decode(value.account.data),
-    pubkey: value.pubkey,
-  }));
-  const metadata = await fetchMetadataAccounts(
-    connection,
-    decodedTokenAccounts.map((value) => value.mint)
-  );
-
-  const selectedMetadataAccount = metadata.find((metadata) =>
-    collections.some((collection) =>
-      metadata.collection?.key.equals(collection)
-    )
-  );
-  const selectedMintAddress = selectedMetadataAccount?.mint;
-
-  if (!selectedMintAddress) {
-    throw new Error("Unauthorized");
-  }
-
-  const selectedMetadataPda = findMetadataPda(selectedMetadataAccount.mint);
-  const selectedTokenAddress = decodedTokenAccounts.find((value) =>
-    value.mint.equals(selectedMetadataAccount.mint)
-  )?.pubkey;
-
-  if (!selectedTokenAddress) {
-    throw new Error("Token account not found");
-  }
-
-  return [
-    selectedMintAddress,
-    selectedMetadataPda,
-    selectedTokenAddress,
-  ] as const;
-}
-
-async function fetchMetadataAccounts(
-  connection: web3.Connection,
-  mints: web3.PublicKey[]
-) {
-  const metadataAddresses = mints.map((mint) => findMetadataPda(mint));
-  const rawMetadataAccounts = await fetchAllAccounts(
-    connection,
-    metadataAddresses
-  );
-
-  return rawMetadataAccounts
-    .map((account) => (account ? Metadata.fromAccountInfo(account)[0] : null))
-    .filter((metadata): metadata is NonNullable<Metadata> => metadata !== null);
 }
 
 function assertSessionIsValid(session: SessionWalletInterface) {

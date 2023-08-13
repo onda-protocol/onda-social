@@ -20,7 +20,7 @@ import {
   TabPanel,
 } from "@chakra-ui/react";
 
-import { fetchForumByNamespace, fetchPostsByForumNamespace } from "lib/api";
+import { fetchForum, fetchPostsByForumNamespace } from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import {
   Sidebar,
@@ -39,7 +39,7 @@ const Community: NextPage<PageProps> = () => {
   const router = useRouter();
   const namespace = router.query.namespace as string;
   const forumQuery = useQuery(["forum", namespace], () =>
-    fetchForumByNamespace(namespace)
+    fetchForum(namespace)
   );
   const postsQuery = useQuery(["posts", "o", namespace], () =>
     fetchPostsByForumNamespace(namespace)

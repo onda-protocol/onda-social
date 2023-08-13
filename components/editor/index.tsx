@@ -12,7 +12,7 @@ import { useSessionWallet } from "@gumhq/react-sdk";
 import { IoDocumentText, IoImage, IoLink } from "react-icons/io5";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
-import { fetchFora } from "lib/api";
+import { fetchFora, fetchForum } from "lib/api";
 import { addEntry } from "lib/anchor/actions";
 import { ContentType, upload } from "lib/bundlr";
 import { RadioCardMenu } from "components/input";
@@ -114,10 +114,15 @@ export const Editor = ({
 
       const session = await getOrCreateSession(sessionWallet);
 
-      const forumId = config.type === "comment" ? config.forum : data.forum;
-      const forum = await queryClient
-        .fetchQuery(["fora"], fetchFora)
-        .then((fora) => fora.find((forum) => forum.id === forumId));
+      const forumNamespace =
+        config.type === "comment" ? config.forum : data.forum;
+      const forum = await queryClient.fetchQuery(
+        ["forum", forumNamespace],
+        () => fetchForum(forumNamespace),
+        {
+          staleTime: 300_000,
+        }
+      );
 
       if (!forum) {
         throw new Error("Forum not found");
@@ -176,10 +181,8 @@ export const Editor = ({
       }
 
       const signature = await addEntry(connection, anchorWallet, session, {
+        forum,
         data: dataArgs,
-        forumId: forum.id,
-        forumConfig: forum.config,
-        collections: null, // forum.Gates, TODO
       });
 
       return {
@@ -384,15 +387,15 @@ const SelectForum = React.forwardRef<
     selected: string;
   } & React.ComponentPropsWithoutRef<typeof Select>
 >(function SelectForum({ options, selected, ...other }, ref) {
-  console.log("props: ", other);
-
   return (
     <Select mt="6" placeholder="Choose a community" ref={ref} {...other}>
-      {options?.map((forum) => (
-        <option key={forum.id} value={forum.id}>
-          {forum.displayName}
-        </option>
-      ))}
+      {options?.map((forum) =>
+        forum.namespace ? (
+          <option key={forum.id} value={forum.namespace!}>
+            {forum.displayName}
+          </option>
+        ) : null
+      )}
     </Select>
   );
 });

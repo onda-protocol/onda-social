@@ -2,10 +2,10 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useCallback } from "react";
 import { Container, Heading } from "@chakra-ui/react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
 
-import { fetchForum, fetchForumByNamespace, fetchUser } from "lib/api";
+import { fetchUser } from "lib/api";
 import { getPrismaPostType } from "utils/parse";
 import { Editor, EntryForm } from "components/editor";
 

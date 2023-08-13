@@ -1,4 +1,4 @@
-import { Comment, Post, Forum, User } from "@prisma/client";
+import { Comment, Post, Forum, User, Gate } from "@prisma/client";
 
 type DeepReplaceBigInt<T, U> = {
   [K in keyof T]: T[K] extends bigint
@@ -20,7 +20,9 @@ export type PostWithCommentsCountAndForum = DeepReplaceBigInt<
   string
 >;
 
-export type SerializedForum = DeepReplaceBigInt<Forum, string>;
+export type SerializedForum = DeepReplaceBigInt<Forum, string> & {
+  gates: Gate[];
+};
 export type SerializedComment = DeepReplaceBigInt<Comment, string> & {
   Author: User;
   _count: { Children: number };
@@ -29,18 +31,10 @@ export type SerializedCommentNested = SerializedComment & {
   Children?: SerializedCommentNested[];
 };
 
-export function fetchForum(id: string): Promise<SerializedForum> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/forum/address/${id}`).then(
+export function fetchForum(namespace: string): Promise<SerializedForum> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/forum/${namespace}`).then(
     (res) => res.json()
   );
-}
-
-export function fetchForumByNamespace(
-  namespace: string
-): Promise<SerializedForum> {
-  return fetch(
-    `${process.env.NEXT_PUBLIC_HOST}/api/forum/namespace/${namespace}`
-  ).then((res) => res.json());
 }
 
 export function fetchFora(): Promise<SerializedForum[]> {
@@ -114,6 +108,19 @@ export function fetchProof(address: string): Promise<{
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/proof/${address}`).then(
     (res) => res.json()
   );
+}
+
+export function fetchForumPass(
+  namespace: string,
+  owner: string
+): Promise<{
+  mint: string;
+  tokenAccount: string;
+  metadata: string | null;
+}> {
+  return fetch(
+    `${process.env.NEXT_PUBLIC_HOST}/api/forum/${namespace}/pass/${owner}`
+  ).then((res) => res.json());
 }
 
 export function fetchOGTags(

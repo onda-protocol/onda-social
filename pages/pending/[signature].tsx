@@ -10,12 +10,7 @@ import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 
 import { getEventFromSignature } from "lib/anchor/actions";
 import { getPrismaPostType } from "utils/parse";
-import {
-  PostWithCommentsCountAndForum,
-  fetchForum,
-  fetchForumByNamespace,
-  fetchUser,
-} from "lib/api";
+import { PostWithCommentsCountAndForum, fetchForum, fetchUser } from "lib/api";
 import { PostHead } from "components/post/head";
 import { DummyCommentEditor } from "components/editor";
 import { DummyPostButtons } from "components/post/buttons";
@@ -51,7 +46,7 @@ const Pending: NextPage = () => {
         ),
         queryClient.fetchQuery(
           ["forum", result.forum],
-          () => fetchForum(result.forum),
+          () => fetchForum(router.query.forum as string),
           {
             staleTime: 300_000,
           }
@@ -127,7 +122,7 @@ const Pending: NextPage = () => {
 
   const forumQuery = useQuery(
     ["forum", data.forumNamespace],
-    () => fetchForumByNamespace(data.forumNamespace),
+    () => fetchForum(data.forumNamespace),
     {
       staleTime: 300_000,
     }
