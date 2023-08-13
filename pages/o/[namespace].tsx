@@ -118,7 +118,7 @@ const Community: NextPage<PageProps> = () => {
                     <Box px="4">
                       <Text>{forumQuery.data?.description}</Text>
                     </Box>
-                    <SidebarButtons forum={forumQuery.data?.id} />
+                    <SidebarButtons namespace={forumQuery.data?.namespace!} />
                   </SidebarSection>
                   <SidebarSection title="Links">
                     <SidebarList>
