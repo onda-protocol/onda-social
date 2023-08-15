@@ -90,7 +90,7 @@ model Post {
   createdAt BigInt
   editedAt  BigInt?
   nonce     BigInt
-  rewards   Json[]    @default([])
+  rewards   Json?
   points    BigInt    @default(0)
   forum     String
   Forum     Forum     @relation("ForumToPost", fields: [forum], references: [id])
@@ -108,7 +108,7 @@ model Comment {
   createdAt BigInt
   editedAt  BigInt?
   nonce     BigInt
-  rewards   Json[]    @default([])
+  rewards   Json?
   points    BigInt    @default(0)
   post      String
   Post      Post      @relation("PostToComment", fields: [post], references: [id])

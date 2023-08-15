@@ -1,13 +1,13 @@
 import { EnrichedTransaction } from "helius-sdk";
 import {
   COMPRESSION_PROGRAM_ID,
-  BLOOM_PROGRAM_ID,
   PROFILE_PROGRAM_ID,
   MODERATION_PROGRAM_ID,
   NAMESPACE_PROGRAM_ID,
+  REWARDS_PROGRAM_ID,
 } from "../anchor/constants";
 import { compressionParser } from "./compression";
-import { bloomParser } from "./bloom";
+import { rewardsParser } from "./rewards";
 import { profileParser } from "./profile";
 import { namespaceParser } from "./namespace";
 
@@ -17,8 +17,8 @@ export default async function enhancedTransactionParser(
   for (const tx of transactions) {
     for (const ix of tx.instructions) {
       switch (ix.programId) {
-        case BLOOM_PROGRAM_ID.toBase58(): {
-          await bloomParser(ix);
+        case REWARDS_PROGRAM_ID.toBase58(): {
+          await rewardsParser(ix);
           break;
         }
 
