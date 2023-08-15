@@ -16,8 +16,16 @@ export const NAMESPACE_PROGRAM_ID = new web3.PublicKey(
   "Ds9mPCckK2axyP9EVM6MhSruHG9S2qDoDeZdVdCqUtst"
 );
 
+export const REWARDS_PROGRAM_ID = new web3.PublicKey(
+  "HPQxJSGNpSGJuEp4Qs3dch8X7GvyxZADGRcw8iqqSuCg"
+);
+
 export const PROFILE_PROGRAM_ID = new web3.PublicKey(
   "ondapcq2qXTSynRieMCE9BjRsZ2XALEEZZunkwbhCPF"
+);
+
+export const BUBBLEGUM_PROGRAM_ID = new web3.PublicKey(
+  "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY"
 );
 
 export const PLANKTON_MINT = new web3.PublicKey(

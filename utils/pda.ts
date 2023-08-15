@@ -6,7 +6,9 @@ import {
   MODERATION_PROGRAM_ID,
   NAMESPACE_PROGRAM_ID,
   PROFILE_PROGRAM_ID,
+  REWARDS_PROGRAM_ID,
   PLANKTON_MINT,
+  BUBBLEGUM_PROGRAM_ID,
 } from "../lib/anchor/constants";
 
 export function findMetadataPda(mint: web3.PublicKey) {
@@ -87,5 +89,26 @@ export function findTreeMarkerPda(merkleTree: web3.PublicKey) {
   return web3.PublicKey.findProgramAddressSync(
     [Buffer.from("tree_marker"), merkleTree.toBuffer()],
     NAMESPACE_PROGRAM_ID
+  )[0];
+}
+
+export function findRewardPda(merkleTree: web3.PublicKey) {
+  return web3.PublicKey.findProgramAddressSync(
+    [merkleTree.toBuffer()],
+    REWARDS_PROGRAM_ID
+  )[0];
+}
+
+export function findTreeAuthorityPda(merkleTree: web3.PublicKey) {
+  return web3.PublicKey.findProgramAddressSync(
+    [merkleTree.toBuffer()],
+    BUBBLEGUM_PROGRAM_ID
+  )[0];
+}
+
+export function findBubblegumSignerPda() {
+  return web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("collection_cpi")],
+    BUBBLEGUM_PROGRAM_ID
   )[0];
 }
