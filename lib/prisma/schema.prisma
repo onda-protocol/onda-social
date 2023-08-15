@@ -38,7 +38,7 @@ enum Operator {
 model Gate {
   id       Int      @id @default(autoincrement())
   amount   BigInt
-  address  String[] 
+  address  String[]
   ruleType Rule
   operator Operator
   Forum    Forum    @relation("ForumToGate", fields: [forum], references: [id])
@@ -60,6 +60,17 @@ model Forum {
   Posts         Post[]      @relation("ForumToPost")
 }
 
+model Reward {
+  id             String @id @unique
+  amount         BigInt
+  authority      String
+  collectionMint String
+  merkleTree     String
+  name           String
+  description    String?
+  image          String
+}
+
 enum PostType {
   TEXT
   IMAGE
@@ -79,7 +90,8 @@ model Post {
   createdAt BigInt
   editedAt  BigInt?
   nonce     BigInt
-  likes     BigInt    @default(0)
+  rewards   Json[]    @default([])
+  points    BigInt    @default(0)
   forum     String
   Forum     Forum     @relation("ForumToPost", fields: [forum], references: [id])
   Comments  Comment[] @relation("PostToComment")
@@ -96,7 +108,8 @@ model Comment {
   createdAt BigInt
   editedAt  BigInt?
   nonce     BigInt
-  likes     BigInt    @default(0)
+  rewards   Json[]    @default([])
+  points    BigInt    @default(0)
   post      String
   Post      Post      @relation("PostToComment", fields: [post], references: [id])
   parent    String?
