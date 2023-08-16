@@ -223,44 +223,12 @@ const Step1 = ({ onNext }: Step1Props) => {
       </Button>
 
       {fieldArray.fields.map((field, index) => (
-        <Box key={field.id} display="flex" alignItems="center" gap="2" my="4">
-          <Input
-            placeholder="Token Address"
-            isInvalid={Boolean(
-              methods.formState.errors.gates?.[index]?.address
-            )}
-            {...methods.register(`gates.${index}.address`, {
-              required: true,
-              validate: (value) => {
-                try {
-                  new web3.PublicKey(value);
-                  return true;
-                } catch (err) {
-                  return "Invalid address";
-                }
-              },
-            })}
-          />
-          <GateAmountInput index={index} methods={methods} />
-          <Select
-            placeholder="Type"
-            width="100px"
-            minWidth="100px"
-            {...methods.register(`gates.${index}.type`, {
-              required: true,
-            })}
-          >
-            <option value="nft">NFT</option>
-            <option value="token">Token</option>
-          </Select>
-          <IconButton
-            aria-label="Remove field"
-            borderRadius="sm"
-            onClick={() => fieldArray.remove(index)}
-          >
-            <IoTrash />
-          </IconButton>
-        </Box>
+        <TokenGateField
+          key={field.id}
+          index={index}
+          methods={methods}
+          onRemove={() => fieldArray.remove(index)}
+        />
       ))}
 
       <Divider my="8" />
@@ -268,6 +236,58 @@ const Step1 = ({ onNext }: Step1Props) => {
       <Box display="flex" justifyContent="flex-end" gap="2" my="8">
         <Button type="submit">Next</Button>
       </Box>
+    </Box>
+  );
+};
+
+interface TokenGateFieldProps {
+  index: number;
+  methods: UseFormReturn<Step1Form>;
+  onRemove: () => void;
+}
+
+const TokenGateField = ({ index, methods, onRemove }: TokenGateFieldProps) => {
+  const field = useWatch({
+    control: methods.control,
+    name: `gates.${index}`,
+  });
+
+  return (
+    <Box display="flex" alignItems="center" gap="2" my="4">
+      <Input
+        placeholder={field.type === "nft" ? "Collection Address" : "Token Mint"}
+        isInvalid={Boolean(methods.formState.errors.gates?.[index]?.address)}
+        {...methods.register(`gates.${index}.address`, {
+          required: true,
+          validate: (value) => {
+            try {
+              new web3.PublicKey(value);
+              return true;
+            } catch (err) {
+              return "Invalid address";
+            }
+          },
+        })}
+      />
+      <GateAmountInput index={index} methods={methods} />
+      <Select
+        placeholder="Type"
+        width="100px"
+        minWidth="100px"
+        {...methods.register(`gates.${index}.type`, {
+          required: true,
+        })}
+      >
+        <option value="nft">NFT</option>
+        <option value="token">Token</option>
+      </Select>
+      <IconButton
+        aria-label="Remove field"
+        borderRadius="sm"
+        onClick={onRemove}
+      >
+        <IoTrash />
+      </IconButton>
     </Box>
   );
 };
