@@ -68,7 +68,7 @@ const Comments: NextPage<PageProps> = () => {
       queryClient.setQueryData<SerializedCommentNested[]>(
         commentsQueryKey,
         (data) => {
-          const newComment = {
+          const newComment: SerializedCommentNested = {
             uri,
             id: Math.random().toString(36),
             createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
@@ -77,7 +77,8 @@ const Comments: NextPage<PageProps> = () => {
             post: id,
             body: entry.body,
             nsfw: false,
-            likes: BigInt(0).toString(),
+            points: BigInt(0).toString(),
+            rewards: {},
             nonce: BigInt(0).toString(),
             hash: "",
             author: userAddress,
@@ -125,7 +126,7 @@ const Comments: NextPage<PageProps> = () => {
         titleSize="3xl"
         body={postQuery.data?.body}
         uri={postQuery.data?.uri}
-        likes={Number(postQuery.data.likes)}
+        likes={Number(postQuery.data.points)}
         postType={postQuery.data.postType}
         author={postQuery.data.Author}
         forum={postQuery.data.forum}

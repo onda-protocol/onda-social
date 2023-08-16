@@ -22,8 +22,9 @@ import { Toaster } from "react-hot-toast";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 import theme from "../theme";
-import { Navbar } from "../components/layout/navbar";
-import { DocumentHead } from "../components/document";
+import { Navbar } from "components/layout/navbar";
+import { DocumentHead } from "components/document";
+import { RewardModalProvider } from "components/modal";
 
 export default function App({ Component, pageProps }: AppProps) {
   const wallets = useMemo(() => [], []);
@@ -63,7 +64,9 @@ export default function App({ Component, pageProps }: AppProps) {
                     url={``}
                   />
                   <Navbar />
-                  <Component {...pageProps} />
+                  <RewardModalProvider>
+                    <Component {...pageProps} />
+                  </RewardModalProvider>
                   <Toaster />
                 </ChakraProvider>
               </SessionProvider>

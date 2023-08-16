@@ -73,13 +73,11 @@ async function createReward(
     })
     .instruction();
 
-  let blockhash = await connection
-    .getLatestBlockhash()
-    .then((res) => res.blockhash);
+  let latestBlockhash = await connection.getLatestBlockhash();
 
   const messageV0 = new anchor.web3.TransactionMessage({
     payerKey: authority.publicKey,
-    recentBlockhash: blockhash,
+    recentBlockhash: latestBlockhash.blockhash,
     instructions: [allocTreeIx, createRewardIx],
   }).compileToV0Message();
 
@@ -87,11 +85,16 @@ async function createReward(
 
   try {
     await transaction.sign([authority, merkleTree]);
-    const txId = await connection.sendTransaction(transaction, {
+    const signature = await connection.sendTransaction(transaction, {
       skipPreflight: true,
       preflightCommitment: "confirmed",
     });
-    console.log("txId: ", txId);
+    console.log("txId: ", signature);
+    const result = await connection.confirmTransaction({
+      signature,
+      ...latestBlockhash,
+    });
+    console.log("result: ", result);
   } catch (err) {
     console.log(err);
     throw err;
@@ -111,7 +114,6 @@ async function createCollectionMint(
     sellerFeeBasisPoints: 0,
     isCollection: true,
   });
-  const mintIx = transactionBuilder.getInstructions();
   const context = transactionBuilder.getContext();
   const mintAddress = context.mintAddress;
   const metadataAddress = context.metadataAddress;
@@ -126,25 +128,9 @@ async function createCollectionMint(
       collectionAuthority: rewardPda,
     });
 
-  let blockhash = await connection
-    .getLatestBlockhash()
-    .then((res) => res.blockhash);
-
-  const messageV0 = new anchor.web3.TransactionMessage({
-    payerKey: authority.publicKey,
-    recentBlockhash: blockhash,
-    instructions: [...mintIx],
-  }).compileToV0Message();
-
-  const transaction = new anchor.web3.VersionedTransaction(messageV0);
-
   try {
-    await transaction.sign([authority]);
-    const txId = await connection.sendTransaction(transaction, {
-      skipPreflight: true,
-      preflightCommitment: "confirmed",
-    });
-    console.log("txId: ", txId);
+    const result = await transactionBuilder.sendAndConfirm(metaplex);
+    console.log("txId: ", result.response.signature);
   } catch (err) {
     console.log(err);
     throw err;

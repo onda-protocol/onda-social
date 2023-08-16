@@ -1,16 +1,17 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Box, Text, useQuery } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { User } from "@prisma/client";
 
-import { getImageFromAddress, getNameFromAddress } from "utils/profile";
 import { shortenAddress } from "utils/format";
+import { PostRewards } from "lib/api";
 import dayjs from "lib/dayjs";
 
 interface PostMetaProps {
   author: User;
-  likes: number;
+  points: number;
+  awards: null | PostRewards;
   createdAt?: string;
   editedAt?: string | null;
   forum?: string;
@@ -29,7 +30,8 @@ const Dot = () => (
 
 export const PostMeta: React.FC<PostMetaProps> = ({
   author,
-  likes,
+  points,
+  awards,
   createdAt,
   editedAt,
   forum,
@@ -56,6 +58,28 @@ export const PostMeta: React.FC<PostMetaProps> = ({
     e.stopPropagation();
     return false;
   }
+
+  const awardsEl = useMemo(() => {
+    if (awards) {
+      const awardsArray = Object.entries(awards);
+
+      return awardsArray.map(([awardId, award]) => (
+        <Box ml="2" key={awardId}>
+          <Image
+            alt="Award"
+            src={award.image}
+            height={16}
+            width={16}
+            style={{
+              borderRadius: "2px",
+            }}
+          />
+        </Box>
+      ));
+    }
+
+    return null;
+  }, [awards]);
 
   return (
     <Box display="flex" alignItems="center">
@@ -144,19 +168,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
           ) : null}
         </Box>
       </Text>
-      {showRewards && likes >= 10 && (
-        <Box ml="2">
-          <Image
-            alt="Plank icon"
-            src="https://spl6zzbxyf3yvcbh2ltohntq24pfsxpl2n3rpr7t7twqfcszee5q.arweave.net/k9fs5DfBd4qIJ9Lm47Zw1x5ZXevTdxfH8_ztAopZITs"
-            height={16}
-            width={16}
-            style={{
-              borderRadius: "2px",
-            }}
-          />
-        </Box>
-      )}
+      {awardsEl}
     </Box>
   );
 };

@@ -1,20 +1,21 @@
 import Link from "next/link";
-import { Box, Text, Tooltip } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useSessionWallet } from "@gumhq/react-sdk";
 import { IoChatbox, IoTrash } from "react-icons/io5";
 import { GiSadCrab } from "react-icons/gi";
-import { MouseEventHandler, forwardRef, use } from "react";
+import { MouseEventHandler, forwardRef, useCallback, useState } from "react";
 import toast from "react-hot-toast";
 
-import { deleteEntry, getDataHash, likeEntry } from "lib/anchor";
+import { deleteEntry, getDataHash } from "lib/anchor";
+import { getOrCreateSession } from "lib/gum";
 import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
 } from "lib/api";
-import { getOrCreateSession } from "lib/gum";
-import { BLOOM_PROGRAM_ID } from "lib/anchor/constants";
+import { Modal } from "components/modal/base";
+import { useRewardModal } from "components/modal";
 
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
@@ -35,7 +36,7 @@ export const PostButtons = ({
           label={`${post?._count?.Comments} comments`}
         />
       </Link>
-      <PostLikeButton post={post} />
+      <RewardButton entryId={post.id} />
       {displayDelete && (
         <DeleteButton
           forumId={post.forum}
@@ -51,7 +52,7 @@ export const PostButtons = ({
 export const DummyPostButtons = () => (
   <Box display="flex" flexDirection="row" gap="2" mt="6">
     <PostButton icon={<IoChatbox />} label={`0 comments`} />
-    <LikeButton disabled label={"0"} />
+    <DummyRewardButton />
   </Box>
 );
 
@@ -66,70 +67,52 @@ export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
   const sessionWallet = useSessionWallet();
   const isAuthor = anchorWallet?.publicKey?.toBase58() === post.author;
 
-  const mutation = useMutation(
-    async () => {
-      return likeEntry(connection, anchorWallet, {
-        id: post.id,
-        author: post.author,
-      });
-    },
-    {
-      onSuccess() {
-        queryClient.setQueryData<PostWithCommentsCountAndForum>(
-          ["post", post.id],
-          {
-            ...post,
-            likes: Number(Number(post.likes) + 1).toString(),
-          }
-        );
+  const mutation = useMutation(async () => {}, {
+    onSuccess() {
+      queryClient.setQueryData<PostWithCommentsCountAndForum>(
+        ["post", post.id],
+        {
+          ...post,
+          points: Number(Number(post.points) + 1).toString(),
+        }
+      );
 
-        queryClient
-          .getQueryCache()
-          .findAll(["posts"], {
-            exact: false,
-          })
-          .forEach((query) => {
-            queryClient.setQueryData<PostWithCommentsCountAndForum[]>(
-              query.queryKey,
-              (posts) => {
-                if (posts) {
-                  for (const index in posts) {
-                    const p = posts[index];
-                    if (p.id === post.id) {
-                      const newPost = { ...p };
-                      newPost.likes = Number(
-                        Number(newPost.likes) + 1
-                      ).toString();
-                      return [
-                        ...posts.slice(0, Number(index)),
-                        newPost,
-                        ...posts.slice(Number(index) + 1),
-                      ];
-                    }
+      queryClient
+        .getQueryCache()
+        .findAll(["posts"], {
+          exact: false,
+        })
+        .forEach((query) => {
+          queryClient.setQueryData<PostWithCommentsCountAndForum[]>(
+            query.queryKey,
+            (posts) => {
+              if (posts) {
+                for (const index in posts) {
+                  const p = posts[index];
+                  if (p.id === post.id) {
+                    const newPost = { ...p };
+                    newPost.points = Number(
+                      Number(newPost.points) + 1
+                    ).toString();
+                    return [
+                      ...posts.slice(0, Number(index)),
+                      newPost,
+                      ...posts.slice(Number(index) + 1),
+                    ];
                   }
                 }
               }
-            );
-          });
-      },
-      onError(err) {
-        console.error(err);
-        toast.error("Failed to send PLANK");
-      },
-    }
-  );
+            }
+          );
+        });
+    },
+    onError(err) {
+      console.error(err);
+      toast.error("Failed to send PLANK");
+    },
+  });
 
-  return (
-    <LikeButton
-      label={post.likes.toString()}
-      disabled={isAuthor || mutation.isLoading}
-      onClick={(e) => {
-        e.stopPropagation();
-        mutation.mutate();
-        return false;
-      }}
-    />
-  );
+  return <RewardButton entryId={post.id} />;
 };
 
 interface PostDeleteButtonProps {
@@ -232,8 +215,29 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
   }
 );
 
-export const LikeButton: React.FC<Omit<PostButtonProps, "icon">> = (props) => (
-  <Tooltip label="Reward PLANK" shouldWrapChildren>
-    <PostButton icon={<GiSadCrab />} {...props} />
-  </Tooltip>
+interface RewardButtonProps {
+  entryId: string;
+  disabled?: boolean;
+}
+
+export const RewardButton = ({ entryId, disabled }: RewardButtonProps) => {
+  const rewardModal = useRewardModal();
+  console.log(rewardModal);
+
+  return (
+    <PostButton
+      icon={<GiSadCrab />}
+      label="Reward"
+      disabled={disabled}
+      onClick={(e) => {
+        e.stopPropagation();
+        rewardModal.openModal(entryId);
+        return false;
+      }}
+    />
+  );
+};
+
+const DummyRewardButton = () => (
+  <PostButton disabled icon={<GiSadCrab />} label="Reward" />
 );

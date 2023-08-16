@@ -27,11 +27,3 @@ export const PROFILE_PROGRAM_ID = new web3.PublicKey(
 export const BUBBLEGUM_PROGRAM_ID = new web3.PublicKey(
   "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY"
 );
-
-export const PLANKTON_MINT = new web3.PublicKey(
-  "pktnre2sUNQZXwHicZj6njpShhSazmzQz5rJtcqnkG5"
-);
-
-export const PROTOCOL_FEE_PLANKTON_ATA = new web3.PublicKey(
-  "EneovF7KrWHBC6QKmoiwC2S6PUFBZnpYcuyUTdD59iYp"
-);

@@ -7,11 +7,15 @@ import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
 
 import { SerializedCommentNested, fetchReplies, fetchUser } from "lib/api";
-import { likeEntry } from "lib/anchor";
+import {} from "lib/anchor";
 import { Markdown } from "../markdown";
 import { Editor, EntryForm } from "../editor";
 import { PostMeta } from "../post/meta";
-import { PostButton, LikeButton, DeleteButton } from "components/post/buttons";
+import {
+  PostButton,
+  RewardButton,
+  DeleteButton,
+} from "components/post/buttons";
 
 interface CommentListItemProps {
   forum: string;
@@ -51,7 +55,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
         );
 
         const hasNestedChildren = "Children" in comment;
-        const newComment = {
+        const newComment: SerializedCommentNested = {
           uri,
           id: Math.random().toString(36),
           createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
@@ -60,8 +64,9 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           post: comment.post,
           body: entry.body,
           nsfw: false,
-          likes: BigInt(0).toString(),
           nonce: BigInt(0).toString(),
+          points: BigInt(0).toString(),
+          rewards: {},
           hash: "",
           author: userAddress,
           Author: author,
@@ -154,7 +159,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
             displayAvatar
             showRewards
             author={comment.Author}
-            likes={Number(comment.likes)}
+            likes={Number(comment.points)}
             createdAt={comment.createdAt}
             editedAt={comment.editedAt}
           />
@@ -245,28 +250,22 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
         throw new Error("Wallet not connected");
       }
 
-      return likeEntry(connection, anchorWallet, {
-        id: comment.id,
-        author: comment.author,
-      });
+      // return likeEntry(connection, anchorWallet, {
+      //   id: comment.id,
+      //   author: comment.author,
+      // });
     },
     {
       onSuccess() {
         queryClient.setQueryData<Array<SerializedCommentNested>>(
           queryKey,
-          nestedCommentsLikeReducer(comment.id)
+          nestedCommentsPointsReducer(comment.id)
         );
       },
     }
   );
 
-  return (
-    <LikeButton
-      label={comment.likes}
-      disabled={mutation.isLoading}
-      onClick={() => mutation.mutate()}
-    />
-  );
+  return <RewardButton entryId={comment.id} />;
 };
 
 interface CommentDeleteButtonProps {
@@ -488,14 +487,14 @@ function increment(like: string) {
   return Number(Number(like) + 1).toString();
 }
 
-function nestedCommentsLikeReducer(
+function nestedCommentsPointsReducer(
   id: string
 ): (
   input: SerializedCommentNested[] | undefined
 ) => SerializedCommentNested[] | undefined {
   return nestedCommentsReducer(id, (comment) => ({
     ...comment,
-    likes: increment(comment.likes),
+    points: increment(comment.points),
   }));
 }
 
@@ -533,7 +532,9 @@ function nestedCommentsReducer(
           ...comments.slice(Number(index) + 1),
         ];
       } else if (comment.Children) {
-        const updatedChildren = nestedCommentsLikeReducer(id)(comment.Children);
+        const updatedChildren = nestedCommentsPointsReducer(id)(
+          comment.Children
+        );
 
         if (updatedChildren) {
           return [

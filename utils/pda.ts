@@ -1,13 +1,11 @@
 import { web3, BN } from "@project-serum/anchor";
 import { PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import {
-  BLOOM_PROGRAM_ID,
   COMPRESSION_PROGRAM_ID,
   MODERATION_PROGRAM_ID,
   NAMESPACE_PROGRAM_ID,
   PROFILE_PROGRAM_ID,
   REWARDS_PROGRAM_ID,
-  PLANKTON_MINT,
   BUBBLEGUM_PROGRAM_ID,
 } from "../lib/anchor/constants";
 
@@ -18,31 +16,31 @@ export function findMetadataPda(mint: web3.PublicKey) {
   )[0];
 }
 
-export function findBloomPda(entryId: web3.PublicKey, author: web3.PublicKey) {
+export function findEditionPda(mint: web3.PublicKey) {
   return web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("bloom"), entryId.toBuffer(), author.toBuffer()],
-    BLOOM_PROGRAM_ID
+    [
+      Buffer.from("metadata"),
+      METADATA_PROGRAM_ID.toBuffer(),
+      mint.toBuffer(),
+      Buffer.from("edition"),
+    ],
+    METADATA_PROGRAM_ID
   )[0];
 }
 
-export function findEscrowTokenPda(owner: web3.PublicKey) {
+export function findCollectionAuthorityRecordPda(
+  mint: web3.PublicKey,
+  collectionAuthority: web3.PublicKey
+) {
   return web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("escrow"), PLANKTON_MINT.toBuffer(), owner.toBuffer()],
-    BLOOM_PROGRAM_ID
-  )[0];
-}
-
-export function findRewardEscrowPda() {
-  return web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("reward_escrow"), PLANKTON_MINT.toBuffer()],
-    BLOOM_PROGRAM_ID
-  )[0];
-}
-
-export function findClaimMarkerPda(owner: web3.PublicKey) {
-  return web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("claim_marker"), owner.toBuffer()],
-    BLOOM_PROGRAM_ID
+    [
+      Buffer.from("metadata"),
+      METADATA_PROGRAM_ID.toBuffer(),
+      mint.toBuffer(),
+      Buffer.from("collection_authority"),
+      collectionAuthority.toBuffer(),
+    ],
+    METADATA_PROGRAM_ID
   )[0];
 }
 

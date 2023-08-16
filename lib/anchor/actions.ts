@@ -1,6 +1,5 @@
 import { web3, BN } from "@project-serum/anchor";
 import { PostType } from "@prisma/client";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
   ConcurrentMerkleTreeAccount,
@@ -8,37 +7,39 @@ import {
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
+import { PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { SessionWalletInterface } from "@gumhq/react-sdk";
 import base58 from "bs58";
 import pkg from "js-sha3";
 
 import {
   findForumConfigPda,
-  findBloomPda,
   findMetadataPda,
   findProfilePda,
   findNamespacePda,
   findTreeMarkerPda,
-  findEscrowTokenPda,
-  findRewardEscrowPda,
-  findClaimMarkerPda,
+  findTreeAuthorityPda,
+  findCollectionAuthorityRecordPda,
+  findEditionPda,
+  findBubblegumSignerPda,
 } from "utils/pda";
 import { parseDataV1Fields } from "utils/parse";
 import { DataV1, LeafSchemaV1, Gate } from "./types";
 import {
   getCompressionProgram,
-  getBloomProgram,
   getProfileProgram,
   getNamespaceProgram,
+  getRewardsProgram,
 } from "./provider";
-import { PLANKTON_MINT, PROTOCOL_FEE_PLANKTON_ATA } from "./constants";
 import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
   SerializedForum,
+  SerializedReward,
   fetchForumPass,
   fetchProof,
 } from "lib/api";
+import { BUBBLEGUM_PROGRAM_ID } from "./constants";
 
 export async function initForumAndNamespace(
   connection: web3.Connection,
@@ -409,61 +410,6 @@ export async function deleteEntry(
     });
 }
 
-export async function likeEntry(
-  connection: web3.Connection,
-  wallet: AnchorWallet,
-  options: {
-    id: string;
-    author: string;
-  }
-) {
-  const program = getBloomProgram(connection, wallet);
-  const entryId = new web3.PublicKey(options.id);
-  const author = new web3.PublicKey(options.author);
-  const bloomPda = findBloomPda(entryId, author);
-  const authorTokenAccount = await findEscrowTokenPda(author);
-  const depositTokenAccount = await findEscrowTokenPda(wallet.publicKey);
-
-  await program.methods
-    .feedPlankton(entryId, new BN(100_000))
-    .accounts({
-      payer: wallet.publicKey,
-      author,
-      sessionToken: null,
-      authorTokenAccount,
-      depositTokenAccount,
-      bloom: bloomPda,
-      mint: PLANKTON_MINT,
-      protocolFeeTokenAccount: PROTOCOL_FEE_PLANKTON_ATA,
-      tokenProgram: TOKEN_PROGRAM_ID,
-    })
-    .rpc();
-}
-
-export async function claimPlankton(
-  connection: web3.Connection,
-  wallet: AnchorWallet
-) {
-  const program = getBloomProgram(connection, wallet);
-  const escrowTokenAccount = await findEscrowTokenPda(wallet.publicKey);
-  const rewardTokenAccount = await findRewardEscrowPda();
-  const claimMarker = await findClaimMarkerPda(wallet.publicKey);
-
-  await program.methods
-    .claimPlankton()
-    .accounts({
-      signer: wallet.publicKey,
-      escrowTokenAccount,
-      rewardTokenAccount,
-      claimMarker,
-      mint: PLANKTON_MINT,
-      tokenProgram: TOKEN_PROGRAM_ID,
-    })
-    .rpc({
-      commitment: "confirmed",
-    });
-}
-
 export async function updateProfile(
   connection: web3.Connection,
   wallet: AnchorWallet,
@@ -537,4 +483,51 @@ function assertSessionIsValid(session: SessionWalletInterface) {
   if (!session.signAndSendTransaction) {
     throw new Error("Session signAndSendTransaction not found");
   }
+}
+
+export async function giveAward(
+  connection: web3.Connection,
+  wallet: AnchorWallet,
+  options: {
+    entryId: string;
+    award: SerializedReward;
+  }
+) {
+  const program = getRewardsProgram(connection, wallet);
+  const leafOwner = new web3.PublicKey(options.entryId);
+  const reward = new web3.PublicKey(options.award.id);
+  const merkleTree = new web3.PublicKey(options.award.merkleTree);
+  const collectionMint = new web3.PublicKey(options.award.collectionMint);
+  const collectionMetadataPda = findMetadataPda(collectionMint);
+  const editionPda = findEditionPda(collectionMint);
+  const treeAuthorityPda = findTreeAuthorityPda(merkleTree);
+  const collectionAuthorityRecordPda = findCollectionAuthorityRecordPda(
+    collectionMint,
+    reward
+  );
+  const bubblegumSignerPda = findBubblegumSignerPda();
+
+  await program.methods
+    .giveReward()
+    .accounts({
+      reward,
+      leafOwner,
+      merkleTree,
+      payer: wallet.publicKey,
+      sessionToken: null,
+      signer: wallet.publicKey,
+      treeAuthority: treeAuthorityPda,
+      collectionAuthorityRecordPda,
+      collectionMint,
+      collectionMetadata: collectionMetadataPda,
+      editionAccount: editionPda,
+      logWrapper: SPL_NOOP_PROGRAM_ID,
+      bubblegumSigner: bubblegumSignerPda,
+      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+      tokenMetadataProgram: METADATA_PROGRAM_ID,
+      bubblegumProgram: BUBBLEGUM_PROGRAM_ID,
+    })
+    .rpc({
+      preflightCommitment: "confirmed",
+    });
 }

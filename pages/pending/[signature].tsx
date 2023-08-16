@@ -67,7 +67,8 @@ const Pending: NextPage = () => {
             uri: result.data.uri,
             nsfw: result.data.nsfw ?? false,
             hash: "",
-            likes: BigInt(0).toString(),
+            points: BigInt(0).toString(),
+            rewards: {},
             createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
             editedAt: null,
             Author: {

@@ -21,7 +21,7 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
       post: address as string,
     },
     orderBy: {
-      likes: "desc",
+      points: "desc",
     },
     take: limit,
     skip: offset,
@@ -30,21 +30,21 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
       Children: {
         take: 3,
         orderBy: {
-          likes: "desc",
+          points: "desc",
         },
         include: {
           Author: true,
           Children: {
             take: 3,
             orderBy: {
-              likes: "desc",
+              points: "desc",
             },
             include: {
               Author: true,
               Children: {
                 take: 3,
                 orderBy: {
-                  likes: "desc",
+                  points: "desc",
                 },
               },
               _count: {

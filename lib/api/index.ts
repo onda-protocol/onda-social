@@ -1,4 +1,4 @@
-import { Comment, Post, Forum, User, Gate } from "@prisma/client";
+import { Comment, Forum, Gate, Post, Reward, User } from "@prisma/client";
 
 type DeepReplaceBigInt<T, U> = {
   [K in keyof T]: T[K] extends bigint
@@ -23,12 +23,20 @@ export type PostWithCommentsCountAndForum = DeepReplaceBigInt<
 export type SerializedForum = DeepReplaceBigInt<Forum, string> & {
   gates: Gate[];
 };
+export type SerializedReward = DeepReplaceBigInt<Reward, string>;
 export type SerializedComment = DeepReplaceBigInt<Comment, string> & {
   Author: User;
   _count: { Children: number };
 };
 export type SerializedCommentNested = SerializedComment & {
   Children?: SerializedCommentNested[];
+};
+
+export type PostRewards = null | {
+  [key: string]: {
+    count: number;
+    image: string;
+  };
 };
 
 export function fetchForum(address: string): Promise<SerializedForum> {
@@ -47,6 +55,12 @@ export function fetchForumByNamespace(
 
 export function fetchFora(): Promise<SerializedForum[]> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/fora`).then((res) =>
+    res.json()
+  );
+}
+
+export function fetchRewards(): Promise<SerializedReward[]> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/rewards`).then((res) =>
     res.json()
   );
 }

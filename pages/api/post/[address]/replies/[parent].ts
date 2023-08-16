@@ -21,14 +21,14 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
       parent: parent as string,
     },
     orderBy: {
-      likes: "desc",
+      points: "desc",
     },
     include: {
       Author: true,
       Children: {
         take: 10,
         orderBy: {
-          likes: "desc",
+          points: "desc",
         },
         include: {
           Author: true,

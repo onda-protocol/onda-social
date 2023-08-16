@@ -26,14 +26,14 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
         FROM "Comment"
         WHERE "Comment"."post" = "Post"."id"
       ) AS "_count.Comments",
-      CAST("createdAt" AS float) + (CAST(likes AS float) * 36000) AS likes_per_created_at
+      CAST("createdAt" AS float) + (CAST(points AS float) * 36000) AS points_per_created_at
     FROM "Post"
     LEFT JOIN 
       "User" ON "Post"."author" = "User"."id"
     LEFT JOIN 
       "Forum" ON "Post"."forum" = "Forum"."id"
     ${where}
-    ORDER BY likes_per_created_at DESC;
+    ORDER BY points_per_created_at DESC;
   `;
 
   return result.map((post: any) => {
