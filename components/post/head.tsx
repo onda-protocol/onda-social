@@ -3,13 +3,15 @@ import { Box, Heading, TypographyProps } from "@chakra-ui/react";
 
 import { PostMeta } from "components/post/meta";
 import { PostContent } from "components/post/content";
+import { AwardsJson } from "lib/api";
 
 interface PostHeadProps {
   title: string;
   body: string | null;
   uri: string;
   author: User;
-  likes: number;
+  points: number;
+  awards: AwardsJson;
   createdAt: string;
   editedAt: string | null;
   forum: string;
@@ -24,7 +26,8 @@ export const PostHead = ({
   body,
   uri,
   author,
-  likes,
+  points,
+  awards,
   createdAt,
   editedAt,
   forum,
@@ -38,7 +41,8 @@ export const PostHead = ({
       <Box mt="12">
         <PostMeta
           showRewards
-          likes={Number(likes)}
+          points={Number(points)}
+          awards={awards}
           author={author}
           forum={forum}
           forumNamespace={forumNamespace}

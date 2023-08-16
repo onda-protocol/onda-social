@@ -17,6 +17,7 @@ import {
   fetchComments,
   fetchUser,
   PostWithCommentsCountAndForum,
+  AwardsJson,
 } from "lib/api";
 import { Editor, EntryForm } from "components/editor";
 import { CommentListItem } from "components/comment";
@@ -126,7 +127,8 @@ const Comments: NextPage<PageProps> = () => {
         titleSize="3xl"
         body={postQuery.data?.body}
         uri={postQuery.data?.uri}
-        likes={Number(postQuery.data.points)}
+        points={Number(postQuery.data.points)}
+        awards={postQuery.data.rewards as AwardsJson}
         postType={postQuery.data.postType}
         author={postQuery.data.Author}
         forum={postQuery.data.forum}

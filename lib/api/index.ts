@@ -32,7 +32,7 @@ export type SerializedCommentNested = SerializedComment & {
   Children?: SerializedCommentNested[];
 };
 
-export type PostRewards = null | {
+export type AwardsJson = null | {
   [key: string]: {
     count: number;
     image: string;

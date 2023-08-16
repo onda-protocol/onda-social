@@ -6,7 +6,12 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
 
-import { SerializedCommentNested, fetchReplies, fetchUser } from "lib/api";
+import {
+  AwardsJson,
+  SerializedCommentNested,
+  fetchReplies,
+  fetchUser,
+} from "lib/api";
 import {} from "lib/anchor";
 import { Markdown } from "../markdown";
 import { Editor, EntryForm } from "../editor";
@@ -159,7 +164,8 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
             displayAvatar
             showRewards
             author={comment.Author}
-            likes={Number(comment.points)}
+            points={Number(comment.points)}
+            awards={comment.rewards as AwardsJson}
             createdAt={comment.createdAt}
             editedAt={comment.editedAt}
           />

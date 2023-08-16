@@ -146,7 +146,8 @@ const Pending: NextPage = () => {
         titleSize="3xl"
         body={data.body}
         uri={data.uri}
-        likes={0}
+        points={0}
+        awards={null}
         postType={data.postType}
         author={authorQuery.data}
         forum={forumQuery.data.id}

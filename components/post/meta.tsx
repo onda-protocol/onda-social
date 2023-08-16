@@ -5,13 +5,13 @@ import { useMemo } from "react";
 import { User } from "@prisma/client";
 
 import { shortenAddress } from "utils/format";
-import { PostRewards } from "lib/api";
+import { AwardsJson } from "lib/api";
 import dayjs from "lib/dayjs";
 
 interface PostMetaProps {
   author: User;
   points: number;
-  awards: null | PostRewards;
+  awards: null | AwardsJson;
   createdAt?: string;
   editedAt?: string | null;
   forum?: string;

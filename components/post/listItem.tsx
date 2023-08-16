@@ -1,7 +1,7 @@
 import { Box, Heading } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 
-import { PostRewards, PostWithCommentsCountAndForum } from "lib/api";
+import { AwardsJson, PostWithCommentsCountAndForum } from "lib/api";
 import { Panel } from "components/panel";
 import { PostMeta } from "components/post/meta";
 import { PostButtons } from "components/post/buttons";
@@ -27,7 +27,7 @@ export const PostListItem = ({ displayIcon, post }: PostListItemProps) => {
         displayIcon={displayIcon}
         author={post.Author}
         points={Number(post.points)}
-        awards={post.rewards as PostRewards}
+        awards={post.rewards as AwardsJson}
         forum={post.forum}
         forumNamespace={post.Forum.namespace}
         forumIcon={post.Forum.icon}
