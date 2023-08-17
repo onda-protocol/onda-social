@@ -10,8 +10,8 @@ export const config = {
 };
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
-  const params = new URL(req.url).searchParams;
-  const namespace = params.get("namespace")!;
+  const searchParams = req.nextUrl.searchParams;
+  const namespace = searchParams.get("namespace")!;
 
   const results = await queryPosts(
     Prisma.sql`WHERE "Forum"."namespace" = ${namespace}`

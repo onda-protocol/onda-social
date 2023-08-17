@@ -9,10 +9,10 @@ export const config = {
 };
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
-  const params = new URL(req.url).searchParams;
-  const address = params.get("address");
-  const parent = params.get("parent");
-  const skip = parseInt(params.get("skip") ?? "0");
+  const searchParams = req.nextUrl.searchParams;
+  const address = searchParams.get("address");
+  const parent = searchParams.get("parent");
+  const skip = parseInt(searchParams.get("skip") ?? "0");
 
   const result = await prisma.comment.findMany({
     skip,

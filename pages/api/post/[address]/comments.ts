@@ -9,13 +9,11 @@ export const config = {
 };
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
-  const params = new URL(req.url).searchParams;
-  const address = params.get("address");
-  const parent = params.get("parent");
-  console.log("address: ", address);
-  console.log("parent: ", parent);
-  const limit = parseInt(params.get("limit") ?? "100");
-  const offset = parseInt(params.get("offset") ?? "0");
+  const searchParams = req.nextUrl.searchParams;
+  const address = searchParams.get("address");
+  const parent = searchParams.get("parent");
+  const limit = parseInt(searchParams.get("limit") ?? "100");
+  const offset = parseInt(searchParams.get("offset") ?? "0");
 
   const result = await prisma.comment.findMany({
     where: {

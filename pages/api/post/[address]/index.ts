@@ -9,8 +9,8 @@ export const config = {
 };
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
-  const params = new URL(req.url).searchParams;
-  const address = params.get("address");
+  const searchParams = req.nextUrl.searchParams;
+  const address = searchParams.get("address");
 
   const result = await prisma.post.findUnique({
     where: {
