@@ -41,7 +41,11 @@ export default function App({ Component, pageProps }: AppProps) {
     () =>
       new QueryClient({
         defaultOptions: {
-          queries: { refetchOnWindowFocus: false, retry: false },
+          queries: {
+            networkMode: "offlineFirst",
+            refetchOnWindowFocus: false,
+            retry: true,
+          },
         },
       }),
     []

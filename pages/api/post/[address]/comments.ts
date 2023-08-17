@@ -10,8 +10,10 @@ export const config = {
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const params = new URL(req.url).searchParams;
-  const parent = params.get("parent");
   const address = params.get("address");
+  const parent = params.get("parent");
+  console.log("address: ", address);
+  console.log("parent: ", parent);
   const limit = parseInt(params.get("limit") ?? "100");
   const offset = parseInt(params.get("offset") ?? "0");
 

@@ -103,8 +103,6 @@ interface SidebarButtonsProps {
 }
 
 export const SidebarButtons: React.FC<SidebarButtonsProps> = ({ forum }) => {
-  console.log("forum: ", forum);
-
   return (
     <Box my="6" mx="4">
       <Button

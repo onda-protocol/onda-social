@@ -38,15 +38,10 @@ const Comments: NextPage<PageProps> = () => {
   const postQuery = useQuery({
     queryKey: postQueryKey,
     queryFn: () => fetchPost(id),
-    enabled: true,
     refetchOnMount: false,
   });
   const commentsQueryKey = useMemo(() => ["comments", id], [id]);
-  const commentsQuery = useQuery({
-    queryKey: commentsQueryKey,
-    queryFn: () => fetchComments(id),
-    enabled: true,
-  });
+  const commentsQuery = useQuery(commentsQueryKey, () => fetchComments(id));
 
   const isAuthor = useMemo(
     () => anchorWallet?.publicKey?.toBase58() === postQuery.data?.author,

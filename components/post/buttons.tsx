@@ -222,7 +222,6 @@ interface RewardButtonProps {
 
 export const RewardButton = ({ entryId, disabled }: RewardButtonProps) => {
   const rewardModal = useRewardModal();
-  console.log(rewardModal);
 
   return (
     <PostButton
