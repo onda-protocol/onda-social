@@ -35,7 +35,7 @@ import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
   SerializedForum,
-  SerializedReward,
+  SerializedAward,
   fetchForumPass,
   fetchProof,
 } from "lib/api";
@@ -490,7 +490,7 @@ export async function giveAward(
   wallet: AnchorWallet,
   options: {
     entryId: string;
-    award: SerializedReward;
+    award: SerializedAward;
   }
 ) {
   const program = getRewardsProgram(connection, wallet);
