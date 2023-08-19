@@ -1,5 +1,5 @@
 import { web3 } from "@project-serum/anchor";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client/edge";
 import axios from "axios";
 import base58 from "bs58";
 import { Instruction } from "helius-sdk";

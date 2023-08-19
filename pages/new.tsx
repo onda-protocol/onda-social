@@ -342,7 +342,7 @@ interface Step2Form {
 }
 
 interface Step2Props {
-  data: Step2Form;
+  data?: Step2Form;
   onNext: (data: Step2Form) => void;
   onPrev: () => void;
 }

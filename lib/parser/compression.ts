@@ -1,5 +1,5 @@
 import { BN, web3 } from "@project-serum/anchor";
-import { Rule, PostType, Operator } from "@prisma/client";
+import { Rule, PostType, Operator } from "@prisma/client/edge";
 import axios from "axios";
 import base58 from "bs58";
 import { Instruction } from "helius-sdk";

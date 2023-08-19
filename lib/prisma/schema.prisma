@@ -52,6 +52,7 @@ model Forum {
   namespace     String?     @unique
   displayName   String?
   description   String?
+  links         Json?
   icon          String?
   banner        String?
   totalCapacity BigInt

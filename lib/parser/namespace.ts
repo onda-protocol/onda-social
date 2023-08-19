@@ -1,5 +1,6 @@
 import * as borsh from "@coral-xyz/borsh";
 import { web3 } from "@project-serum/anchor";
+import { Prisma } from "@prisma/client/edge";
 import axios from "axios";
 import base58 from "bs58";
 import { Instruction } from "helius-sdk";
@@ -40,12 +41,16 @@ export async function namespaceParser(ix: Instruction) {
   const layout = borsh.struct([borsh.str("namespace"), borsh.str("uri")]);
   const decoded = layout.decode(Buffer.from(ixData.slice(8)));
   const metadata = await axios.get(decoded.uri).then((res) => res.data);
+  const links = (
+    metadata?.links instanceof Array ? metadata?.links : []
+  ) as Prisma.JsonArray;
 
   await prisma.forum.update({
     where: {
       id: merkleTreeAddress,
     },
     data: {
+      links,
       namespace: decoded.namespace,
       displayName: metadata?.displayName,
       description: metadata?.description,
