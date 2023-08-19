@@ -1,6 +1,5 @@
 import Link from "next/link";
 import React from "react";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import {
   Box,
   Button,

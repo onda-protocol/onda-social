@@ -28,8 +28,13 @@ export type PostWithCommentsCountAndForum = DeepReplaceBigInt<
   string
 >;
 
+export type LinkJson = {
+  name: string;
+  url: string;
+};
 export type SerializedForum = DeepReplaceBigInt<Forum, string> & {
   gates: Gate[];
+  links: LinkJson[] | null;
 };
 export type SerializedAward = DeepReplaceBigInt<Reward, string>;
 export type SerializedComment = DeepReplaceBigInt<Comment, string> & {

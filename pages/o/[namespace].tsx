@@ -28,6 +28,7 @@ import {
   SidebarSection,
   SidebarButtons,
   SidebarList,
+  SidebarLink,
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
 
@@ -129,19 +130,19 @@ const Community: NextPage<PageProps> = () => {
                     </Box>
                     <SidebarButtons forum={forumQuery.data?.id} />
                   </SidebarSection>
-                  <SidebarSection title="Links">
-                    <SidebarList>
-                      {/* {links?.twitter && (
-                        <SidebarLink href={links.twitter} label="Twitter" />
-                      )}
-                      {links?.discord && (
-                        <SidebarLink href={links.discord} label="Discord" />
-                      )}
-                      {links?.website && (
-                        <SidebarLink href={links.website} label="Website" />
-                      )} */}
-                    </SidebarList>
-                  </SidebarSection>
+                  {Array.isArray(forumQuery.data?.links) ? (
+                    <SidebarSection title="Links">
+                      <SidebarList>
+                        {forumQuery.data?.links.map((link, index) => (
+                          <SidebarLink
+                            key={index}
+                            href={link.url}
+                            label={link.name}
+                          />
+                        ))}
+                      </SidebarList>
+                    </SidebarSection>
+                  ) : null}
                 </Sidebar>
               }
             />
