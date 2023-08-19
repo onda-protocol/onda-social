@@ -66,8 +66,7 @@ export const RewardModalProvider = ({ children }: RewardModalProviderProps) => {
   const giveRewardMutation = useMutation<void, Error, AwardMutationArgs>(
     async ({ entryId, award }) => {
       if (!anchorWallet) {
-        toast.error("Please connect your wallet");
-        return;
+        throw new Error("Please connect your wallet");
       }
 
       return giveAward(connection, anchorWallet, {
@@ -78,14 +77,13 @@ export const RewardModalProvider = ({ children }: RewardModalProviderProps) => {
     {
       onSuccess(_, variables) {
         closeModal();
-        toast.success("Reward given 🎉");
         variables.callback(variables.award);
+        toast.success("Reward given 🎉");
       },
       onError(err) {
         console.log(err);
         // @ts-ignore
-        console.log(err.logs);
-        toast.error("Something went wrong!");
+        toast.error(err.message ?? "Something went wrong!");
       },
     }
   );
