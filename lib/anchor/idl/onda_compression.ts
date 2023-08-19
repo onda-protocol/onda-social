@@ -50,12 +50,38 @@ export type OndaCompression = {
           type: {
             option: {
               vec: {
-                defined: "RestrictionType";
+                defined: "Gate";
               };
             };
           };
         }
       ];
+    },
+    {
+      name: "setAdmin";
+      accounts: [
+        {
+          name: "admin";
+          isMut: true;
+          isSigner: true;
+        },
+        {
+          name: "newAdmin";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "forumConfig";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "merkleTree";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [];
     },
     {
       name: "addEntry";
@@ -75,6 +101,12 @@ export type OndaCompression = {
           name: "signer";
           isMut: true;
           isSigner: true;
+        },
+        {
+          name: "additionalSigner";
+          isMut: false;
+          isSigner: true;
+          isOptional: true;
         },
         {
           name: "forumConfig";
@@ -134,12 +166,17 @@ export type OndaCompression = {
       accounts: [
         {
           name: "author";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "signer";
           isMut: true;
           isSigner: true;
         },
         {
           name: "forumConfig";
-          isMut: true;
+          isMut: false;
           isSigner: false;
         },
         {
@@ -218,18 +255,72 @@ export type OndaCompression = {
           {
             name: "gate";
             type: {
-              option: {
-                vec: {
-                  defined: "RestrictionType";
-                };
+              vec: {
+                defined: "Gate";
               };
             };
+          }
+        ];
+      };
+    },
+    {
+      name: "delegateAction";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "delegate";
+            type: "publicKey";
+          },
+          {
+            name: "action";
+            type: {
+              defined: "DelegateActionType";
+            };
+          },
+          {
+            name: "expiry";
+            type: "i64";
+          },
+          {
+            name: "nonce";
+            type: "u64";
           }
         ];
       };
     }
   ];
   types: [
+    {
+      name: "Gate";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "amount";
+            type: "u64";
+          },
+          {
+            name: "ruleType";
+            type: {
+              defined: "Rule";
+            };
+          },
+          {
+            name: "operator";
+            type: {
+              defined: "Operator";
+            };
+          },
+          {
+            name: "address";
+            type: {
+              vec: "publicKey";
+            };
+          }
+        ];
+      };
+    },
     {
       name: "LeafSchemaEvent";
       type: {
@@ -263,27 +354,49 @@ export type OndaCompression = {
       };
     },
     {
-      name: "RestrictionType";
+      name: "Rule";
       type: {
         kind: "enum";
         variants: [
           {
-            name: "Collection";
-            fields: [
-              {
-                name: "address";
-                type: "publicKey";
-              }
-            ];
+            name: "Token";
           },
           {
-            name: "Mint";
-            fields: [
-              {
-                name: "address";
-                type: "publicKey";
-              }
-            ];
+            name: "NFT";
+          },
+          {
+            name: "Pass";
+          },
+          {
+            name: "AdditionalSigner";
+          }
+        ];
+      };
+    },
+    {
+      name: "Operator";
+      type: {
+        kind: "enum";
+        variants: [
+          {
+            name: "AND";
+          },
+          {
+            name: "OR";
+          },
+          {
+            name: "NOT";
+          }
+        ];
+      };
+    },
+    {
+      name: "DelegateActionType";
+      type: {
+        kind: "enum";
+        variants: [
+          {
+            name: "Delete";
           }
         ];
       };
@@ -526,12 +639,38 @@ export const IDL: OndaCompression = {
           type: {
             option: {
               vec: {
-                defined: "RestrictionType",
+                defined: "Gate",
               },
             },
           },
         },
       ],
+    },
+    {
+      name: "setAdmin",
+      accounts: [
+        {
+          name: "admin",
+          isMut: true,
+          isSigner: true,
+        },
+        {
+          name: "newAdmin",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "forumConfig",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "merkleTree",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [],
     },
     {
       name: "addEntry",
@@ -551,6 +690,12 @@ export const IDL: OndaCompression = {
           name: "signer",
           isMut: true,
           isSigner: true,
+        },
+        {
+          name: "additionalSigner",
+          isMut: false,
+          isSigner: true,
+          isOptional: true,
         },
         {
           name: "forumConfig",
@@ -610,12 +755,17 @@ export const IDL: OndaCompression = {
       accounts: [
         {
           name: "author",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "signer",
           isMut: true,
           isSigner: true,
         },
         {
           name: "forumConfig",
-          isMut: true,
+          isMut: false,
           isSigner: false,
         },
         {
@@ -694,18 +844,72 @@ export const IDL: OndaCompression = {
           {
             name: "gate",
             type: {
-              option: {
-                vec: {
-                  defined: "RestrictionType",
-                },
+              vec: {
+                defined: "Gate",
               },
             },
           },
         ],
       },
     },
+    {
+      name: "delegateAction",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "delegate",
+            type: "publicKey",
+          },
+          {
+            name: "action",
+            type: {
+              defined: "DelegateActionType",
+            },
+          },
+          {
+            name: "expiry",
+            type: "i64",
+          },
+          {
+            name: "nonce",
+            type: "u64",
+          },
+        ],
+      },
+    },
   ],
   types: [
+    {
+      name: "Gate",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "amount",
+            type: "u64",
+          },
+          {
+            name: "ruleType",
+            type: {
+              defined: "Rule",
+            },
+          },
+          {
+            name: "operator",
+            type: {
+              defined: "Operator",
+            },
+          },
+          {
+            name: "address",
+            type: {
+              vec: "publicKey",
+            },
+          },
+        ],
+      },
+    },
     {
       name: "LeafSchemaEvent",
       type: {
@@ -739,27 +943,49 @@ export const IDL: OndaCompression = {
       },
     },
     {
-      name: "RestrictionType",
+      name: "Rule",
       type: {
         kind: "enum",
         variants: [
           {
-            name: "Collection",
-            fields: [
-              {
-                name: "address",
-                type: "publicKey",
-              },
-            ],
+            name: "Token",
           },
           {
-            name: "Mint",
-            fields: [
-              {
-                name: "address",
-                type: "publicKey",
-              },
-            ],
+            name: "NFT",
+          },
+          {
+            name: "Pass",
+          },
+          {
+            name: "AdditionalSigner",
+          },
+        ],
+      },
+    },
+    {
+      name: "Operator",
+      type: {
+        kind: "enum",
+        variants: [
+          {
+            name: "AND",
+          },
+          {
+            name: "OR",
+          },
+          {
+            name: "NOT",
+          },
+        ],
+      },
+    },
+    {
+      name: "DelegateActionType",
+      type: {
+        kind: "enum",
+        variants: [
+          {
+            name: "Delete",
           },
         ],
       },

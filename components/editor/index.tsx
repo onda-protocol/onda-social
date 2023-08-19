@@ -1,37 +1,34 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { web3 } from "@project-serum/anchor";
 import {
   useAnchorWallet,
   useConnection,
   useWallet,
 } from "@solana/wallet-adapter-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Forum, PostType } from "@prisma/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
 import { useSessionWallet } from "@gumhq/react-sdk";
-import { IoDocumentText, IoImage } from "react-icons/io5";
+import { IoDocumentText, IoImage, IoLink } from "react-icons/io5";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { useRouter } from "next/router";
-import { randomBytes } from "crypto";
 
-import { sleep } from "utils/async";
-import { getPrismaPostType } from "utils/format";
-import { SerializedForum, fetchFora } from "lib/api";
+import { fetchFora, fetchForum } from "lib/api";
 import { addEntry } from "lib/anchor/actions";
-import { getNameFromAddress, getProfiles } from "utils/profile";
-import { ContentType, upload } from "lib/bundlr";
+import { ContentType, upload } from "lib/bundlr/index";
 import { RadioCardMenu } from "components/input";
 import { ImagePicker } from "components/input/imagePicker";
 import { getOrCreateSession } from "lib/gum";
+import { useRouter } from "next/router";
+import SessionProvider from "components/providers/sessions";
+import { PublicKey } from "@metaplex-foundation/js";
 
-interface EntryForm {
+export interface EntryForm {
   title: string;
   body: string;
   image: File | null;
   forum: string;
   url: string;
-  postType: "textPost" | "imagePost";
+  postType: "textPost" | "imagePost" | "linkPost";
 }
 
 type EntryConfig =
@@ -49,47 +46,62 @@ type EntryConfig =
 interface EditorProps {
   buttonLabel?: string;
   placeholder?: string;
-  invalidateQueries?: string[];
-  redirect?: string;
   successMessage?: string;
   config: EntryConfig;
   onRequestClose?: () => void;
-  onUpdate?: (data: {
-    id: string;
-    nonce: string;
-    title: string;
-    nsfw?: boolean;
-    body: string;
-    uri: string;
-    postType: PostType;
-    author: string;
-    Forum: SerializedForum;
-  }) => void;
+  onSuccess?: (signature: string, uri: string, variables: EntryForm) => void;
 }
 
-export const Editor = ({
+export const EditorProvider = (props: EditorProps) => {
+  return (
+    <SessionProvider>
+      <Editor {...props} />
+    </SessionProvider>
+  );
+};
+
+const Editor = ({
   buttonLabel,
-  invalidateQueries,
   placeholder,
-  redirect,
   successMessage,
   config,
   onRequestClose,
-  onUpdate,
+  onSuccess,
 }: EditorProps) => {
+  const router = useRouter();
+  const forum = router.query.o as string | undefined;
   const { connection } = useConnection();
   const wallet = useWallet();
   const anchorWallet = useAnchorWallet();
   const sessionWallet = useSessionWallet();
+
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const foraQuery = useQuery(
+    ["fora"],
+    async () => {
+      const fora = await fetchFora();
+
+      fora.forEach((forum) => {
+        queryClient.setQueryData(["forum", forum.id], forum);
+        queryClient.setQueryData(
+          ["forum", "namespace", forum.namespace],
+          forum
+        );
+      });
+
+      return fora;
+    },
+    {
+      enabled: Boolean(config.type === "post"),
+    }
+  );
 
   const methods = useForm<EntryForm>({
     defaultValues: {
       title: "",
       body: "",
       image: null,
-      forum: "",
+      forum: forum || "",
       postType: "textPost",
     },
   });
@@ -102,14 +114,15 @@ export const Editor = ({
   useEffect(() => {
     const setValue = methods.setValue;
 
-    if (config.forum) {
+    if (forum) {
+      setValue("forum", forum);
+    } else if (config.forum) {
       setValue("forum", config.forum);
     }
-  }, [methods.setValue, config.forum]);
+  }, [methods.setValue, forum, config.forum]);
 
   const mutation = useMutation<
-    | { uri: string; entryId: string; nonce: string; forum: SerializedForum }
-    | undefined,
+    { signature: string; uri: string },
     Error,
     EntryForm
   >(
@@ -120,10 +133,16 @@ export const Editor = ({
 
       const session = await getOrCreateSession(sessionWallet);
 
-      const forumId = config.type === "comment" ? config.forum : data.forum;
-      const forum = await queryClient
-        .fetchQuery(["fora"], fetchFora)
-        .then((fora) => fora.find((forum) => forum.id === forumId));
+      const forumAddress =
+        config.type === "comment" ? config.forum : data.forum;
+
+      const forum = await queryClient.fetchQuery(
+        ["forum", forumAddress],
+        () => fetchForum(forumAddress),
+        {
+          staleTime: 300_000,
+        }
+      );
 
       if (!forum) {
         throw new Error("Forum not found");
@@ -134,15 +153,16 @@ export const Editor = ({
 
       if (config.type === "post") {
         switch (data.postType) {
-          // case "linkPost": {
-          //   dataArgs = {
-          //     linkPost: {
-          //       title: data.title,
-          //       url: data.url,
-          //     },
-          //   };
-          //   break;
-          // }
+          case "linkPost": {
+            uri = data.url;
+            dataArgs = {
+              linkPost: {
+                uri,
+                title: data.title,
+              },
+            };
+            break;
+          }
 
           case "textPost": {
             uri = await upload(wallet, session, data.body, "application/json");
@@ -180,55 +200,30 @@ export const Editor = ({
         };
       }
 
-      const result = await addEntry(connection, anchorWallet, session, {
+      const signature = await addEntry(connection, anchorWallet, session, {
+        forum,
         data: dataArgs,
-        forumId: forum.id,
-        forumConfig: forum.config,
-        collections: forum.collections,
       });
 
-      if (result) {
-        return {
-          uri,
-          entryId: result[0],
-          nonce: result[1],
-          forum,
-        };
-      }
+      return {
+        uri,
+        signature,
+      };
     },
     {
       async onSuccess(data, variables) {
         methods.reset();
 
-        if (successMessage) {
-          toast.success(successMessage);
-        }
-
         if (onRequestClose) {
           onRequestClose();
         }
 
-        if (data && onUpdate) {
-          onUpdate({
-            id: data.entryId,
-            nonce: data.nonce,
-            title: variables.title,
-            nsfw: false,
-            body: variables.body,
-            uri: data.uri,
-            postType: getPrismaPostType(variables.postType),
-            author: wallet.publicKey!.toBase58(),
-            Forum: data.forum,
-          });
+        if (onSuccess) {
+          onSuccess(data.signature, data.uri, variables);
         }
 
-        if (invalidateQueries) {
-          await sleep(2000);
-          await queryClient.invalidateQueries(invalidateQueries);
-        }
-
-        if (data && redirect) {
-          router.push(redirect);
+        if (successMessage) {
+          toast.success(successMessage);
         }
       },
       onError(error) {
@@ -307,6 +302,12 @@ export const Editor = ({
           />
         );
       }
+
+      case "linkPost": {
+        return (
+          <Input mt="4" placeholder="Enter url" {...methods.register("url")} />
+        );
+      }
     }
   }
 
@@ -316,11 +317,17 @@ export const Editor = ({
       as="form"
       onSubmit={methods.handleSubmit((data) => mutation.mutate(data))}
     >
-      <SelectForum
-        defaultValue={config.forum}
-        {...methods.register("forum", {
-          required: true,
-        })}
+      <Controller
+        name="forum"
+        control={methods.control}
+        rules={{ required: true }}
+        render={({ field }) => (
+          <SelectForum
+            {...field}
+            options={foraQuery.data}
+            defaultValue={forum || config.forum}
+          />
+        )}
       />
       <Box my="6">
         <Controller
@@ -339,6 +346,11 @@ export const Editor = ({
                   label: "Image Post",
                   value: "imagePost",
                   icon: <IoImage size="1.25em" />,
+                },
+                {
+                  label: "Link Post",
+                  value: "linkPost",
+                  icon: <IoLink size="1.25em" />,
                 },
               ]}
               // @ts-ignore
@@ -373,6 +385,7 @@ export const Editor = ({
               </Button>
             )}
             <Button
+              disabled={mutation.isLoading}
               isLoading={mutation.isLoading}
               variant="solid"
               minWidth="100px"
@@ -390,15 +403,20 @@ export const Editor = ({
 
 const SelectForum = React.forwardRef<
   HTMLSelectElement,
-  React.ComponentPropsWithoutRef<typeof Select>
->(function SelectForum(props, ref) {
+  {
+    options: Awaited<ReturnType<typeof fetchFora>>;
+    selected: string;
+  } & React.ComponentPropsWithoutRef<typeof Select>
+>(function SelectForum({ options, selected, ...other }, ref) {
   return (
-    <Select mt="6" placeholder="Choose a community" ref={ref} {...props}>
-      {getProfiles().map((forum) => (
-        <option key={forum.id} value={forum.id}>
-          {getNameFromAddress(forum.id)}
-        </option>
-      ))}
+    <Select mt="6" placeholder="Choose a community" ref={ref} {...other}>
+      {options?.map((forum) =>
+        forum.namespace ? (
+          <option key={forum.id} value={forum.id}>
+            {forum.displayName}
+          </option>
+        ) : null
+      )}
     </Select>
   );
 });

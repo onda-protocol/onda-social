@@ -1,10 +1,12 @@
 import type { NextPage } from "next";
+import Image from "next/image";
 import { useRouter } from "next/router";
 import {
   QueryClient,
   DehydratedState,
   dehydrate,
   useQuery,
+  useQueryClient,
 } from "@tanstack/react-query";
 import {
   Box,
@@ -19,13 +21,7 @@ import {
   TabPanel,
 } from "@chakra-ui/react";
 
-import {
-  getDescriptionFromAddress,
-  getImageFromAddress,
-  getLinksFromAddress,
-  getNameFromAddress,
-} from "utils/profile";
-import { fetchPostsByForum } from "lib/api";
+import { fetchForumByNamespace, fetchPostsByForumNamespace } from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import {
   Sidebar,
@@ -35,7 +31,6 @@ import {
   SidebarLink,
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
-import Image from "next/image";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -43,31 +38,42 @@ interface PageProps {
 
 const Community: NextPage<PageProps> = () => {
   const router = useRouter();
-  const id = router.query.address as string;
-  const query = useQuery(["posts", "o", id], () => fetchPostsByForum(id));
+  const namespace = router.query.namespace as string;
+  const queryClient = useQueryClient();
 
-  const image = getImageFromAddress(id);
-  const name = getNameFromAddress(id);
-  const links = getLinksFromAddress(id);
+  const forumQuery = useQuery(["forum", "namespace", namespace], async () => {
+    const forum = await fetchForumByNamespace(namespace);
+
+    if (forum) {
+      queryClient.setQueryData(["forum", forum.id], forum);
+    }
+
+    return forum;
+  });
+
+  const postsQuery = useQuery(["posts", "o", namespace], () =>
+    fetchPostsByForumNamespace(namespace)
+  );
 
   return (
     <>
       <Box>
         <Box
-          height="180px"
-          backgroundImage="https://uploads-ssl.webflow.com/613eaeea238773c51dcfd629/627771cb11ba1157594db622_Header%20BG.png"
+          height={forumQuery.data?.banner ? "180px" : "90px"}
+          backgroundColor="onda.600"
+          backgroundImage={forumQuery.data?.banner as string}
           backgroundPosition="center"
         />
         <Box bgColor="onda.1000">
           <Container maxW="container.lg">
             <Box display="flex" py="4" marginTop="-8">
-              {image && (
+              {forumQuery.data?.icon && (
                 <Box mr="2" p="3px" bgColor="#fff" borderRadius="100%">
                   <Image
-                    alt={name}
-                    src={image}
-                    height={72}
-                    width={72}
+                    alt={forumQuery.data.namespace + " logo"}
+                    src={forumQuery.data.icon}
+                    height={78}
+                    width={78}
                     style={{
                       borderRadius: "100%",
                     }}
@@ -75,11 +81,11 @@ const Community: NextPage<PageProps> = () => {
                 </Box>
               )}
               <Box mt="8">
-                <Heading mb="2" size="md">
-                  {name}
+                <Heading mb="1" size="md">
+                  {forumQuery.data?.displayName}
                 </Heading>
                 <Heading color="gray.500" fontWeight="medium" size="xs">
-                  o/{id}
+                  o/{namespace}
                 </Heading>
               </Box>
             </Box>
@@ -97,7 +103,7 @@ const Community: NextPage<PageProps> = () => {
             <GridLayout
               leftColumn={
                 <Box mt="2">
-                  {query.isLoading ? (
+                  {postsQuery.isLoading ? (
                     <Box
                       display="flex"
                       alignItems="center"
@@ -106,8 +112,12 @@ const Community: NextPage<PageProps> = () => {
                       <Spinner />
                     </Box>
                   ) : (
-                    query.data?.map((post) => (
-                      <PostListItem key={post.id} post={post} />
+                    postsQuery.data?.map((post) => (
+                      <PostListItem
+                        key={post.id}
+                        displayIcon={false}
+                        post={post}
+                      />
                     ))
                   )}
                 </Box>
@@ -116,23 +126,23 @@ const Community: NextPage<PageProps> = () => {
                 <Sidebar>
                   <SidebarSection title="About">
                     <Box px="4">
-                      <Text>{getDescriptionFromAddress(id)}</Text>
+                      <Text>{forumQuery.data?.description}</Text>
                     </Box>
-                    <SidebarButtons forum={id} />
+                    <SidebarButtons forum={forumQuery.data?.id} />
                   </SidebarSection>
-                  <SidebarSection title="Links">
-                    <SidebarList>
-                      {links?.twitter && (
-                        <SidebarLink href={links.twitter} label="Twitter" />
-                      )}
-                      {links?.discord && (
-                        <SidebarLink href={links.discord} label="Discord" />
-                      )}
-                      {links?.website && (
-                        <SidebarLink href={links.website} label="Website" />
-                      )}
-                    </SidebarList>
-                  </SidebarSection>
+                  {Array.isArray(forumQuery.data?.links) ? (
+                    <SidebarSection title="Links">
+                      <SidebarList>
+                        {forumQuery.data?.links.map((link, index) => (
+                          <SidebarLink
+                            key={index}
+                            href={link.url}
+                            label={link.name}
+                          />
+                        ))}
+                      </SidebarList>
+                    </SidebarSection>
+                  ) : null}
                 </Sidebar>
               }
             />
@@ -149,7 +159,7 @@ Community.getInitialProps = async (ctx) => {
       const address = ctx.query.address as string;
       const queryClient = new QueryClient();
       await queryClient.prefetchQuery(["posts", "o", address], () =>
-        fetchPostsByForum(address)
+        fetchPostsByForumNamespace(address)
       );
 
       return {

@@ -1,20 +1,24 @@
 import Link from "next/link";
-import { Box, Text, Tooltip } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { useSessionWallet } from "@gumhq/react-sdk";
+import {
+  useQueryClient,
+  useMutation,
+  QueryClient,
+} from "@tanstack/react-query";
 import { IoChatbox, IoTrash } from "react-icons/io5";
 import { GiSadCrab } from "react-icons/gi";
-import { MouseEventHandler, forwardRef, use } from "react";
+import { MouseEventHandler, forwardRef, useCallback } from "react";
 import toast from "react-hot-toast";
 
-import { deleteEntry, getDataHash, likeEntry } from "lib/anchor";
+import { deleteEntry, getDataHash } from "lib/anchor";
 import {
+  AwardsJson,
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
+  SerializedAward,
 } from "lib/api";
-import { getOrCreateSession } from "lib/gum";
-import { BLOOM_PROGRAM_ID } from "lib/anchor/constants";
+import { useRewardModal } from "components/modal";
 
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
@@ -27,6 +31,15 @@ export const PostButtons = ({
   displayDelete,
   onDeleted,
 }: PostButtonsProps) => {
+  const queryClient = useQueryClient();
+
+  const handleCacheUpdate = useCallback(
+    (award: SerializedAward) => {
+      updatePostCache(queryClient, post.id, award);
+    },
+    [queryClient, post]
+  );
+
   return (
     <Box display="flex" flexDirection="row" gap="2" mt="6">
       <Link href={`/comments/${post.id}`}>
@@ -35,7 +48,7 @@ export const PostButtons = ({
           label={`${post?._count?.Comments} comments`}
         />
       </Link>
-      <PostLikeButton post={post} />
+      <RewardButton entryId={post.id} onSuccess={handleCacheUpdate} />
       {displayDelete && (
         <DeleteButton
           forumId={post.forum}
@@ -48,84 +61,15 @@ export const PostButtons = ({
   );
 };
 
-interface PostLikeButtonProps {
-  post: PostWithCommentsCountAndForum;
-}
-
-export const PostLikeButton = ({ post }: PostLikeButtonProps) => {
-  const { connection } = useConnection();
-  const anchorWallet = useAnchorWallet()!;
-  const queryClient = useQueryClient();
-  const sessionWallet = useSessionWallet();
-  const isAuthor = anchorWallet?.publicKey?.toBase58() === post.author;
-
-  const mutation = useMutation(
-    async () => {
-      return likeEntry(connection, anchorWallet, {
-        id: post.id,
-        author: post.author,
-      });
-    },
-    {
-      onSuccess() {
-        queryClient.setQueryData<PostWithCommentsCountAndForum>(
-          ["post", post.id],
-          {
-            ...post,
-            likes: Number(Number(post.likes) + 1).toString(),
-          }
-        );
-
-        queryClient
-          .getQueryCache()
-          .findAll(["posts"], {
-            exact: false,
-          })
-          .forEach((query) => {
-            queryClient.setQueryData<PostWithCommentsCountAndForum[]>(
-              query.queryKey,
-              (posts) => {
-                if (posts) {
-                  for (const index in posts) {
-                    const p = posts[index];
-                    if (p.id === post.id) {
-                      const newPost = { ...p };
-                      newPost.likes = Number(
-                        Number(newPost.likes) + 1
-                      ).toString();
-                      return [
-                        ...posts.slice(0, Number(index)),
-                        newPost,
-                        ...posts.slice(Number(index) + 1),
-                      ];
-                    }
-                  }
-                }
-              }
-            );
-          });
-      },
-      onError(err) {
-        console.error(err);
-        toast.error("Failed to send PLANK");
-      },
-    }
-  );
-
-  return (
-    <LikeButton
-      label={post.likes.toString()}
-      disabled={isAuthor || mutation.isLoading}
-      onClick={(e) => {
-        e.stopPropagation();
-        mutation.mutate();
-        return false;
-      }}
-    />
-  );
-};
+export const DummyPostButtons = () => (
+  <Box display="flex" flexDirection="row" gap="2" mt="6">
+    <PostButton icon={<IoChatbox />} label={`0 comments`} />
+    <DummyRewardButton />
+  </Box>
+);
 
 interface PostDeleteButtonProps {
+  disabled?: boolean;
   forumId: string;
   entry: PostWithCommentsCountAndForum | SerializedCommentNested;
   label?: string;
@@ -133,6 +77,7 @@ interface PostDeleteButtonProps {
 }
 
 export const DeleteButton = ({
+  disabled,
   forumId,
   entry,
   label,
@@ -177,7 +122,7 @@ export const DeleteButton = ({
     <PostButton
       icon={<IoTrash />}
       label={label}
-      disabled={mutation.isLoading}
+      disabled={disabled || mutation.isLoading}
       onClick={(e) => {
         e.stopPropagation();
         mutation.mutate();
@@ -225,8 +170,97 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
   }
 );
 
-export const LikeButton: React.FC<Omit<PostButtonProps, "icon">> = (props) => (
-  <Tooltip label="Reward PLANK" shouldWrapChildren>
-    <PostButton icon={<GiSadCrab />} {...props} />
-  </Tooltip>
+interface RewardButtonProps {
+  entryId: string;
+  disabled?: boolean;
+  onSuccess: (award: SerializedAward) => void;
+}
+
+export const RewardButton = ({
+  entryId,
+  disabled,
+  onSuccess,
+}: RewardButtonProps) => {
+  const rewardModal = useRewardModal();
+
+  return (
+    <PostButton
+      icon={<GiSadCrab />}
+      label="Reward"
+      disabled={disabled}
+      onClick={(e) => {
+        e.stopPropagation();
+        rewardModal.openModal(entryId, onSuccess);
+        return false;
+      }}
+    />
+  );
+};
+
+const DummyRewardButton = () => (
+  <PostButton disabled icon={<GiSadCrab />} label="Reward" />
 );
+
+function incrementAward(awardJson: AwardsJson, award: SerializedAward) {
+  const awards = awardJson ?? {};
+
+  if (awards[award.id]) {
+    awards[award.id].count = awards[award.id].count + 1;
+  } else {
+    awards[award.id] = {
+      image: award.image,
+      count: 1,
+    };
+  }
+
+  return { ...awards };
+}
+
+function updatePostCache(
+  queryClient: QueryClient,
+  entryId: string,
+  award: SerializedAward
+) {
+  queryClient.setQueryData<PostWithCommentsCountAndForum>(
+    ["post", entryId],
+    (data) => {
+      if (data) {
+        const rewards = incrementAward(data.rewards, award);
+
+        return {
+          ...data,
+          rewards,
+          points: Number(Number(data.points) + 1).toString(),
+        };
+      }
+    }
+  );
+
+  queryClient
+    .getQueryCache()
+    .findAll(["posts"], {
+      exact: false,
+    })
+    .forEach((query) => {
+      queryClient.setQueryData<PostWithCommentsCountAndForum[]>(
+        query.queryKey,
+        (posts) => {
+          if (posts) {
+            for (const index in posts) {
+              const p = posts[index];
+              if (p.id === entryId) {
+                const rewards = incrementAward(p.rewards, award);
+                const newPost = { ...p, rewards };
+                newPost.points = Number(Number(newPost.points) + 1).toString();
+                return [
+                  ...posts.slice(0, Number(index)),
+                  newPost,
+                  ...posts.slice(Number(index) + 1),
+                ];
+              }
+            }
+          }
+        }
+      );
+    });
+}

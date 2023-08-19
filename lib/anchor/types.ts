@@ -1,9 +1,9 @@
 import { IdlTypes } from "@project-serum/anchor/dist/cjs/program/namespace/types";
-import { OndaBloom } from "./idl/onda_bloom";
+import { OndaRewards } from "./idl/onda_rewards";
 import { OndaCompression } from "./idl/onda_compression";
 import { OndaProfile } from "./idl/onda_profile";
 
-export type OndaBloomTypes = IdlTypes<OndaBloom>;
+export type OndaRewardsTypes = IdlTypes<OndaRewards>;
 export type OndaCompressionTypes = IdlTypes<OndaCompression>;
 export type OndaProfileTypes = IdlTypes<OndaProfile>;
 
@@ -11,7 +11,10 @@ export type DataV1 = OndaCompressionTypes["DataV1"];
 export type LeafSchemaV1 = SnakeToCamelCaseObj<
   OndaCompressionTypes["LeafSchema"]["v1"]
 >;
-export type RestrictionType = OndaCompressionTypes["RestrictionType"];
+export type Gate = OndaCompressionTypes["Gate"];
+export type Rule = OndaCompressionTypes["Rule"];
+export type Operator = OndaCompressionTypes["Operator"];
+export type RewardMetadata = OndaRewardsTypes["RewardMetadata"];
 
 type SnakeToCamelCase<S extends string> = S extends `${infer T}_${infer U}`
   ? `${T}${Capitalize<SnakeToCamelCase<U>>}`

@@ -1,8 +1,13 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { Prisma } from "@prisma/client";
+import type { NextFetchEvent, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client/edge";
 
 import { parseBigInt } from "utils/format";
 import prisma from "lib/prisma";
+
+export const config = {
+  runtime: "edge",
+};
 
 export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
   const result: any = await prisma.$queryRaw`
@@ -14,19 +19,21 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
       "User".avatar AS "Author.avatar",
       "Forum".id AS "Forum.id",
       "Forum".config AS "Forum.config",
+      "Forum".namespace AS "Forum.namespace",
+      "Forum".icon AS "Forum.icon",
       (
         SELECT COUNT(*)
         FROM "Comment"
         WHERE "Comment"."post" = "Post"."id"
       ) AS "_count.Comments",
-      CAST("createdAt" AS float) + (CAST(likes AS float) * 36000) AS likes_per_created_at
+      CAST("createdAt" AS float) + (CAST(points AS float) * 36000) AS points_per_created_at
     FROM "Post"
     LEFT JOIN 
       "User" ON "Post"."author" = "User"."id"
     LEFT JOIN 
       "Forum" ON "Post"."forum" = "Forum"."id"
     ${where}
-    ORDER BY likes_per_created_at DESC;
+    ORDER BY points_per_created_at DESC;
   `;
 
   return result.map((post: any) => {
@@ -36,6 +43,8 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
     const authorAvatar = post["Author.avatar"];
     const forumId = post["Forum.id"];
     const forumConfig = post["Forum.config"];
+    const forumNamespace = post["Forum.namespace"];
+    const forumIcon = post["Forum.icon"];
     const commentsCount = post["_count.Comments"];
 
     delete post["Author.id"];
@@ -57,6 +66,8 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
       Forum: {
         id: forumId,
         config: forumConfig,
+        namespace: forumNamespace,
+        icon: forumIcon,
       },
       _count: {
         Comments: commentsCount,
@@ -65,11 +76,8 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
   });
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const results = await queryPosts();
-
-  res.json(parseBigInt(results));
+export default async function handler(_req: NextRequest, _ctx: NextFetchEvent) {
+  const result = await queryPosts();
+  const parsedResult = parseBigInt(result);
+  return NextResponse.json(parsedResult);
 }

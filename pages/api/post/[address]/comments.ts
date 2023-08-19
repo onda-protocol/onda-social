@@ -1,16 +1,21 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextFetchEvent, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 import { parseBigInt } from "utils/format";
 import prisma from "lib/prisma";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const address = req.query.address as string;
-  const parent = typeof req.query.parent === "string" ? req.query.parent : null;
-  const limit = Number(req.query.limit) || 100;
-  const offset = Number(req.query.offset) || 0;
+export const config = {
+  runtime: "edge",
+};
+
+export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
+  const url = new URL(req.url);
+  const address = url.pathname.split("/")[3] as string;
+  console.log("address: ", address);
+  const searchParams = req.nextUrl.searchParams;
+  const parent = searchParams.get("parent");
+  const limit = parseInt(searchParams.get("limit") ?? "100");
+  const offset = parseInt(searchParams.get("offset") ?? "0");
 
   const result = await prisma.comment.findMany({
     where: {
@@ -18,7 +23,7 @@ export default async function handler(
       post: address as string,
     },
     orderBy: {
-      likes: "desc",
+      points: "desc",
     },
     take: limit,
     skip: offset,
@@ -27,21 +32,21 @@ export default async function handler(
       Children: {
         take: 3,
         orderBy: {
-          likes: "desc",
+          points: "desc",
         },
         include: {
           Author: true,
           Children: {
             take: 3,
             orderBy: {
-              likes: "desc",
+              points: "desc",
             },
             include: {
               Author: true,
               Children: {
                 take: 3,
                 orderBy: {
-                  likes: "desc",
+                  points: "desc",
                 },
               },
               _count: {
@@ -66,5 +71,5 @@ export default async function handler(
     },
   });
 
-  res.json(parseBigInt(result));
+  return NextResponse.json(parseBigInt(result));
 }

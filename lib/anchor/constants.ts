@@ -5,17 +5,29 @@ export const BLOOM_PROGRAM_ID = new web3.PublicKey(
 );
 
 export const COMPRESSION_PROGRAM_ID = new web3.PublicKey(
-  "ondaUaJpDBZZQzpGe5Tr391CbuJH1UpZuRcS7sZU2GB"
+  "D3eGvVzSzcZZARAfxARQoEHiySYa1aMdkd4djc7LRQRC"
+);
+
+export const MODERATION_PROGRAM_ID = new web3.PublicKey(
+  "5o1PS9vW57YUezjCuN7aycLnACKkaxGyb7Ak7pdcK6sw"
+);
+
+export const NAMESPACE_PROGRAM_ID = new web3.PublicKey(
+  "Ds9mPCckK2axyP9EVM6MhSruHG9S2qDoDeZdVdCqUtst"
+);
+
+export const REWARDS_PROGRAM_ID = new web3.PublicKey(
+  "HPQxJSGNpSGJuEp4Qs3dch8X7GvyxZADGRcw8iqqSuCg"
 );
 
 export const PROFILE_PROGRAM_ID = new web3.PublicKey(
   "ondapcq2qXTSynRieMCE9BjRsZ2XALEEZZunkwbhCPF"
 );
 
-export const PLANKTON_MINT = new web3.PublicKey(
-  "pktnre2sUNQZXwHicZj6njpShhSazmzQz5rJtcqnkG5"
+export const METADATA_PROGRAM_ID = new web3.PublicKey(
+  "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
 );
 
-export const PROTOCOL_FEE_PLANKTON_ATA = new web3.PublicKey(
-  "EneovF7KrWHBC6QKmoiwC2S6PUFBZnpYcuyUTdD59iYp"
+export const BUBBLEGUM_PROGRAM_ID = new web3.PublicKey(
+  "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY"
 );

@@ -64,10 +64,10 @@ export const RadioCard: React.FC<
       borderTopRightRadius="inherit"
       borderBottomRightRadius="inherit"
       sx={{
-        "&:first-child": {
+        "&:first-of-type": {
           borderTopLeftRadius: "sm",
         },
-        "&:last-child": {
+        "&:last-of-type": {
           borderTopRightRadius: "sm",
           borderLeftWidth: "0",
         },

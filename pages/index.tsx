@@ -1,9 +1,16 @@
 import type { NextPage } from "next";
-import { DehydratedState, useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import {
+  DehydratedState,
+  QueryClient,
+  dehydrate,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { Box, Spinner, Text } from "@chakra-ui/react";
 
 import { getProfiles } from "utils/profile";
-import { fetchPosts } from "lib/api";
+import { fetchFora, fetchPosts } from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import {
   Sidebar,
@@ -18,19 +25,38 @@ interface PageProps {
 }
 
 const Home: NextPage<PageProps> = () => {
-  const query = useQuery(["posts"], fetchPosts);
+  const queryClient = useQueryClient();
+  const postsQuery = useQuery(["posts"], fetchPosts);
+  const foraQuery = useQuery(["fora"], fetchFora);
+
+  // Seed posts to cache
+  useEffect(() => {
+    if (postsQuery.data) {
+      for (const post of postsQuery.data) {
+        queryClient.setQueryData(["post", post.id], post);
+      }
+    }
+  }, [queryClient, postsQuery.data]);
+
+  useEffect(() => {
+    if (foraQuery.data) {
+      for (const forum of foraQuery.data) {
+        queryClient.setQueryData(["forum", forum.namespace], forum);
+      }
+    }
+  }, [queryClient, foraQuery.data]);
 
   return (
     <Box mt="4">
       <GridLayout
         leftColumn={
           <Box mt="2">
-            {query.isLoading ? (
+            {postsQuery.isLoading ? (
               <Box display="flex" alignItems="center" justifyContent="center">
                 <Spinner />
               </Box>
             ) : (
-              query.data?.map((post) => (
+              postsQuery.data?.map((post) => (
                 <PostListItem key={post.id} post={post} />
               )) ?? null
             )}
@@ -49,13 +75,13 @@ const Home: NextPage<PageProps> = () => {
                 <SidebarButtons />
               </SidebarSection>
               <SidebarSection title="Communities">
-                {getProfiles().map((profile) => (
+                {foraQuery.data?.map((forum) => (
                   <SidebarItem
-                    key={profile.id}
+                    key={forum.id}
                     active={false}
-                    href={`/o/${profile.id}`}
-                    label={profile.name}
-                    image={profile.image}
+                    href={`/o/${forum.namespace}`}
+                    label={forum.displayName!}
+                    image={forum.icon}
                   />
                 ))}
               </SidebarSection>
@@ -65,6 +91,25 @@ const Home: NextPage<PageProps> = () => {
       />
     </Box>
   );
+};
+
+Home.getInitialProps = async () => {
+  if (typeof window === "undefined") {
+    try {
+      const queryClient = new QueryClient();
+      await queryClient.prefetchQuery(["posts"], fetchPosts);
+
+      return {
+        dehydratedState: dehydrate(queryClient),
+      };
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  return {
+    dehydratedState: undefined,
+  };
 };
 
 export default Home;

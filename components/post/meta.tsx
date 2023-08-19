@@ -4,16 +4,20 @@ import { Box, Text } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { User } from "@prisma/client";
 
-import { getImageFromAddress, getNameFromAddress } from "utils/profile";
 import { shortenAddress } from "utils/format";
+import { AwardsJson } from "lib/api";
 import dayjs from "lib/dayjs";
 
 interface PostMetaProps {
   author: User;
-  likes: number;
+  points: number;
+  awards: null | AwardsJson;
   createdAt?: string;
   editedAt?: string | null;
   forum?: string;
+  forumNamespace?: string | null;
+  forumIcon?: string | null;
+  displayIcon?: boolean;
   showRewards?: boolean;
   displayAvatar?: boolean;
 }
@@ -26,24 +30,20 @@ const Dot = () => (
 
 export const PostMeta: React.FC<PostMetaProps> = ({
   author,
-  likes,
-  forum,
+  points,
+  awards,
   createdAt,
   editedAt,
+  forum,
+  forumNamespace,
+  forumIcon,
+  displayIcon = true,
   showRewards = false,
   displayAvatar = false,
 }) => {
   const authorAddress = useMemo(
     () => (author?.id ? shortenAddress(author.id) : null),
     [author]
-  );
-  const forumName = useMemo(
-    () => (forum ? getNameFromAddress(forum) : null),
-    [forum]
-  );
-  const forumImage = useMemo(
-    () => (forum ? getImageFromAddress(forum) : null),
-    [forum]
   );
   const time = useMemo(
     () => (createdAt ? dayjs.unix(Number(createdAt)).fromNow() : null),
@@ -59,6 +59,28 @@ export const PostMeta: React.FC<PostMetaProps> = ({
     return false;
   }
 
+  const awardsEl = useMemo(() => {
+    if (awards) {
+      const awardsArray = Object.entries(awards);
+
+      return awardsArray.map(([awardId, award]) => (
+        <Box ml="2" key={awardId}>
+          <Image
+            alt="Award"
+            src={award.image}
+            height={16}
+            width={16}
+            style={{
+              borderRadius: "2px",
+            }}
+          />
+        </Box>
+      ));
+    }
+
+    return null;
+  }, [awards]);
+
   return (
     <Box display="flex" alignItems="center">
       {forum && (
@@ -71,15 +93,15 @@ export const PostMeta: React.FC<PostMetaProps> = ({
             color: "gray.300",
           }}
         >
-          <Link href={`/o/${forum}`} onClick={handleClick}>
+          <Link href={`/o/${forumNamespace}`} onClick={handleClick}>
             <Box as="span" display="flex" alignItems="center" color="inherit">
-              {forumName && forumImage && (
+              {displayIcon && forumIcon && (
                 <Box mr="2">
                   <Image
                     height={24}
                     width={24}
-                    alt={forumName}
-                    src={forumImage}
+                    alt="forum icon"
+                    src={forumIcon}
                     style={{
                       borderRadius: "100%",
                       objectFit: "cover",
@@ -89,7 +111,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
               )}
               <Text as="span" color="inherit">
                 <Text as="span" color="inherit">
-                  o/{forumName}
+                  o/{forumNamespace ?? shortenAddress(forum)}
                 </Text>
                 <Dot />
               </Text>
@@ -97,57 +119,56 @@ export const PostMeta: React.FC<PostMetaProps> = ({
           </Link>
         </Text>
       )}
-      <Text
-        as="span"
-        fontSize="sm"
-        color="gray.500"
-        _hover={{
-          color: "gray.400",
-        }}
-      >
-        <Link href={`/u/${author.id}`} onClick={handleClick}>
-          <Box as="span" display="flex" flexDirection="row" alignItems="center">
-            {displayAvatar && author.avatar && author.name && (
-              <Box as="span" mr="2">
-                <Image
-                  height={28}
-                  width={28}
-                  alt={author.name}
-                  src={author.avatar}
-                  style={{
-                    borderRadius: "100%",
-                  }}
-                />
-              </Box>
-            )}
-            <Text as="span" color="gray.300">
-              {forum ? "Posted by " : ""} {author.name ?? authorAddress}
-            </Text>
-            {forum ? <>&nbsp;</> : <Dot />}
+      <Text as="span" fontSize="sm">
+        <Box
+          as="span"
+          display="flex"
+          flexDirection="row"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Box
+            as="span"
+            color="gray.300"
+            _hover={{
+              color: "gray.400",
+            }}
+          >
+            <Link href={`/u/${author?.id}`} onClick={handleClick}>
+              {displayAvatar && author.avatar && author.name && (
+                <Box as="span" mr="2">
+                  <Image
+                    height={28}
+                    width={28}
+                    alt={author.name}
+                    src={author.avatar}
+                    style={{
+                      borderRadius: "100%",
+                    }}
+                  />
+                </Box>
+              )}
+              <Text as="span" color="inherit">
+                {forum ? "Posted by " : ""} {author?.name ?? authorAddress}
+              </Text>
+            </Link>
+          </Box>
+          <>&nbsp;&nbsp;</>
+          <Text as="span" color="gray.500">
             {time}
-            {lastEdited ? (
-              <>
-                <Dot />
+          </Text>
+          {lastEdited ? (
+            <>
+              <Dot />
+              <Text as="span" color="gray.500">
                 last edited&nbsp;
                 {lastEdited}
-              </>
-            ) : null}
-          </Box>
-        </Link>
-      </Text>
-      {showRewards && likes >= 10 && (
-        <Box ml="2">
-          <Image
-            alt="Plank icon"
-            src="https://spl6zzbxyf3yvcbh2ltohntq24pfsxpl2n3rpr7t7twqfcszee5q.arweave.net/k9fs5DfBd4qIJ9Lm47Zw1x5ZXevTdxfH8_ztAopZITs"
-            height={16}
-            width={16}
-            style={{
-              borderRadius: "2px",
-            }}
-          />
+              </Text>
+            </>
+          ) : null}
         </Box>
-      )}
+      </Text>
+      {awardsEl}
     </Box>
   );
 };

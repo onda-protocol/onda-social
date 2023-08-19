@@ -1,6 +1,5 @@
 import Link from "next/link";
 import React from "react";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 import {
   Box,
   Button,
@@ -11,9 +10,7 @@ import {
   Link as ChakraLink,
 } from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
-import { useMutation } from "@tanstack/react-query";
 
-import { initForum } from "lib/anchor/actions";
 import { Avatar } from "../avatar";
 import { Panel } from "../panel";
 
@@ -56,7 +53,7 @@ export const SidebarSection: React.FC<SectionProps> = ({ title, children }) => {
 interface SidebarItemProps {
   active: boolean;
   href: string;
-  image: string;
+  image: string | null;
   label: string;
 }
 
@@ -80,7 +77,16 @@ export const SidebarItem = ({
           }}
         >
           <Box minW="24px" mr="2">
-            <Avatar name={label} image={image} size={24} />
+            {image ? (
+              <Avatar name={label} image={image} size={24} />
+            ) : (
+              <Box
+                height="24px"
+                width="24px"
+                borderRadius="100%"
+                bgColor="whiteAlpha.200"
+              />
+            )}
           </Box>
           <Text as="span" fontSize="sm" wordBreak="break-word">
             {label}
@@ -96,17 +102,6 @@ interface SidebarButtonsProps {
 }
 
 export const SidebarButtons: React.FC<SidebarButtonsProps> = ({ forum }) => {
-  const { connection } = useConnection();
-  const anchorWallet = useAnchorWallet();
-
-  const initForumMutation = useMutation(async () => {
-    if (!anchorWallet) {
-      throw new Error("Wallet not connected");
-    }
-
-    return initForum(connection, anchorWallet);
-  });
-
   return (
     <Box my="6" mx="4">
       <Button
@@ -120,12 +115,11 @@ export const SidebarButtons: React.FC<SidebarButtonsProps> = ({ forum }) => {
         Create Post
       </Button>
       <Button
-        isDisabled
+        as={Link}
+        href="/new"
         width="100%"
         borderRadius="lg"
         variant="outline"
-        isLoading={initForumMutation.isLoading}
-        onClick={() => initForumMutation.mutate()}
       >
         Create Community
       </Button>

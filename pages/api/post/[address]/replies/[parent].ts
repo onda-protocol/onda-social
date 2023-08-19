@@ -1,29 +1,35 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextFetchEvent, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 import { parseBigInt } from "utils/format";
 import prisma from "lib/prisma";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const { address, parent, skip = "0" } = req.query;
+export const config = {
+  runtime: "edge",
+};
+
+export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
+  const url = new URL(req.url);
+  const address = url.pathname.split("/")[3] as string;
+  const searchParams = req.nextUrl.searchParams;
+  const parent = searchParams.get("parent");
+  const skip = parseInt(searchParams.get("skip") ?? "0");
 
   const result = await prisma.comment.findMany({
-    skip: parseInt(skip as string),
+    skip,
     where: {
       post: address as string,
       parent: parent as string,
     },
     orderBy: {
-      likes: "desc",
+      points: "desc",
     },
     include: {
       Author: true,
       Children: {
         take: 10,
         orderBy: {
-          likes: "desc",
+          points: "desc",
         },
         include: {
           Author: true,
@@ -42,5 +48,5 @@ export default async function handler(
     },
   });
 
-  res.json(parseBigInt(result));
+  return NextResponse.json(parseBigInt(result));
 }

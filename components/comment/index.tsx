@@ -1,19 +1,32 @@
+import dynamic from "next/dynamic";
+import { web3 } from "@project-serum/anchor";
 import { Box, Button } from "@chakra-ui/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { useSessionWallet } from "@gumhq/react-sdk";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
 
-import { SerializedCommentNested, fetchReplies, fetchUser } from "lib/api";
-import { likeEntry } from "lib/anchor";
-import { BLOOM_PROGRAM_ID } from "lib/anchor/constants";
-import { getOrCreateSession } from "lib/gum";
+import type { EntryForm } from "../editor";
+import {
+  AwardsJson,
+  SerializedAward,
+  SerializedCommentNested,
+  fetchReplies,
+  fetchUser,
+} from "lib/api";
 import { Markdown } from "../markdown";
-import { Editor } from "../editor";
 import { PostMeta } from "../post/meta";
-import { PostButton, LikeButton, DeleteButton } from "components/post/buttons";
+import {
+  PostButton,
+  RewardButton,
+  DeleteButton,
+} from "components/post/buttons";
+
+const EditorProvider = dynamic(
+  () => import("components/editor").then((mod) => mod.EditorProvider),
+  { ssr: false }
+);
 
 interface CommentListItemProps {
   forum: string;
@@ -44,12 +57,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
     );
 
     const onReplyAdded = useCallback(
-      async (vars: {
-        id: string;
-        nonce: string;
-        body: string;
-        uri: string;
-      }) => {
+      async (_: string, uri: string, entry: EntryForm) => {
         if (anchorWallet === undefined) return;
 
         const userAddress = anchorWallet.publicKey.toBase58();
@@ -58,17 +66,18 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
         );
 
         const hasNestedChildren = "Children" in comment;
-        const newComment = {
-          id: vars.id,
+        const newComment: SerializedCommentNested = {
+          uri,
+          id: Math.random().toString(36),
           createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
           editedAt: null,
           parent: comment.id,
           post: comment.post,
-          body: vars.body,
-          uri: vars.uri,
+          body: entry.body,
           nsfw: false,
-          likes: "0",
-          nonce: vars.nonce,
+          nonce: BigInt(0).toString(),
+          points: BigInt(0).toString(),
+          rewards: {},
           hash: "",
           author: userAddress,
           Author: author,
@@ -154,6 +163,19 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
       [comment, queryKey, anchorWallet, queryClient]
     );
 
+    // Disable comment replies if parent is not a valid public key
+    const disabled = useMemo(() => {
+      if (typeof comment.id === "string") {
+        try {
+          new web3.PublicKey(comment.id);
+          return false;
+        } catch {
+          return true;
+        }
+      }
+      return false;
+    }, [comment]);
+
     return (
       <Box position="relative" ml={isRoot ? "0" : "8"} mt="0">
         <Box p="4" pb="2">
@@ -161,7 +183,8 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
             displayAvatar
             showRewards
             author={comment.Author}
-            likes={Number(comment.likes)}
+            points={Number(comment.points)}
+            awards={comment.rewards as AwardsJson}
             createdAt={comment.createdAt}
             editedAt={comment.editedAt}
           />
@@ -170,16 +193,22 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
             <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
               <Markdown>{comment.body}</Markdown>
               <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
-                <CommentLikeButton comment={comment} queryKey={queryKey} />
+                <CommentAwardButton
+                  disabled={disabled}
+                  comment={comment}
+                  queryKey={queryKey}
+                />
                 {!disableReplies && (
                   <PostButton
                     label="Reply"
+                    disabled={disabled}
                     icon={<IoChatbox />}
                     onClick={toggleReply}
                   />
                 )}
                 {isAuthor && comment.body !== "[deleted]" && (
                   <CommentDeleteButton
+                    disabled={disabled}
                     forumId={forum}
                     comment={comment}
                     queryKey={queryKey}
@@ -187,7 +216,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                 )}
               </Box>
               {reply && disableReplies === false && (
-                <Editor
+                <EditorProvider
                   buttonLabel="Reply"
                   placeholder={`Reply to ${
                     comment.Author.name ?? comment.author
@@ -200,7 +229,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                     forum,
                   }}
                   onRequestClose={() => setReply(false)}
-                  onUpdate={onReplyAdded}
+                  onSuccess={onReplyAdded}
                 />
               )}
             </Box>
@@ -232,57 +261,47 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
   }
 );
 
-interface CommentLikeButtonProps {
+interface CommentAwardButtonProps {
+  disabled?: boolean;
   comment: SerializedCommentNested;
   queryKey: (string | { offset: number })[];
 }
 
-const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
+const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
+  disabled,
   comment,
   queryKey,
 }) => {
-  const { connection } = useConnection();
-  const anchorWallet = useAnchorWallet();
-  const sessionWallet = useSessionWallet();
   const queryClient = useQueryClient();
 
-  const mutation = useMutation(
-    async () => {
-      if (!anchorWallet) {
-        throw new Error("Wallet not connected");
-      }
-
-      return likeEntry(connection, anchorWallet, {
-        id: comment.id,
-        author: comment.author,
-      });
+  const handleCacheUpdate = useCallback(
+    (award: SerializedAward) => {
+      queryClient.setQueryData<Array<SerializedCommentNested>>(
+        queryKey,
+        nestedCommentsAwardsReducer(comment.id, award)
+      );
     },
-    {
-      onSuccess() {
-        queryClient.setQueryData<Array<SerializedCommentNested>>(
-          queryKey,
-          nestedCommentsLikeReducer(comment.id)
-        );
-      },
-    }
+    [queryClient, comment, queryKey]
   );
 
   return (
-    <LikeButton
-      label={comment.likes}
-      disabled={mutation.isLoading}
-      onClick={() => mutation.mutate()}
+    <RewardButton
+      disabled={disabled}
+      entryId={comment.id}
+      onSuccess={handleCacheUpdate}
     />
   );
 };
 
 interface CommentDeleteButtonProps {
+  disabled?: boolean;
   forumId: string;
   comment: SerializedCommentNested;
   queryKey: (string | { offset: number })[];
 }
 
 const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
+  disabled,
   forumId,
   comment,
   queryKey,
@@ -298,6 +317,7 @@ const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
 
   return (
     <DeleteButton
+      disabled={disabled}
       forumId={forumId}
       entry={comment}
       onDeleted={onCommentDeleted}
@@ -495,21 +515,38 @@ function increment(like: string) {
   return Number(Number(like) + 1).toString();
 }
 
-function nestedCommentsLikeReducer(
-  id: string
+function incrementAward(awardJson: AwardsJson, award: SerializedAward) {
+  const awards = awardJson ?? {};
+
+  if (awards[award.id]) {
+    awards[award.id].count = awards[award.id].count + 1;
+  } else {
+    awards[award.id] = {
+      image: award.image,
+      count: 1,
+    };
+  }
+
+  return { ...awards };
+}
+
+function nestedCommentsAwardsReducer(
+  id: string,
+  award: SerializedAward
 ): (
   input: SerializedCommentNested[] | undefined
 ) => SerializedCommentNested[] | undefined {
   return nestedCommentsReducer(id, (comment) => ({
     ...comment,
-    likes: increment(comment.likes),
+    rewards: incrementAward(comment.rewards, award),
+    points: increment(comment.points),
   }));
 }
 
 function nestedCommentsDeleteReducer(
   id: string
 ): (
-  input: SerializedCommentNested[] | undefined
+  comments: SerializedCommentNested[] | undefined
 ) => SerializedCommentNested[] | undefined {
   return nestedCommentsReducer(id, (comment) => ({
     ...comment,
@@ -539,8 +576,11 @@ function nestedCommentsReducer(
           updater(comment),
           ...comments.slice(Number(index) + 1),
         ];
-      } else if (comment.Children) {
-        const updatedChildren = nestedCommentsLikeReducer(id)(comment.Children);
+      } else if (comment.Children && comment.Children.length > 0) {
+        const updatedChildren = nestedCommentsReducer(
+          id,
+          updater
+        )(comment.Children);
 
         if (updatedChildren) {
           return [

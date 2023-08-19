@@ -1,7 +1,6 @@
+import type { SessionWalletInterface } from "@gumhq/react-sdk";
 import { web3, BN } from "@project-serum/anchor";
 import { PostType } from "@prisma/client";
-import { AccountLayout, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
   ConcurrentMerkleTreeAccount,
@@ -9,71 +8,81 @@ import {
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
-import { SessionWalletInterface } from "@gumhq/react-sdk";
 import base58 from "bs58";
 import pkg from "js-sha3";
 
 import {
   findForumConfigPda,
-  findBloomPda,
   findMetadataPda,
   findProfilePda,
-  findEscrowTokenPda,
-  findRewardEscrowPda,
-  findClaimMarkerPda,
+  findNamespacePda,
+  findTreeMarkerPda,
+  findTreeAuthorityPda,
+  findCollectionAuthorityRecordPda,
+  findEditionPda,
+  findBubblegumSignerPda,
 } from "utils/pda";
-import { fetchAllAccounts } from "utils/web3";
-import { DataV1, LeafSchemaV1 } from "./types";
-import {
-  getCompressionProgram,
-  getBloomProgram,
-  getProfileProgram,
-} from "./provider";
-import { PLANKTON_MINT, PROTOCOL_FEE_PLANKTON_ATA } from "./constants";
 import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
+  SerializedForum,
+  SerializedAward,
+  fetchForumPass,
   fetchProof,
 } from "lib/api";
+import { parseDataV1Fields } from "utils/parse";
+import { DataV1, LeafSchemaV1, Gate } from "./types";
+import { BUBBLEGUM_PROGRAM_ID, METADATA_PROGRAM_ID } from "./constants";
+import {
+  getCompressionProgram,
+  getProfileProgram,
+  getNamespaceProgram,
+  getRewardsProgram,
+} from "./provider";
 
-export async function initForum(
+export async function initForumAndNamespace(
   connection: web3.Connection,
-  wallet: AnchorWallet
+  wallet: AnchorWallet,
+  maxDepth: number,
+  maxBufferSize: number,
+  name: string,
+  uri: string,
+  gates: Gate[] = []
 ) {
-  const program = getCompressionProgram(connection, wallet);
-  const payer = program.provider.publicKey;
+  const compressionProgram = getCompressionProgram(connection, wallet);
+  const namespaceProgram = getNamespaceProgram(connection, wallet);
+  const payer = wallet.publicKey;
 
-  if (!payer || !program.provider.sendAndConfirm) {
+  if (!compressionProgram.provider.sendAndConfirm) {
     throw new Error("Provider not found");
   }
 
-  const maxDepth = 18;
-  const canopyDepth = 12;
-  const maxBufferSize = 64;
   const merkleTreeKeypair = web3.Keypair.generate();
   const merkleTree = merkleTreeKeypair.publicKey;
   const forumConfig = findForumConfigPda(merkleTree);
-  const space = getConcurrentMerkleTreeAccountSize(maxDepth, maxBufferSize);
-  const canopySpace = (Math.pow(2, canopyDepth) - 2) * 32;
-  const totalSpace = space + canopySpace;
-  const lamports = await connection.getMinimumBalanceForRentExemption(
-    totalSpace
+  const namespacePda = findNamespacePda(name);
+  const treeMarkerPda = findTreeMarkerPda(merkleTree);
+  const space = getConcurrentMerkleTreeAccountSize(
+    maxDepth,
+    maxBufferSize,
+    maxDepth - 5
   );
-  console.log("Allocating ", totalSpace, " bytes for merkle tree");
+  const lamports = await connection.getMinimumBalanceForRentExemption(space);
+  console.log("Allocating ", space, " bytes for merkle tree");
   console.log(
     lamports / web3.LAMPORTS_PER_SOL,
     " SOL required for rent exemption"
   );
   const allocTreeIx = web3.SystemProgram.createAccount({
     lamports,
-    space: totalSpace,
+    space,
     fromPubkey: payer,
     newAccountPubkey: merkleTree,
     programId: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   });
 
-  const initIx = await program.methods
-    .initForum(maxDepth, maxBufferSize, null)
+  const initIx = await compressionProgram.methods
+    .initForum(maxDepth, maxBufferSize, gates)
     .accounts({
       payer,
       forumConfig,
@@ -83,12 +92,27 @@ export async function initForum(
     })
     .instruction();
 
-  const tx = new web3.Transaction().add(allocTreeIx).add(initIx);
+  const namespaceIx = await namespaceProgram.methods
+    .createNamespace(name, uri)
+    .accounts({
+      merkleTree,
+      forumConfig,
+      admin: wallet.publicKey,
+      payer: wallet.publicKey,
+      namespace: namespacePda,
+      treeMarker: treeMarkerPda,
+    })
+    .instruction();
+
+  const tx = new web3.Transaction().add(allocTreeIx, initIx, namespaceIx);
+
   tx.feePayer = payer;
+  tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
   try {
-    await program.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
+    await compressionProgram.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
       commitment: "confirmed",
+      skipPreflight: true,
     });
   } catch (err) {
     // @ts-ignore
@@ -97,8 +121,10 @@ export async function initForum(
   }
 
   console.log("Forum initialized");
-  console.log("forumConfig: ", forumConfig.toBase58());
   console.log("merkleTree: ", merkleTree.toBase58());
+  console.log("forumConfig: ", forumConfig.toBase58());
+
+  return merkleTree.toBase58();
 }
 
 export async function addEntry(
@@ -106,31 +132,33 @@ export async function addEntry(
   wallet: AnchorWallet,
   session: SessionWalletInterface,
   options: {
-    forumId: string;
-    forumConfig: string;
-    collections: string[] | null;
+    forum: SerializedForum;
     data: DataV1;
   }
-): Promise<[string, string] | void> {
+): Promise<string> {
   assertSessionIsValid(session);
   // @ts-ignore
   const program = getCompressionProgram(connection, wallet);
-  const merkleTree = new web3.PublicKey(options.forumId);
-  const forumConfig = new web3.PublicKey(options.forumConfig);
-  const collections = options.collections
-    ? options.collections.map((collection) => new web3.PublicKey(collection))
-    : undefined;
+  const merkleTree = new web3.PublicKey(options.forum.id);
+  const forumConfig = findForumConfigPda(merkleTree);
 
   let mint = null;
-  let metadata = null;
   let tokenAccount = null;
+  let metadata = null;
 
-  if (collections?.length) {
-    [mint, metadata, tokenAccount] = await fetchTokenAccounts(
-      connection,
-      wallet.publicKey,
-      collections
+  if (options.forum.gates?.length) {
+    const result = await fetchForumPass(
+      options.forum.id,
+      wallet.publicKey.toBase58()
     );
+
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    mint = new web3.PublicKey(result.mint);
+    tokenAccount = new web3.PublicKey(result.tokenAccount);
+    metadata = result.metadata ? new web3.PublicKey(result.metadata) : null;
   }
 
   const transaction = await program.methods
@@ -143,45 +171,99 @@ export async function addEntry(
       metadata,
       author: wallet.publicKey,
       sessionToken: new web3.PublicKey(session.sessionToken!),
+      additionalSigner: null,
       signer: session.publicKey!,
       logWrapper: SPL_NOOP_PROGRAM_ID,
       compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
     })
     .transaction();
-  const signatures = await session.signAndSendTransaction!(
+
+  const [signature] = await session.signAndSendTransaction!(
     transaction,
     connection,
     {
       preflightCommitment: "confirmed",
     }
   );
+  console.log("Transaction sent: ", signature);
 
-  console.log("Transaction sent: ", signatures);
+  return signature;
+}
 
-  const response = await waitForConfirmation(connection, signatures[0]);
+export async function getEventFromSignature(
+  connection: web3.Connection,
+  wallet: AnchorWallet,
+  signature: string
+) {
+  const program = getCompressionProgram(connection, wallet);
+  const ixAccounts = program.idl.instructions.find(
+    (i) => i.name === "addEntry"
+  )?.accounts;
+  const response = await waitForConfirmation(connection, signature);
+  const message = response?.transaction.message;
   const innerInstructions = response?.meta?.innerInstructions?.[0];
 
-  if (innerInstructions) {
-    const noopIx = innerInstructions.instructions[0];
-    const serializedEvent = noopIx.data;
-    const event = base58.decode(serializedEvent);
-    const eventBuffer = Buffer.from(event.slice(8));
-    const eventData: LeafSchemaV1 = program.coder.types.decode(
-      "LeafSchema",
-      eventBuffer
-    ).v1;
-
-    if (eventData) {
-      return [eventData.id.toBase58(), eventData.nonce.toString()];
-    }
+  if (!message) {
+    throw new Error("Transaction message not found");
   }
+
+  if (!innerInstructions) {
+    throw new Error("Noop instruction not found");
+  }
+
+  const instruction = message.instructions[0];
+  const accountKeys = message.accountKeys;
+  const accounts = instruction.accounts.map((key) => accountKeys[key]);
+  accounts.forEach((key) => console.log(key.toBase58()));
+
+  const merkleTreeAddressIndex = ixAccounts!.findIndex(
+    (a) => a.name === "merkleTree"
+  );
+
+  if (merkleTreeAddressIndex === undefined) {
+    throw new Error("Merkle tree address index not found");
+  }
+
+  const merkleTreeAddress = accounts[merkleTreeAddressIndex];
+  const forumConfig = findForumConfigPda(merkleTreeAddress);
+
+  const ixData = instruction.data;
+  const entry = typeof ixData === "string" ? base58.decode(ixData) : ixData;
+  const buffer = Buffer.from(entry.slice(8));
+  const data: DataV1 = program.coder.types.decode("DataV1", buffer);
+
+  const noopIx = innerInstructions.instructions[0];
+  const serializedEvent = noopIx.data;
+  const event = base58.decode(serializedEvent);
+  const eventBuffer = Buffer.from(event.slice(8));
+  const eventData: LeafSchemaV1 = program.coder.types.decode(
+    "LeafSchema",
+    eventBuffer
+  ).v1;
+
+  if (!eventData) {
+    throw new Error("Event data did not decode");
+  }
+
+  return {
+    id: eventData.id.toBase58(),
+    nonce: eventData.nonce.toNumber(),
+    author: eventData.author.toBase58(),
+    createdAt: eventData.createdAt.toNumber(),
+    editedAt: eventData.editedAt?.toNumber() || null,
+    forum: merkleTreeAddress.toBase58(),
+    forumConfig: forumConfig.toBase58(),
+    data: parseDataV1Fields(data),
+  };
 }
+
+const MAX_RETRIES = 5;
 
 function waitForConfirmation(
   connection: web3.Connection,
   signature: string,
   retries: number = 0
-): Promise<web3.VersionedTransactionResponse | undefined> {
+): Promise<web3.TransactionResponse> {
   return new Promise(async (resolve, reject) => {
     const logs = await connection.getTransaction(signature, {
       commitment: "confirmed",
@@ -189,10 +271,10 @@ function waitForConfirmation(
     });
 
     if (logs) {
-      return resolve(logs);
+      return resolve(logs as web3.TransactionResponse);
     }
 
-    if (retries > 3) {
+    if (retries >= MAX_RETRIES) {
       return reject(undefined);
     }
 
@@ -212,12 +294,6 @@ export function getDataHash(
   if ("postType" in entry) {
     switch (entry.postType) {
       case PostType.TEXT: {
-        console.log({
-          textPost: {
-            title: entry.title,
-            uri: entry.uri,
-          },
-        });
         return pkg.keccak_256.digest(
           program.coder.types.encode<DataV1>("DataV1", {
             textPost: {
@@ -228,10 +304,23 @@ export function getDataHash(
           })
         );
       }
+
       case PostType.IMAGE: {
         return pkg.keccak_256.digest(
           program.coder.types.encode<DataV1>("DataV1", {
             imagePost: {
+              title: entry.title,
+              uri: entry.uri,
+              nsfw: entry.nsfw,
+            },
+          })
+        );
+      }
+
+      case PostType.LINK: {
+        return pkg.keccak_256.digest(
+          program.coder.types.encode<DataV1>("DataV1", {
+            linkPost: {
               title: entry.title,
               uri: entry.uri,
               nsfw: entry.nsfw,
@@ -320,61 +409,6 @@ export async function deleteEntry(
     });
 }
 
-export async function likeEntry(
-  connection: web3.Connection,
-  wallet: AnchorWallet,
-  options: {
-    id: string;
-    author: string;
-  }
-) {
-  const program = getBloomProgram(connection, wallet);
-  const entryId = new web3.PublicKey(options.id);
-  const author = new web3.PublicKey(options.author);
-  const bloomPda = findBloomPda(entryId, author);
-  const authorTokenAccount = await findEscrowTokenPda(author);
-  const depositTokenAccount = await findEscrowTokenPda(wallet.publicKey);
-
-  await program.methods
-    .feedPlankton(entryId, new BN(100_000))
-    .accounts({
-      payer: wallet.publicKey,
-      author,
-      sessionToken: null,
-      authorTokenAccount,
-      depositTokenAccount,
-      bloom: bloomPda,
-      mint: PLANKTON_MINT,
-      protocolFeeTokenAccount: PROTOCOL_FEE_PLANKTON_ATA,
-      tokenProgram: TOKEN_PROGRAM_ID,
-    })
-    .rpc();
-}
-
-export async function claimPlankton(
-  connection: web3.Connection,
-  wallet: AnchorWallet
-) {
-  const program = getBloomProgram(connection, wallet);
-  const escrowTokenAccount = await findEscrowTokenPda(wallet.publicKey);
-  const rewardTokenAccount = await findRewardEscrowPda();
-  const claimMarker = await findClaimMarkerPda(wallet.publicKey);
-
-  await program.methods
-    .claimPlankton()
-    .accounts({
-      signer: wallet.publicKey,
-      escrowTokenAccount,
-      rewardTokenAccount,
-      claimMarker,
-      mint: PLANKTON_MINT,
-      tokenProgram: TOKEN_PROGRAM_ID,
-    })
-    .rpc({
-      commitment: "confirmed",
-    });
-}
-
 export async function updateProfile(
   connection: web3.Connection,
   wallet: AnchorWallet,
@@ -407,84 +441,29 @@ export async function updateProfile(
     .rpc();
 }
 
-async function submitInstructions(
+export async function createNamepace(
   connection: web3.Connection,
-  instructions: web3.TransactionInstruction[],
-  payer: web3.PublicKey,
-  signers: web3.Signer[]
+  wallet: AnchorWallet,
+  merkleTree: web3.PublicKey,
+  name: string,
+  uri: string
 ) {
-  const latestBlockhash = await connection.getLatestBlockhash();
-  const message = new web3.TransactionMessage({
-    instructions,
-    payerKey: payer,
-    recentBlockhash: latestBlockhash.blockhash,
-  }).compileToV0Message();
-  const transaction = new web3.VersionedTransaction(message);
-  transaction.sign(signers);
-  const signature = await connection.sendTransaction(transaction);
-  await connection.confirmTransaction({
-    signature,
-    ...latestBlockhash,
-  });
-}
+  const program = getNamespaceProgram(connection, wallet);
+  const namespacePda = findNamespacePda(name);
+  const treeMarkerPda = findTreeMarkerPda(merkleTree);
+  const forumConfigPda = findForumConfigPda(merkleTree);
 
-async function fetchTokenAccounts(
-  connection: web3.Connection,
-  owner: web3.PublicKey,
-  collections: web3.PublicKey[]
-) {
-  const tokenAccounts = await connection.getTokenAccountsByOwner(owner, {
-    programId: TOKEN_PROGRAM_ID,
-  });
-  const decodedTokenAccounts = tokenAccounts.value.map((value) => ({
-    ...AccountLayout.decode(value.account.data),
-    pubkey: value.pubkey,
-  }));
-  const metadata = await fetchMetadataAccounts(
-    connection,
-    decodedTokenAccounts.map((value) => value.mint)
-  );
-
-  const selectedMetadataAccount = metadata.find((metadata) =>
-    collections.some((collection) =>
-      metadata.collection?.key.equals(collection)
-    )
-  );
-  const selectedMintAddress = selectedMetadataAccount?.mint;
-
-  if (!selectedMintAddress) {
-    throw new Error("Unauthorized");
-  }
-
-  const selectedMetadataPda = findMetadataPda(selectedMetadataAccount.mint);
-  const selectedTokenAddress = decodedTokenAccounts.find((value) =>
-    value.mint.equals(selectedMetadataAccount.mint)
-  )?.pubkey;
-
-  if (!selectedTokenAddress) {
-    throw new Error("Token account not found");
-  }
-
-  return [
-    selectedMintAddress,
-    selectedMetadataPda,
-    selectedTokenAddress,
-  ] as const;
-}
-
-async function fetchMetadataAccounts(
-  connection: web3.Connection,
-  mints: web3.PublicKey[]
-) {
-  const metadataAddresses = mints.map((mint) => findMetadataPda(mint));
-  const rawMetadataAccounts = await fetchAllAccounts(
-    connection,
-    metadataAddresses
-  );
-
-  return rawMetadataAccounts
-    .map((account) => (account ? Metadata.fromAccountInfo(account)[0] : null))
-    .filter((metadata): metadata is NonNullable<Metadata> => metadata !== null);
+  await program.methods
+    .createNamespace(name, uri)
+    .accounts({
+      merkleTree,
+      admin: wallet.publicKey,
+      payer: wallet.publicKey,
+      namespace: namespacePda,
+      treeMarker: treeMarkerPda,
+      forumConfig: forumConfigPda,
+    })
+    .rpc();
 }
 
 function assertSessionIsValid(session: SessionWalletInterface) {
@@ -503,4 +482,51 @@ function assertSessionIsValid(session: SessionWalletInterface) {
   if (!session.signAndSendTransaction) {
     throw new Error("Session signAndSendTransaction not found");
   }
+}
+
+export async function giveAward(
+  connection: web3.Connection,
+  wallet: AnchorWallet,
+  options: {
+    entryId: string;
+    award: SerializedAward;
+  }
+) {
+  const program = getRewardsProgram(connection, wallet);
+  const leafOwner = new web3.PublicKey(options.entryId);
+  const reward = new web3.PublicKey(options.award.id);
+  const merkleTree = new web3.PublicKey(options.award.merkleTree);
+  const collectionMint = new web3.PublicKey(options.award.collectionMint);
+  const collectionMetadataPda = findMetadataPda(collectionMint);
+  const editionPda = findEditionPda(collectionMint);
+  const treeAuthorityPda = findTreeAuthorityPda(merkleTree);
+  const collectionAuthorityRecordPda = findCollectionAuthorityRecordPda(
+    collectionMint,
+    reward
+  );
+  const bubblegumSignerPda = findBubblegumSignerPda();
+
+  await program.methods
+    .giveReward()
+    .accounts({
+      reward,
+      leafOwner,
+      merkleTree,
+      payer: wallet.publicKey,
+      sessionToken: null,
+      signer: wallet.publicKey,
+      treeAuthority: treeAuthorityPda,
+      collectionAuthorityRecordPda,
+      collectionMint,
+      collectionMetadata: collectionMetadataPda,
+      editionAccount: editionPda,
+      logWrapper: SPL_NOOP_PROGRAM_ID,
+      bubblegumSigner: bubblegumSignerPda,
+      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+      tokenMetadataProgram: METADATA_PROGRAM_ID,
+      bubblegumProgram: BUBBLEGUM_PROGRAM_ID,
+    })
+    .rpc({
+      preflightCommitment: "confirmed",
+    });
 }

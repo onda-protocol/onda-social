@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client/edge";
 declare let global: { prisma: PrismaClient };
 
 // PrismaClient is attached to the `global` object in development to prevent

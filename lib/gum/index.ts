@@ -1,4 +1,4 @@
-import { SessionWalletInterface } from "@gumhq/react-sdk";
+import type { SessionWalletInterface } from "@gumhq/react-sdk";
 import { web3 } from "@project-serum/anchor";
 import { COMPRESSION_PROGRAM_ID } from "lib/anchor/constants";
 

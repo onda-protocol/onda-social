@@ -1,30 +1,34 @@
 import type { NextPage } from "next";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
-import Image from "next/image";
-import { Box, Container, Divider, Heading, Spinner } from "@chakra-ui/react";
+import { useCallback, useMemo } from "react";
+import { Box, Container, Divider, Spinner } from "@chakra-ui/react";
 import {
-  QueryClient,
   DehydratedState,
+  QueryClient,
   dehydrate,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
-import { useCallback, useMemo } from "react";
 
+import type { EntryForm } from "components/editor";
 import {
   SerializedCommentNested,
   fetchPost,
   fetchComments,
   fetchUser,
   PostWithCommentsCountAndForum,
+  AwardsJson,
 } from "lib/api";
-import { Editor } from "components/editor";
-import { Markdown } from "components/markdown";
 import { CommentListItem } from "components/comment";
-import { PostMeta } from "components/post/meta";
 import { PostButtons } from "components/post/buttons";
-import { PostType } from "@prisma/client";
+import { PostHead } from "components/post/head";
+
+const EditorProvider = dynamic(
+  () => import("components/editor").then((mod) => mod.EditorProvider),
+  { ssr: false }
+);
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -32,21 +36,19 @@ interface PageProps {
 
 const Comments: NextPage<PageProps> = () => {
   const router = useRouter();
+  const anchorWallet = useAnchorWallet();
+  const queryClient = useQueryClient();
   const id = router.query.address as string;
+
   const postQueryKey = useMemo(() => ["post", id], [id]);
   const postQuery = useQuery({
     queryKey: postQueryKey,
     queryFn: () => fetchPost(id),
-    enabled: true,
+    refetchOnMount: false,
   });
   const commentsQueryKey = useMemo(() => ["comments", id], [id]);
-  const commentsQuery = useQuery({
-    queryKey: commentsQueryKey,
-    queryFn: () => fetchComments(id),
-    enabled: true,
-  });
-  const anchorWallet = useAnchorWallet();
-  const queryClient = useQueryClient();
+  const commentsQuery = useQuery(commentsQueryKey, () => fetchComments(id));
+
   const isAuthor = useMemo(
     () => anchorWallet?.publicKey?.toBase58() === postQuery.data?.author,
     [anchorWallet, postQuery.data?.author]
@@ -57,7 +59,7 @@ const Comments: NextPage<PageProps> = () => {
   );
 
   const onCommentCreated = useCallback(
-    async (vars: { id: string; nonce: string; body: string; uri: string }) => {
+    async (_: string, uri: string, entry: EntryForm) => {
       if (anchorWallet === undefined) return;
 
       const userAddress = anchorWallet.publicKey.toBase58();
@@ -68,17 +70,18 @@ const Comments: NextPage<PageProps> = () => {
       queryClient.setQueryData<SerializedCommentNested[]>(
         commentsQueryKey,
         (data) => {
-          const newComment = {
-            id: vars.id,
+          const newComment: SerializedCommentNested = {
+            uri,
+            id: Math.random().toString(36),
             createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
             editedAt: null,
             parent: null,
             post: id,
-            body: vars.body,
+            body: entry.body,
             nsfw: false,
-            uri: vars.uri,
-            likes: "0",
-            nonce: vars.nonce,
+            points: BigInt(0).toString(),
+            rewards: {},
+            nonce: BigInt(0).toString(),
             hash: "",
             author: userAddress,
             Author: author,
@@ -118,58 +121,23 @@ const Comments: NextPage<PageProps> = () => {
     );
   }
 
-  function renderPostBody() {
-    switch (postQuery.data?.postType) {
-      case PostType.TEXT: {
-        return <Markdown>{postQuery.data.body ?? ""}</Markdown>;
-      }
-
-      case PostType.IMAGE: {
-        return (
-          <Box
-            position="relative"
-            width="100%"
-            maxHeight="512px"
-            sx={{
-              "&:before": {
-                content: '""',
-                display: "block",
-                paddingBottom: "100%",
-              },
-            }}
-          >
-            <Image
-              fill
-              src={postQuery.data.uri}
-              alt="post image"
-              style={{
-                objectFit: "cover",
-                maxWidth: "100%",
-                maxHeight: "100%",
-              }}
-            />
-          </Box>
-        );
-      }
-    }
-  }
-
   return (
     <Container maxW="container.md">
-      <Box mt="12">
-        <PostMeta
-          showRewards
-          likes={Number(postQuery.data.likes)}
-          author={postQuery.data.Author}
-          forum={postQuery.data.forum}
-          createdAt={postQuery.data.createdAt}
-          editedAt={postQuery.data.editedAt}
-        />
-        <Heading my="6" as="h1">
-          {postQuery.data?.title}
-        </Heading>
-      </Box>
-      <Box mb="6">{renderPostBody()}</Box>
+      <PostHead
+        title={postQuery.data?.title}
+        titleSize="3xl"
+        body={postQuery.data?.body}
+        uri={postQuery.data?.uri}
+        points={Number(postQuery.data.points)}
+        awards={postQuery.data.rewards as AwardsJson}
+        postType={postQuery.data.postType}
+        author={postQuery.data.Author}
+        forum={postQuery.data.forum}
+        forumNamespace={postQuery.data.Forum.namespace}
+        forumIcon={postQuery.data.Forum.icon}
+        createdAt={postQuery.data.createdAt}
+        editedAt={postQuery.data.editedAt}
+      />
 
       <Box mb="6">
         <PostButtons
@@ -179,9 +147,9 @@ const Comments: NextPage<PageProps> = () => {
         />
       </Box>
 
-      <Editor
+      <EditorProvider
         buttonLabel="Comment"
-        placeholder="Got some thinky thoughts?"
+        placeholder="Got some thoughts?"
         successMessage="Reply added"
         config={{
           type: "comment",
@@ -189,7 +157,7 @@ const Comments: NextPage<PageProps> = () => {
           forum: postQuery.data?.forum,
           parent: null,
         }}
-        onUpdate={onCommentCreated}
+        onSuccess={onCommentCreated}
       />
 
       <Divider my="6" />
@@ -220,24 +188,24 @@ const Comments: NextPage<PageProps> = () => {
   );
 };
 
-// Comments.getInitialProps = async (ctx) => {
-//   if (typeof window === "undefined") {
-//     try {
-//       const queryClient = new QueryClient();
-//       const id = ctx.query.address as string;
-//       await queryClient.prefetchQuery(["post", id], () => fetchPost(id));
+Comments.getInitialProps = async (ctx) => {
+  if (typeof window === "undefined") {
+    try {
+      const queryClient = new QueryClient();
+      const id = ctx.query.address as string;
+      await queryClient.prefetchQuery(["post", id], () => fetchPost(id));
 
-//       return {
-//         dehydratedState: dehydrate(queryClient),
-//       };
-//     } catch (err) {
-//       console.log(err);
-//     }
-//   }
+      return {
+        dehydratedState: dehydrate(queryClient),
+      };
+    } catch (err) {
+      console.log(err);
+    }
+  }
 
-//   return {
-//     dehydratedState: undefined,
-//   };
-// };
+  return {
+    dehydratedState: undefined,
+  };
+};
 
 export default Comments;

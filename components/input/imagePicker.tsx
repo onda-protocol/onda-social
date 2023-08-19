@@ -47,6 +47,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
       {({ getRootProps, getInputProps }) => (
         <Box
           aria-label={name}
+          position="relative"
           minHeight="200px"
           border="1px"
           borderStyle="dotted"
@@ -66,7 +67,13 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
             })}
           />
           {dataUrl ? (
-            <Box position="relative" overflow="hidden">
+            <Box
+              position="absolute"
+              inset={0}
+              display="flex"
+              alignItems="center"
+              overflow="hidden"
+            >
               <Box>
                 <Image
                   fill
@@ -87,6 +94,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
                 alt="preview"
                 style={{
                   objectFit: "contain",
+                  objectPosition: "center",
                   maxHeight: "512px",
                   maxWidth: "100%",
                   marginLeft: "auto",
@@ -108,7 +116,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
               <Box mb="4">
                 <IoImage size="2em" />
               </Box>
-              <Text color="inherit">
+              <Text color="inherit" textAlign="center">
                 Drag &apos;n&apos; drop some files here, or click to select
                 files
               </Text>
