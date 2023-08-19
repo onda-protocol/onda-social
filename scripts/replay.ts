@@ -6,12 +6,18 @@ import enhancedTransactionParser from "../lib/parser";
 const apiKey = process.env.HELIUS_API_KEY;
 
 async function main() {
+  const args = process.argv.slice(2);
+  const txIdIndex = args.indexOf("--signature");
+  const signature = args[txIdIndex + 1];
+
+  if (!signature) {
+    throw new Error("Transaction ID not provided.");
+  }
+
   const { data: entries } = await axios.post(
     `https://api-devnet.helius.xyz/v0/transactions/?api-key=${apiKey}`,
     {
-      transactions: [
-        "Bf7zbtQJb5dXXkKUigm5WcYcCic7R5RmdtvJvFdhqLCXCkcjp7PDqdTK2aE4hvZLfK7VoRmKSGxrgPtiUEFtSwM",
-      ],
+      transactions: [signature],
     },
     {
       headers: {
