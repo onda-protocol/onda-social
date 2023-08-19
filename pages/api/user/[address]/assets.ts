@@ -6,8 +6,9 @@ export const config = {
 };
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
+  const url = new URL(req.url);
+  const address = url.pathname.split("/")[3] as string;
   const searchParams = req.nextUrl.searchParams;
-  const address = searchParams.get("address");
   const page = searchParams.get("page") ?? 1;
 
   const assets = await fetch(process.env.HELIUS_API_URL as string, {

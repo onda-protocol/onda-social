@@ -9,8 +9,8 @@ export const config = {
 };
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
-  const searchParams = req.nextUrl.searchParams;
-  const address = searchParams.get("address");
+  const url = new URL(req.url);
+  const address = url.pathname.split("/")[3] as string;
 
   const result = await prisma.comment.findMany({
     where: {

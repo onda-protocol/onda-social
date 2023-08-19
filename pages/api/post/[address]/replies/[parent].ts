@@ -9,8 +9,9 @@ export const config = {
 };
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
+  const url = new URL(req.url);
+  const address = url.pathname.split("/")[3] as string;
   const searchParams = req.nextUrl.searchParams;
-  const address = searchParams.get("address");
   const parent = searchParams.get("parent");
   const skip = parseInt(searchParams.get("skip") ?? "0");
 

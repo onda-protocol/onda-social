@@ -9,8 +9,9 @@ export const config = {
 };
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
-  const searchParams = req.nextUrl.searchParams;
-  const namespace = searchParams.get("address")!;
+  const url = new URL(req.url);
+  const namespace = url.pathname.split("/")[3] as string;
+
   const result = await prisma.forum.findUnique({
     where: {
       namespace,

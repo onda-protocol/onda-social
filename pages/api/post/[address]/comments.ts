@@ -9,11 +9,10 @@ export const config = {
 };
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
+  const url = new URL(req.url);
+  const address = url.pathname.split("/")[3] as string;
+  console.log("address: ", address);
   const searchParams = req.nextUrl.searchParams;
-  console.log("nextUrl: ", req.nextUrl);
-  console.log("url: ", req.url);
-  console.log("_ctx: ", _ctx);
-  const address = searchParams.get("address");
   const parent = searchParams.get("parent");
   const limit = parseInt(searchParams.get("limit") ?? "100");
   const offset = parseInt(searchParams.get("offset") ?? "0");

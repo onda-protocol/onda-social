@@ -150,7 +150,8 @@ const Step1 = ({ onNext }: Step1Props) => {
 
   useEffect(() => {
     async function fetchCost() {
-      const canopyDepth = size - 5;
+      const canopyDepth = size - 3;
+      console.log("=====> ", canopyDepth);
       const space = getConcurrentMerkleTreeAccountSize(size, 64, canopyDepth);
       const lamports = await connection.getMinimumBalanceForRentExemption(
         space
