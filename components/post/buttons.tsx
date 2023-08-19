@@ -69,6 +69,7 @@ export const DummyPostButtons = () => (
 );
 
 interface PostDeleteButtonProps {
+  disabled?: boolean;
   forumId: string;
   entry: PostWithCommentsCountAndForum | SerializedCommentNested;
   label?: string;
@@ -76,6 +77,7 @@ interface PostDeleteButtonProps {
 }
 
 export const DeleteButton = ({
+  disabled,
   forumId,
   entry,
   label,
@@ -120,7 +122,7 @@ export const DeleteButton = ({
     <PostButton
       icon={<IoTrash />}
       label={label}
-      disabled={mutation.isLoading}
+      disabled={disabled || mutation.isLoading}
       onClick={(e) => {
         e.stopPropagation();
         mutation.mutate();

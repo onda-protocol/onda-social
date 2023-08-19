@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { web3 } from "@project-serum/anchor";
 import {
   useAnchorWallet,
@@ -20,6 +20,7 @@ import { ImagePicker } from "components/input/imagePicker";
 import { getOrCreateSession } from "lib/gum";
 import { useRouter } from "next/router";
 import SessionProvider from "components/providers/sessions";
+import { PublicKey } from "@metaplex-foundation/js";
 
 export interface EntryForm {
   title: string;
@@ -213,16 +214,16 @@ const Editor = ({
       async onSuccess(data, variables) {
         methods.reset();
 
-        if (successMessage) {
-          toast.success(successMessage);
-        }
-
         if (onRequestClose) {
           onRequestClose();
         }
 
         if (onSuccess) {
           onSuccess(data.signature, data.uri, variables);
+        }
+
+        if (successMessage) {
+          toast.success(successMessage);
         }
       },
       onError(error) {
@@ -384,6 +385,7 @@ const Editor = ({
               </Button>
             )}
             <Button
+              disabled={mutation.isLoading}
               isLoading={mutation.isLoading}
               variant="solid"
               minWidth="100px"

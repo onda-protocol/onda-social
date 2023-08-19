@@ -1,4 +1,5 @@
 import dynamic from "next/dynamic";
+import { web3 } from "@project-serum/anchor";
 import { Box, Button } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
@@ -162,6 +163,19 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
       [comment, queryKey, anchorWallet, queryClient]
     );
 
+    // Disable comment replies if parent is not a valid public key
+    const disabled = useMemo(() => {
+      if (typeof comment.id === "string") {
+        try {
+          new web3.PublicKey(comment.id);
+          return false;
+        } catch {
+          return true;
+        }
+      }
+      return false;
+    }, [comment]);
+
     return (
       <Box position="relative" ml={isRoot ? "0" : "8"} mt="0">
         <Box p="4" pb="2">
@@ -179,16 +193,22 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
             <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
               <Markdown>{comment.body}</Markdown>
               <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
-                <CommentLikeButton comment={comment} queryKey={queryKey} />
+                <CommentAwardButton
+                  disabled={disabled}
+                  comment={comment}
+                  queryKey={queryKey}
+                />
                 {!disableReplies && (
                   <PostButton
                     label="Reply"
+                    disabled={disabled}
                     icon={<IoChatbox />}
                     onClick={toggleReply}
                   />
                 )}
                 {isAuthor && comment.body !== "[deleted]" && (
                   <CommentDeleteButton
+                    disabled={disabled}
                     forumId={forum}
                     comment={comment}
                     queryKey={queryKey}
@@ -241,12 +261,14 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
   }
 );
 
-interface CommentLikeButtonProps {
+interface CommentAwardButtonProps {
+  disabled?: boolean;
   comment: SerializedCommentNested;
   queryKey: (string | { offset: number })[];
 }
 
-const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
+const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
+  disabled,
   comment,
   queryKey,
 }) => {
@@ -262,16 +284,24 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
     [queryClient, comment, queryKey]
   );
 
-  return <RewardButton entryId={comment.id} onSuccess={handleCacheUpdate} />;
+  return (
+    <RewardButton
+      disabled={disabled}
+      entryId={comment.id}
+      onSuccess={handleCacheUpdate}
+    />
+  );
 };
 
 interface CommentDeleteButtonProps {
+  disabled?: boolean;
   forumId: string;
   comment: SerializedCommentNested;
   queryKey: (string | { offset: number })[];
 }
 
 const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
+  disabled,
   forumId,
   comment,
   queryKey,
@@ -287,6 +317,7 @@ const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
 
   return (
     <DeleteButton
+      disabled={disabled}
       forumId={forumId}
       entry={comment}
       onDeleted={onCommentDeleted}
