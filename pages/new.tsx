@@ -45,7 +45,7 @@ import {
   useConnection,
   useWallet,
 } from "@solana/wallet-adapter-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { Gate, initForumAndNamespace } from "lib/anchor";
 import { ContentType, upload } from "lib/bundlr/index";
@@ -103,6 +103,7 @@ const New: NextPage = () => {
       </Box>
       {activeStep === 0 && (
         <Step1
+          data={step1Data}
           onNext={(data) => {
             setStep1Data(data);
             goToNext();
@@ -111,6 +112,7 @@ const New: NextPage = () => {
       )}
       {activeStep === 1 && (
         <Step2
+          data={step2Data}
           onPrev={goToPrevious}
           onNext={(data) => {
             setStep2Data(data);
@@ -135,33 +137,31 @@ interface Step1Form {
 }
 
 interface Step1Props {
+  data?: Step1Form;
   onNext: (data: Step1Form) => void;
 }
 
-const Step1 = ({ onNext }: Step1Props) => {
+const Step1 = ({ data, onNext }: Step1Props) => {
   const { connection } = useConnection();
-  const [lamports, setLamports] = useState<number>();
-  const methods = useForm<Step1Form>({});
+  const methods = useForm<Step1Form>({ defaultValues: data });
   const fieldArray = useFieldArray({
     control: methods.control,
     name: "gates",
   });
   const size = methods.watch("size");
 
-  useEffect(() => {
-    async function fetchCost() {
+  const costQuery = useQuery(
+    ["merkle_tree_cost", size],
+    async () => {
       const canopyDepth = size - 5;
       const space = getConcurrentMerkleTreeAccountSize(size, 64, canopyDepth);
-      const lamports = await connection.getMinimumBalanceForRentExemption(
-        space
-      );
-      setLamports(lamports);
+      return connection.getMinimumBalanceForRentExemption(space);
+    },
+    {
+      enabled: Boolean(size),
     }
-
-    if (size) {
-      fetchCost();
-    }
-  }, [connection, size]);
+  );
+  const lamports = costQuery.data;
 
   return (
     <Box
@@ -333,18 +333,29 @@ interface Step2Form {
   namespace: string;
   displayName: string;
   description: string;
+  links: {
+    name: string;
+    url: string;
+  }[];
   icon: File | null;
   banner: File | null;
 }
 
 interface Step2Props {
+  data: Step2Form;
   onNext: (data: Step2Form) => void;
   onPrev: () => void;
 }
 
-const Step2 = ({ onNext, onPrev }: Step2Props) => {
+const Step2 = ({ data, onNext, onPrev }: Step2Props) => {
   const { connection } = useConnection();
-  const methods = useForm<Step2Form>();
+  const methods = useForm<Step2Form>({
+    defaultValues: data,
+  });
+  const fieldArray = useFieldArray({
+    control: methods.control,
+    name: "links",
+  });
 
   return (
     <Box
@@ -411,6 +422,25 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
         />
       </FormControl>
 
+      <Button
+        width="100%"
+        variant="outline"
+        onClick={() => fieldArray.append({ name: "", url: "" })}
+      >
+        Add Link
+      </Button>
+
+      {fieldArray.fields.map((field, index) => (
+        <LinkField
+          key={field.id}
+          index={index}
+          methods={methods}
+          onRemove={() => fieldArray.remove(index)}
+        />
+      ))}
+
+      <Divider my="8" />
+
       <Box
         display="flex"
         flexDirection={{
@@ -470,6 +500,46 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
   );
 };
 
+interface LinkFieldProps {
+  index: number;
+  methods: UseFormReturn<Step2Form>;
+  onRemove: () => void;
+}
+
+const LinkField = ({ index, methods, onRemove }: LinkFieldProps) => {
+  const field = useWatch({
+    control: methods.control,
+    name: `links.${index}`,
+  });
+
+  return (
+    <Box display="flex" alignItems="center" gap="2" my="4">
+      <Input
+        placeholder="Name"
+        isInvalid={Boolean(methods.formState.errors.links?.[index]?.name)}
+        {...methods.register(`links.${index}.name`, {
+          required: true,
+        })}
+      />
+      <Input
+        placeholder="Url"
+        isInvalid={Boolean(methods.formState.errors.links?.[index]?.url)}
+        {...methods.register(`links.${index}.url`, {
+          required: true,
+          pattern: /^(https?|ipfs):\/\/[^\s$.?#].[^\s]*$/gm,
+        })}
+      />
+      <IconButton
+        aria-label="Remove field"
+        borderRadius="sm"
+        onClick={onRemove}
+      >
+        <IoTrash />
+      </IconButton>
+    </Box>
+  );
+};
+
 interface Step3Props {
   config: Step1Form;
   metadata: Step2Form;
@@ -480,6 +550,7 @@ interface ForumJsonMetadata {
   namespace: string;
   displayName: string;
   description: string;
+  links?: { name: string; url: string }[];
   icon?: string;
   banner?: string;
 }
@@ -552,6 +623,10 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
         displayName: metadata.displayName,
         description: metadata.description,
       };
+
+      if (metadata.links?.length) {
+        json.links = metadata.links;
+      }
 
       if (metadata.icon) {
         const buffer = Buffer.from(await metadata.icon.arrayBuffer());
