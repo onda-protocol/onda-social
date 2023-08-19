@@ -11,13 +11,16 @@ import {
 } from "react";
 import toast from "react-hot-toast";
 import { Modal } from "./base";
-import { SerializedReward, fetchRewards } from "lib/api";
+import { SerializedAward, fetchRewards } from "lib/api";
 import { giveAward } from "lib/anchor";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 
 const RewardModalContext = createContext({
   isOpen: false,
-  openModal: (_entryId: string) => {},
+  openModal: (
+    _entryId: string,
+    _callback: (award: SerializedAward) => void
+  ) => {},
   closeModal: () => {},
 });
 
@@ -25,17 +28,23 @@ interface RewardModalProviderProps {
   children: React.ReactNode;
 }
 
+interface SelectedEntry {
+  entryId: string;
+  callback: (award: SerializedAward) => void;
+}
+
 interface AwardMutationArgs {
   entryId: string;
-  award: SerializedReward;
+  award: SerializedAward;
+  callback: (award: SerializedAward) => void;
 }
 
 export const RewardModalProvider = ({ children }: RewardModalProviderProps) => {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
-  const [entryId, setEntryId] = useState<string | null>(null);
-  const [selected, setSelected] = useState<SerializedReward>();
-  const isOpen = entryId !== null;
+  const [entry, setEntry] = useState<SelectedEntry | null>(null);
+  const [selected, setSelected] = useState<SerializedAward>();
+  const isOpen = entry !== null;
 
   const rewardsQuery = useQuery(["rewards"], fetchRewards, {
     enabled: isOpen,
@@ -47,8 +56,12 @@ export const RewardModalProvider = ({ children }: RewardModalProviderProps) => {
     }
   }, [rewardsQuery.data]);
 
-  const closeModal = useCallback(() => setEntryId(null), []);
-  const openModal = useCallback((entryId: string) => setEntryId(entryId), []);
+  const closeModal = useCallback(() => setEntry(null), []);
+  const openModal = useCallback(
+    (entryId: string, callback: (award: SerializedAward) => void) =>
+      setEntry({ entryId, callback }),
+    []
+  );
 
   const giveRewardMutation = useMutation<void, Error, AwardMutationArgs>(
     async ({ entryId, award }) => {
@@ -63,9 +76,10 @@ export const RewardModalProvider = ({ children }: RewardModalProviderProps) => {
       });
     },
     {
-      onSuccess() {
+      onSuccess(_, variables) {
         closeModal();
         toast.success("Reward given 🎉");
+        variables.callback(variables.award);
       },
       onError(err) {
         console.log(err);
@@ -83,12 +97,12 @@ export const RewardModalProvider = ({ children }: RewardModalProviderProps) => {
       return toast.error("Please select a reward");
     }
 
-    if (!entryId) {
+    if (!entry) {
       return toast.error("Entry not selected");
     }
 
-    mutate({ entryId, award: selected });
-  }, [selected, entryId, giveRewardMutation.mutate]);
+    mutate({ ...entry, award: selected });
+  }, [selected, entry, giveRewardMutation.mutate]);
 
   const context = useMemo(() => {
     return {

@@ -8,6 +8,7 @@ import { BsArrowsExpand } from "react-icons/bs";
 
 import {
   AwardsJson,
+  SerializedAward,
   SerializedCommentNested,
   fetchReplies,
   fetchUser,
@@ -245,33 +246,19 @@ const CommentLikeButton: React.FC<CommentLikeButtonProps> = ({
   comment,
   queryKey,
 }) => {
-  const { connection } = useConnection();
-  const anchorWallet = useAnchorWallet();
-  const sessionWallet = useSessionWallet();
   const queryClient = useQueryClient();
 
-  const mutation = useMutation(
-    async () => {
-      if (!anchorWallet) {
-        throw new Error("Wallet not connected");
-      }
-
-      // return likeEntry(connection, anchorWallet, {
-      //   id: comment.id,
-      //   author: comment.author,
-      // });
+  const handleCacheUpdate = useCallback(
+    (award: SerializedAward) => {
+      queryClient.setQueryData<Array<SerializedCommentNested>>(
+        queryKey,
+        nestedCommentsAwardsReducer(comment.id, award)
+      );
     },
-    {
-      onSuccess() {
-        queryClient.setQueryData<Array<SerializedCommentNested>>(
-          queryKey,
-          nestedCommentsPointsReducer(comment.id)
-        );
-      },
-    }
+    [queryClient, comment, queryKey]
   );
 
-  return <RewardButton entryId={comment.id} />;
+  return <RewardButton entryId={comment.id} onSuccess={handleCacheUpdate} />;
 };
 
 interface CommentDeleteButtonProps {
@@ -493,13 +480,30 @@ function increment(like: string) {
   return Number(Number(like) + 1).toString();
 }
 
-function nestedCommentsPointsReducer(
-  id: string
+function incrementAward(awardJson: AwardsJson, award: SerializedAward) {
+  const awards = awardJson ?? {};
+
+  if (awards[award.id]) {
+    awards[award.id].count = awards[award.id].count + 1;
+  } else {
+    awards[award.id] = {
+      image: award.image,
+      count: 1,
+    };
+  }
+
+  return { ...awards };
+}
+
+function nestedCommentsAwardsReducer(
+  id: string,
+  award: SerializedAward
 ): (
   input: SerializedCommentNested[] | undefined
 ) => SerializedCommentNested[] | undefined {
   return nestedCommentsReducer(id, (comment) => ({
     ...comment,
+    rewards: incrementAward(comment.rewards, award),
     points: increment(comment.points),
   }));
 }
@@ -538,9 +542,10 @@ function nestedCommentsReducer(
           ...comments.slice(Number(index) + 1),
         ];
       } else if (comment.Children) {
-        const updatedChildren = nestedCommentsPointsReducer(id)(
-          comment.Children
-        );
+        const updatedChildren = nestedCommentsReducer(
+          id,
+          updater
+        )(comment.Children);
 
         if (updatedChildren) {
           return [

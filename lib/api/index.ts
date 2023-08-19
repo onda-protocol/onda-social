@@ -10,9 +10,17 @@ type DeepReplaceBigInt<T, U> = {
     : T[K];
 };
 
-export type SerializedPost = DeepReplaceBigInt<Post, string>;
+export type AwardsJson = null | {
+  [key: string]: {
+    count: number;
+    image: string;
+  };
+};
+export type SerializedPost = DeepReplaceBigInt<Post, string> & {
+  rewards: AwardsJson;
+};
 export type PostWithCommentsCountAndForum = DeepReplaceBigInt<
-  Post & {
+  SerializedPost & {
     Author: User;
     Forum: Forum;
     _count: { Comments: number };
@@ -23,20 +31,14 @@ export type PostWithCommentsCountAndForum = DeepReplaceBigInt<
 export type SerializedForum = DeepReplaceBigInt<Forum, string> & {
   gates: Gate[];
 };
-export type SerializedReward = DeepReplaceBigInt<Reward, string>;
+export type SerializedAward = DeepReplaceBigInt<Reward, string>;
 export type SerializedComment = DeepReplaceBigInt<Comment, string> & {
+  rewards: AwardsJson;
   Author: User;
   _count: { Children: number };
 };
 export type SerializedCommentNested = SerializedComment & {
   Children?: SerializedCommentNested[];
-};
-
-export type AwardsJson = null | {
-  [key: string]: {
-    count: number;
-    image: string;
-  };
 };
 
 export function fetchForum(address: string): Promise<SerializedForum> {
@@ -59,7 +61,7 @@ export function fetchFora(): Promise<SerializedForum[]> {
   );
 }
 
-export function fetchRewards(): Promise<SerializedReward[]> {
+export function fetchRewards(): Promise<SerializedAward[]> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/rewards`).then((res) =>
     res.json()
   );
