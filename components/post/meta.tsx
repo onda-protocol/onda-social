@@ -93,7 +93,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
             color: "gray.300",
           }}
         >
-          <Link href={`/o/${forum}`} onClick={handleClick}>
+          <Link href={`/o/${forumNamespace}`} onClick={handleClick}>
             <Box as="span" display="flex" alignItems="center" color="inherit">
               {displayIcon && forumIcon && (
                 <Box mr="2">

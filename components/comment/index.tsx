@@ -546,7 +546,7 @@ function nestedCommentsAwardsReducer(
 function nestedCommentsDeleteReducer(
   id: string
 ): (
-  input: SerializedCommentNested[] | undefined
+  comments: SerializedCommentNested[] | undefined
 ) => SerializedCommentNested[] | undefined {
   return nestedCommentsReducer(id, (comment) => ({
     ...comment,
@@ -576,7 +576,7 @@ function nestedCommentsReducer(
           updater(comment),
           ...comments.slice(Number(index) + 1),
         ];
-      } else if (comment.Children) {
+      } else if (comment.Children && comment.Children.length > 0) {
         const updatedChildren = nestedCommentsReducer(
           id,
           updater
