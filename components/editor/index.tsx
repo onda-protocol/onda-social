@@ -14,7 +14,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { fetchFora, fetchForum } from "lib/api";
 import { addEntry } from "lib/anchor/actions";
-import { ContentType, upload } from "lib/bundlr";
+import { ContentType, upload } from "lib/bundlr/index";
 import { RadioCardMenu } from "components/input";
 import { ImagePicker } from "components/input/imagePicker";
 import { getOrCreateSession } from "lib/gum";

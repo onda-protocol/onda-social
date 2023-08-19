@@ -48,7 +48,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 
 import { Gate, initForumAndNamespace } from "lib/anchor";
-import { ContentType, upload } from "lib/bundlr";
+import { ContentType, upload } from "lib/bundlr/index";
 import { ImagePicker } from "components/input/imagePicker";
 import { findNamespacePda } from "utils/pda";
 
@@ -150,8 +150,7 @@ const Step1 = ({ onNext }: Step1Props) => {
 
   useEffect(() => {
     async function fetchCost() {
-      const canopyDepth = size - 3;
-      console.log("=====> ", canopyDepth);
+      const canopyDepth = size - 5;
       const space = getConcurrentMerkleTreeAccountSize(size, 64, canopyDepth);
       const lamports = await connection.getMinimumBalanceForRentExemption(
         space
@@ -355,7 +354,7 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
     >
       <Text mb="8">
         Add a namespace, display name and description for your community. You
-        can also upload a logo and banner image.
+        can also upload an icon and banner image.
       </Text>
 
       <FormControl mb="6">
@@ -365,7 +364,7 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
           isInvalid={Boolean(methods.formState.errors.namespace)}
           {...methods.register("namespace", {
             required: true,
-            pattern: /^[a-z0-9]+$/,
+            pattern: /^[a-zA-Z0-9]+$/,
             validate: {
               maxLength: (value) => {
                 if (Buffer.from(value).byteLength > 32) {
@@ -390,7 +389,7 @@ const Step2 = ({ onNext, onPrev }: Step2Props) => {
           {typeof methods.formState.errors.namespace?.message === "string" &&
           methods.formState.errors.namespace.message.length
             ? methods.formState.errors.namespace?.message
-            : "Lowercase only, no spaces or symbols allowed"}
+            : "Case sensitive, no spaces or symbols"}
         </FormHelperText>
       </FormControl>
 
@@ -671,30 +670,44 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
 
   return (
     <Box py="12">
-      <Text mb="2">{getMessage()}&hellip;</Text>
-      <Progress
-        size="xs"
-        isIndeterminate
-        isAnimated={!initMutation.error && !metadataUploadMutation.error}
-      />
+      {!initMutation.error && !metadataUploadMutation.error ? (
+        <>
+          <Text mb="2">{getMessage()}&hellip;</Text>
+          <Progress
+            size="xs"
+            isIndeterminate
+            isAnimated={!initMutation.error && !metadataUploadMutation.error}
+          />
+        </>
+      ) : null}
 
       {initMutation.error ? (
-        <Box display="flex" justifyContent="center">
-          <Text textAlign="center">Failed to initalize forum</Text>
+        <Box display="flex" flexDirection="column" justifyContent="center">
+          <Text fontSize="lg" textAlign="center">
+            Failed to initalize forum
+          </Text>
           {metadataUploadMutation.data ? (
-            <Button
-              onClick={() => initMutation.mutate(metadataUploadMutation.data)}
-            >
-              Retry
-            </Button>
+            <Box display="flex" justifyContent="center" p="6">
+              <Button
+                onClick={() => initMutation.mutate(metadataUploadMutation.data)}
+              >
+                Retry
+              </Button>
+            </Box>
           ) : null}
         </Box>
       ) : null}
 
       {metadataUploadMutation.error ? (
-        <Box display="flex" justifyContent="center">
-          <Text textAlign="center">Failed to upload forum metadata</Text>
-          <Button onClick={() => metadataUploadMutation.mutate()}>Retry</Button>
+        <Box display="flex" flexDirection="column" justifyContent="center">
+          <Text fontSize="lg" textAlign="center">
+            Failed to upload forum metadata
+          </Text>
+          <Box display="flex" justifyContent="center" p="6">
+            <Button onClick={() => metadataUploadMutation.mutate()}>
+              Retry
+            </Button>
+          </Box>
         </Box>
       ) : null}
     </Box>

@@ -65,7 +65,7 @@ export async function initForumAndNamespace(
   const space = getConcurrentMerkleTreeAccountSize(
     maxDepth,
     maxBufferSize,
-    maxDepth - 3
+    maxDepth - 5
   );
   const lamports = await connection.getMinimumBalanceForRentExemption(space);
   console.log("Allocating ", space, " bytes for merkle tree");
