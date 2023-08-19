@@ -21,11 +21,7 @@ import {
   TabPanel,
 } from "@chakra-ui/react";
 
-import {
-  fetchForum,
-  fetchForumByNamespace,
-  fetchPostsByForumNamespace,
-} from "lib/api";
+import { fetchForumByNamespace, fetchPostsByForumNamespace } from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import {
   Sidebar,

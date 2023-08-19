@@ -2,7 +2,7 @@ import type { NextPage } from "next";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import { useCallback } from "react";
-import { Container, Heading } from "@chakra-ui/react";
+import { Box, Container, Heading, Spinner } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
 
@@ -12,7 +12,14 @@ import { getPrismaPostType } from "utils/parse";
 
 const EditorProvider = dynamic(
   () => import("components/editor").then((mod) => mod.EditorProvider),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => (
+      <Box display="flex" justifyContent="center" p="12">
+        <Spinner />
+      </Box>
+    ),
+  }
 );
 
 const Submit: NextPage = () => {
