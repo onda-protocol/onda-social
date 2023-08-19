@@ -4,7 +4,14 @@ import { useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
 import { PostType } from "@prisma/client";
-import { Box, Container, Divider, Spinner } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Container,
+  Divider,
+  Spinner,
+  Textarea,
+} from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 
@@ -12,7 +19,6 @@ import { getEventFromSignature } from "lib/anchor/actions";
 import { getPrismaPostType } from "utils/parse";
 import { PostWithCommentsCountAndForum, fetchForum, fetchUser } from "lib/api";
 import { PostHead } from "components/post/head";
-import { DummyCommentEditor } from "components/editor";
 import { DummyPostButtons } from "components/post/buttons";
 
 const Pending: NextPage = () => {
@@ -173,5 +179,22 @@ const Pending: NextPage = () => {
     </Container>
   );
 };
+
+const DummyCommentEditor = () => (
+  <Box>
+    <Textarea
+      isDisabled
+      mt="2"
+      placeholder="Loading..."
+      minHeight="100px"
+      backgroundColor="#090A20"
+    />
+    <Box display="flex" mt="2" justifyContent="right">
+      <Button isDisabled variant="solid" type="submit" cursor="pointer">
+        Submit
+      </Button>
+    </Box>
+  </Box>
+);
 
 export default Pending;

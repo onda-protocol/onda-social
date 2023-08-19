@@ -3,13 +3,15 @@ import os from "os";
 import * as dotenv from "dotenv";
 import * as anchor from "@project-serum/anchor";
 import { keypairIdentity, Metaplex } from "@metaplex-foundation/js";
-import { PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import {
   getConcurrentMerkleTreeAccountSize,
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
-import { BUBBLEGUM_PROGRAM_ID } from "../lib/anchor/constants";
+import {
+  BUBBLEGUM_PROGRAM_ID,
+  METADATA_PROGRAM_ID,
+} from "../lib/anchor/constants";
 import { getRewardsProgram } from "../lib/anchor/provider";
 import { findRewardPda, findTreeAuthorityPda } from "../utils/pda";
 

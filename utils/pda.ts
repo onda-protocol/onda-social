@@ -1,5 +1,4 @@
 import { web3, BN } from "@project-serum/anchor";
-import { PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import {
   COMPRESSION_PROGRAM_ID,
   MODERATION_PROGRAM_ID,
@@ -7,6 +6,7 @@ import {
   PROFILE_PROGRAM_ID,
   REWARDS_PROGRAM_ID,
   BUBBLEGUM_PROGRAM_ID,
+  METADATA_PROGRAM_ID,
 } from "../lib/anchor/constants";
 
 export function findMetadataPda(mint: web3.PublicKey) {

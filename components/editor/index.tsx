@@ -19,6 +19,7 @@ import { RadioCardMenu } from "components/input";
 import { ImagePicker } from "components/input/imagePicker";
 import { getOrCreateSession } from "lib/gum";
 import { useRouter } from "next/router";
+import SessionProvider from "components/providers/sessions";
 
 export interface EntryForm {
   title: string;
@@ -50,7 +51,15 @@ interface EditorProps {
   onSuccess?: (signature: string, uri: string, variables: EntryForm) => void;
 }
 
-export const Editor = ({
+export const EditorProvider = (props: EditorProps) => {
+  return (
+    <SessionProvider>
+      <Editor {...props} />
+    </SessionProvider>
+  );
+};
+
+const Editor = ({
   buttonLabel,
   placeholder,
   successMessage,
@@ -409,20 +418,3 @@ const SelectForum = React.forwardRef<
     </Select>
   );
 });
-
-export const DummyCommentEditor = () => (
-  <Box>
-    <Textarea
-      isDisabled
-      mt="2"
-      placeholder="Loading..."
-      minHeight="100px"
-      backgroundColor="#090A20"
-    />
-    <Box display="flex" mt="2" justifyContent="right">
-      <Button isDisabled variant="solid" type="submit" cursor="pointer">
-        Submit
-      </Button>
-    </Box>
-  </Box>
-);

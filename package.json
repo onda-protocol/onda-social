@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "analyze": "ANALYZE=true npm run build",
     "generate": "npx prisma generate --schema ./lib/prisma/schema.prisma --data-proxy",
     "postinstall": "npm run generate --data-proxy",
     "replay": "ts-node ./scripts/replay.ts",
@@ -42,11 +43,9 @@
     "eslint-config-next": "13.3.0",
     "framer-motion": "^10.12.7",
     "helius-sdk": "^1.0.13",
-    "install": "^0.13.0",
     "js-sha256": "^0.9.0",
     "js-sha3": "^0.8.0",
     "next": "13.3.0",
-    "npm": "^9.8.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-dropzone": "^14.2.3",
@@ -62,9 +61,12 @@
   },
   "devDependencies": {
     "@metaplex-foundation/js": "^0.19.1",
+    "@next/bundle-analyzer": "^13.4.19",
     "@tanstack/react-query-devtools": "^4.29.1",
     "axios": "^1.4.0",
     "dotenv": "^16.0.3",
+    "install": "^0.13.0",
+    "npm": "^9.8.1",
     "ts-node": "^10.9.1"
   },
   "prisma": {

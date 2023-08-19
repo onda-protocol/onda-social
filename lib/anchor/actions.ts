@@ -1,3 +1,4 @@
+import type { SessionWalletInterface } from "@gumhq/react-sdk";
 import { web3, BN } from "@project-serum/anchor";
 import { PostType } from "@prisma/client";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
@@ -7,8 +8,6 @@ import {
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
-import { PROGRAM_ID as METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
-import { SessionWalletInterface } from "@gumhq/react-sdk";
 import base58 from "bs58";
 import pkg from "js-sha3";
 
@@ -23,14 +22,6 @@ import {
   findEditionPda,
   findBubblegumSignerPda,
 } from "utils/pda";
-import { parseDataV1Fields } from "utils/parse";
-import { DataV1, LeafSchemaV1, Gate } from "./types";
-import {
-  getCompressionProgram,
-  getProfileProgram,
-  getNamespaceProgram,
-  getRewardsProgram,
-} from "./provider";
 import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
@@ -39,7 +30,15 @@ import {
   fetchForumPass,
   fetchProof,
 } from "lib/api";
-import { BUBBLEGUM_PROGRAM_ID } from "./constants";
+import { parseDataV1Fields } from "utils/parse";
+import { DataV1, LeafSchemaV1, Gate } from "./types";
+import { BUBBLEGUM_PROGRAM_ID, METADATA_PROGRAM_ID } from "./constants";
+import {
+  getCompressionProgram,
+  getProfileProgram,
+  getNamespaceProgram,
+  getRewardsProgram,
+} from "./provider";
 
 export async function initForumAndNamespace(
   connection: web3.Connection,

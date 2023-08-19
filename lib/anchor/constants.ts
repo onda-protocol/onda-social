@@ -24,6 +24,10 @@ export const PROFILE_PROGRAM_ID = new web3.PublicKey(
   "ondapcq2qXTSynRieMCE9BjRsZ2XALEEZZunkwbhCPF"
 );
 
+export const METADATA_PROGRAM_ID = new web3.PublicKey(
+  "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+);
+
 export const BUBBLEGUM_PROGRAM_ID = new web3.PublicKey(
   "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY"
 );

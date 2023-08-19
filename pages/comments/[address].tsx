@@ -1,4 +1,5 @@
 import type { NextPage } from "next";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import { useCallback, useMemo } from "react";
 import { Box, Container, Divider, Spinner } from "@chakra-ui/react";
@@ -11,6 +12,7 @@ import {
 } from "@tanstack/react-query";
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
 
+import type { EntryForm } from "components/editor";
 import {
   SerializedCommentNested,
   fetchPost,
@@ -19,10 +21,14 @@ import {
   PostWithCommentsCountAndForum,
   AwardsJson,
 } from "lib/api";
-import { Editor, EntryForm } from "components/editor";
 import { CommentListItem } from "components/comment";
 import { PostButtons } from "components/post/buttons";
 import { PostHead } from "components/post/head";
+
+const EditorProvider = dynamic(
+  () => import("components/editor").then((mod) => mod.EditorProvider),
+  { ssr: false }
+);
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -141,7 +147,7 @@ const Comments: NextPage<PageProps> = () => {
         />
       </Box>
 
-      <Editor
+      <EditorProvider
         buttonLabel="Comment"
         placeholder="Got some thoughts?"
         successMessage="Reply added"

@@ -1,6 +1,6 @@
+import type { SessionWalletInterface } from "@gumhq/react-sdk";
+import type { WalletContextState } from "@solana/wallet-adapter-react";
 import { WebBundlr } from "@bundlr-network/client";
-import { SessionWalletInterface } from "@gumhq/react-sdk";
-import { WalletContextState } from "@solana/wallet-adapter-react";
 
 const BUNDLR_URL = process.env.NEXT_PUBLIC_BUNDLR_URL as string;
 

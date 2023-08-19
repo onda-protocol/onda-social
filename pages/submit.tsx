@@ -1,13 +1,19 @@
 import type { NextPage } from "next";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import { useCallback } from "react";
 import { Container, Heading } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "@solana/wallet-adapter-react";
 
+import type { EntryForm } from "components/editor";
 import { fetchUser } from "lib/api";
 import { getPrismaPostType } from "utils/parse";
-import { Editor, EntryForm } from "components/editor";
+
+const EditorProvider = dynamic(
+  () => import("components/editor").then((mod) => mod.EditorProvider),
+  { ssr: false }
+);
 
 const Submit: NextPage = () => {
   const router = useRouter();
@@ -44,7 +50,7 @@ const Submit: NextPage = () => {
       <Heading size="md" my="9">
         Create a post
       </Heading>
-      <Editor
+      <EditorProvider
         config={{ type: "post", forum }}
         buttonLabel="Post"
         successMessage="Post created!"

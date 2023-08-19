@@ -1,11 +1,12 @@
+import dynamic from "next/dynamic";
 import { Box, Button } from "@chakra-ui/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
-import { useSessionWallet } from "@gumhq/react-sdk";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
 
+import type { EntryForm } from "../editor";
 import {
   AwardsJson,
   SerializedAward,
@@ -13,15 +14,18 @@ import {
   fetchReplies,
   fetchUser,
 } from "lib/api";
-import {} from "lib/anchor";
 import { Markdown } from "../markdown";
-import { Editor, EntryForm } from "../editor";
 import { PostMeta } from "../post/meta";
 import {
   PostButton,
   RewardButton,
   DeleteButton,
 } from "components/post/buttons";
+
+const EditorProvider = dynamic(
+  () => import("components/editor").then((mod) => mod.EditorProvider),
+  { ssr: false }
+);
 
 interface CommentListItemProps {
   forum: string;
@@ -192,7 +196,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                 )}
               </Box>
               {reply && disableReplies === false && (
-                <Editor
+                <EditorProvider
                   buttonLabel="Reply"
                   placeholder={`Reply to ${
                     comment.Author.name ?? comment.author

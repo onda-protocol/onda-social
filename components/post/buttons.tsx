@@ -6,21 +6,18 @@ import {
   useMutation,
   QueryClient,
 } from "@tanstack/react-query";
-import { useSessionWallet } from "@gumhq/react-sdk";
 import { IoChatbox, IoTrash } from "react-icons/io5";
 import { GiSadCrab } from "react-icons/gi";
-import { MouseEventHandler, forwardRef, useCallback, useState } from "react";
+import { MouseEventHandler, forwardRef, useCallback } from "react";
 import toast from "react-hot-toast";
 
 import { deleteEntry, getDataHash } from "lib/anchor";
-import { getOrCreateSession } from "lib/gum";
 import {
   AwardsJson,
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
   SerializedAward,
 } from "lib/api";
-import { Modal } from "components/modal/base";
 import { useRewardModal } from "components/modal";
 
 interface PostButtonsProps {
