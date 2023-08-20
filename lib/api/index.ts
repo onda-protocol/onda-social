@@ -33,7 +33,7 @@ export type LinkJson = {
   url: string;
 };
 export type SerializedForum = DeepReplaceBigInt<Forum, string> & {
-  gates: Gate[];
+  Gates: Gate[];
   links: LinkJson[] | null;
 };
 export type SerializedAward = DeepReplaceBigInt<Award, string>;

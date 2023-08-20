@@ -51,7 +51,7 @@ export default async function handler(
     }
   }
 
-  return res.status(404).json({ error: "Forum pass not found" });
+  return res.status(404).json({ error: "Access denied" });
 }
 
 async function searchCollection(owner: string, collection: string) {

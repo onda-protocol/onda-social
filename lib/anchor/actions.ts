@@ -146,7 +146,7 @@ export async function addEntry(
   let tokenAccount = null;
   let metadata = null;
 
-  if (options.forum.gates?.length) {
+  if (options.forum.Gates?.length) {
     const result = await fetchForumPass(
       options.forum.id,
       wallet.publicKey.toBase58()
