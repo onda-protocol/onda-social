@@ -10,11 +10,7 @@ export async function getOrCreateSession(
   let sessionToken = session.sessionToken;
 
   if (!sessionToken) {
-    const newSession = await session.createSession(
-      programId,
-      true,
-      60 * 24 * 3 // 3 days
-    );
+    const newSession = await session.createSession(programId, true, 60 * 24);
 
     if (newSession) {
       session = newSession;
