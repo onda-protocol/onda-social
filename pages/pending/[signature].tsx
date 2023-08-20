@@ -74,7 +74,7 @@ const Pending: NextPage = () => {
             nsfw: result.data.nsfw ?? false,
             hash: "",
             points: BigInt(0).toString(),
-            rewards: {},
+            awards: {},
             createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
             editedAt: null,
             Author: {

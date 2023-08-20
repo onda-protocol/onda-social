@@ -20,6 +20,7 @@ import {
   fetchUser,
   PostWithCommentsCountAndForum,
   AwardsJson,
+  fetchAwards,
 } from "lib/api";
 import { CommentListItem } from "components/comment";
 import { PostButtons } from "components/post/buttons";
@@ -80,7 +81,7 @@ const Comments: NextPage<PageProps> = () => {
             body: entry.body,
             nsfw: false,
             points: BigInt(0).toString(),
-            rewards: {},
+            awards: {},
             nonce: BigInt(0).toString(),
             hash: "",
             author: userAddress,
@@ -129,7 +130,7 @@ const Comments: NextPage<PageProps> = () => {
         body={postQuery.data?.body}
         uri={postQuery.data?.uri}
         points={Number(postQuery.data.points)}
-        awards={postQuery.data.rewards as AwardsJson}
+        awards={postQuery.data.awards as AwardsJson}
         postType={postQuery.data.postType}
         author={postQuery.data.Author}
         forum={postQuery.data.forum}
@@ -193,7 +194,11 @@ Comments.getInitialProps = async (ctx) => {
     try {
       const queryClient = new QueryClient();
       const id = ctx.query.address as string;
-      await queryClient.prefetchQuery(["post", id], () => fetchPost(id));
+
+      await Promise.allSettled([
+        queryClient.prefetchQuery(["post", id], () => fetchPost(id)),
+        queryClient.prefetchQuery(["awards"], fetchAwards),
+      ]);
 
       return {
         dehydratedState: dehydrate(queryClient),

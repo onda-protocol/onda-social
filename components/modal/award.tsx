@@ -11,11 +11,11 @@ import {
 } from "react";
 import toast from "react-hot-toast";
 import { Modal } from "./base";
-import { SerializedAward, fetchRewards } from "lib/api";
+import { SerializedAward, fetchAwards } from "lib/api";
 import { giveAward } from "lib/anchor";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 
-const RewardModalContext = createContext({
+const AwardModalContext = createContext({
   isOpen: false,
   openModal: (
     _entryId: string,
@@ -24,7 +24,7 @@ const RewardModalContext = createContext({
   closeModal: () => {},
 });
 
-interface RewardModalProviderProps {
+interface AwardModalProviderProps {
   children: React.ReactNode;
 }
 
@@ -39,14 +39,14 @@ interface AwardMutationArgs {
   callback: (award: SerializedAward) => void;
 }
 
-export const RewardModalProvider = ({ children }: RewardModalProviderProps) => {
+export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
   const [entry, setEntry] = useState<SelectedEntry | null>(null);
   const [selected, setSelected] = useState<SerializedAward>();
   const isOpen = entry !== null;
 
-  const rewardsQuery = useQuery(["rewards"], fetchRewards, {
+  const rewardsQuery = useQuery(["awards"], fetchAwards, {
     enabled: isOpen,
   });
 
@@ -112,9 +112,9 @@ export const RewardModalProvider = ({ children }: RewardModalProviderProps) => {
 
   return (
     <>
-      <RewardModalContext.Provider value={context}>
+      <AwardModalContext.Provider value={context}>
         {children}
-      </RewardModalContext.Provider>
+      </AwardModalContext.Provider>
       <Modal isOpen={isOpen} onRequestClose={closeModal}>
         <Box display="flex">
           <Box
@@ -195,8 +195,15 @@ export const RewardModalProvider = ({ children }: RewardModalProviderProps) => {
                     <Heading size="md" textAlign="center" pt="4" pb="2">
                       {selected.name} Award
                     </Heading>
-                    <Text fontSize="sm" textAlign="center">
+                    <Text fontSize="sm" textAlign="center" mb="2">
                       Boosts visibility of a comment or post.
+                    </Text>
+                    <Text
+                      color="whiteAlpha.600"
+                      fontSize="xs"
+                      textAlign="center"
+                    >
+                      NOTE: This award is for demo purposes only.
                     </Text>
                   </>
                 ) : null}
@@ -217,6 +224,6 @@ export const RewardModalProvider = ({ children }: RewardModalProviderProps) => {
   );
 };
 
-export const useRewardModal = () => {
-  return useContext(RewardModalContext);
+export const useAwardModal = () => {
+  return useContext(AwardModalContext);
 };

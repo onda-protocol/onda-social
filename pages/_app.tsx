@@ -18,7 +18,7 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import theme from "../theme";
 import { Navbar } from "components/layout/navbar";
 import { DocumentHead } from "components/document";
-import { RewardModalProvider } from "components/modal";
+import { AwardModalProvider } from "components/modal";
 
 export default function App({ Component, pageProps }: AppProps) {
   const wallets = useMemo(() => [], []);
@@ -61,9 +61,9 @@ export default function App({ Component, pageProps }: AppProps) {
                   url={``}
                 />
                 <Navbar />
-                <RewardModalProvider>
+                <AwardModalProvider>
                   <Component {...pageProps} />
-                </RewardModalProvider>
+                </AwardModalProvider>
                 <Toaster />
               </ChakraProvider>
             </WalletModalProvider>

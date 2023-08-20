@@ -18,7 +18,7 @@ import {
   SerializedCommentNested,
   SerializedAward,
 } from "lib/api";
-import { useRewardModal } from "components/modal";
+import { useAwardModal } from "components/modal";
 
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
@@ -157,7 +157,7 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
         _focus={{
           backgroundColor: disabled ? undefined : "whiteAlpha.200",
         }}
-        onClick={onClick}
+        onClick={disabled ? undefined : onClick}
       >
         {icon ?? null}
         {label ? (
@@ -181,7 +181,7 @@ export const RewardButton = ({
   disabled,
   onSuccess,
 }: RewardButtonProps) => {
-  const rewardModal = useRewardModal();
+  const AwardModal = useAwardModal();
 
   return (
     <PostButton
@@ -190,7 +190,7 @@ export const RewardButton = ({
       disabled={disabled}
       onClick={(e) => {
         e.stopPropagation();
-        rewardModal.openModal(entryId, onSuccess);
+        AwardModal.openModal(entryId, onSuccess);
         return false;
       }}
     />
@@ -225,11 +225,11 @@ function updatePostCache(
     ["post", entryId],
     (data) => {
       if (data) {
-        const rewards = incrementAward(data.rewards, award);
+        const awards = incrementAward(data.awards, award);
 
         return {
           ...data,
-          rewards,
+          awards,
           points: Number(Number(data.points) + 1).toString(),
         };
       }
@@ -249,8 +249,8 @@ function updatePostCache(
             for (const index in posts) {
               const p = posts[index];
               if (p.id === entryId) {
-                const rewards = incrementAward(p.rewards, award);
-                const newPost = { ...p, rewards };
+                const awards = incrementAward(p.awards, award);
+                const newPost = { ...p, awards };
                 newPost.points = Number(Number(newPost.points) + 1).toString();
                 return [
                   ...posts.slice(0, Number(index)),

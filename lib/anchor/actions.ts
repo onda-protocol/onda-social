@@ -37,7 +37,7 @@ import {
   getCompressionProgram,
   getProfileProgram,
   getNamespaceProgram,
-  getRewardsProgram,
+  getAwardsProgram,
 } from "./provider";
 
 export async function initForumAndNamespace(
@@ -146,7 +146,7 @@ export async function addEntry(
   let tokenAccount = null;
   let metadata = null;
 
-  if (options.forum.gates?.length) {
+  if (options.forum.Gates?.length) {
     const result = await fetchForumPass(
       options.forum.id,
       wallet.publicKey.toBase58()
@@ -492,9 +492,9 @@ export async function giveAward(
     award: SerializedAward;
   }
 ) {
-  const program = getRewardsProgram(connection, wallet);
+  const program = getAwardsProgram(connection, wallet);
   const leafOwner = new web3.PublicKey(options.entryId);
-  const reward = new web3.PublicKey(options.award.id);
+  const award = new web3.PublicKey(options.award.id);
   const merkleTree = new web3.PublicKey(options.award.merkleTree);
   const collectionMint = new web3.PublicKey(options.award.collectionMint);
   const collectionMetadataPda = findMetadataPda(collectionMint);
@@ -502,14 +502,14 @@ export async function giveAward(
   const treeAuthorityPda = findTreeAuthorityPda(merkleTree);
   const collectionAuthorityRecordPda = findCollectionAuthorityRecordPda(
     collectionMint,
-    reward
+    award
   );
   const bubblegumSignerPda = findBubblegumSignerPda();
 
   await program.methods
-    .giveReward()
+    .giveAward()
     .accounts({
-      reward,
+      award,
       leafOwner,
       merkleTree,
       payer: wallet.publicKey,

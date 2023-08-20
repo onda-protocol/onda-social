@@ -1,12 +1,12 @@
-export type OndaRewards = {
+export type OndaAwards = {
   version: "0.1.0";
-  name: "onda_rewards";
+  name: "onda_awards";
   instructions: [
     {
-      name: "createReward";
+      name: "createAward";
       accounts: [
         {
-          name: "reward";
+          name: "award";
           isMut: true;
           isSigner: false;
         },
@@ -78,13 +78,13 @@ export type OndaRewards = {
         {
           name: "metadataArgs";
           type: {
-            defined: "RewardMetadata";
+            defined: "AwardMetadata";
           };
         }
       ];
     },
     {
-      name: "giveReward";
+      name: "giveAward";
       accounts: [
         {
           name: "payer";
@@ -103,7 +103,7 @@ export type OndaRewards = {
           isSigner: true;
         },
         {
-          name: "reward";
+          name: "award";
           isMut: true;
           isSigner: false;
         },
@@ -178,7 +178,7 @@ export type OndaRewards = {
   ];
   accounts: [
     {
-      name: "reward";
+      name: "award";
       type: {
         kind: "struct";
         fields: [
@@ -201,7 +201,7 @@ export type OndaRewards = {
             name: "metadata";
             docs: ["The reward metadata"];
             type: {
-              defined: "RewardMetadata";
+              defined: "AwardMetadata";
             };
           }
         ];
@@ -210,7 +210,7 @@ export type OndaRewards = {
   ];
   types: [
     {
-      name: "RewardMetadata";
+      name: "AwardMetadata";
       type: {
         kind: "struct";
         fields: [
@@ -241,26 +241,21 @@ export type OndaRewards = {
     },
     {
       code: 6001;
-      name: "InvalidMint";
-      msg: "Invalid mint.";
-    },
-    {
-      code: 6002;
       name: "NumericOverflow";
       msg: "Numeric overflow.";
     }
   ];
 };
 
-export const IDL: OndaRewards = {
+export const IDL: OndaAwards = {
   version: "0.1.0",
-  name: "onda_rewards",
+  name: "onda_awards",
   instructions: [
     {
-      name: "createReward",
+      name: "createAward",
       accounts: [
         {
-          name: "reward",
+          name: "award",
           isMut: true,
           isSigner: false,
         },
@@ -332,13 +327,13 @@ export const IDL: OndaRewards = {
         {
           name: "metadataArgs",
           type: {
-            defined: "RewardMetadata",
+            defined: "AwardMetadata",
           },
         },
       ],
     },
     {
-      name: "giveReward",
+      name: "giveAward",
       accounts: [
         {
           name: "payer",
@@ -357,7 +352,7 @@ export const IDL: OndaRewards = {
           isSigner: true,
         },
         {
-          name: "reward",
+          name: "award",
           isMut: true,
           isSigner: false,
         },
@@ -432,7 +427,7 @@ export const IDL: OndaRewards = {
   ],
   accounts: [
     {
-      name: "reward",
+      name: "award",
       type: {
         kind: "struct",
         fields: [
@@ -455,7 +450,7 @@ export const IDL: OndaRewards = {
             name: "metadata",
             docs: ["The reward metadata"],
             type: {
-              defined: "RewardMetadata",
+              defined: "AwardMetadata",
             },
           },
         ],
@@ -464,7 +459,7 @@ export const IDL: OndaRewards = {
   ],
   types: [
     {
-      name: "RewardMetadata",
+      name: "AwardMetadata",
       type: {
         kind: "struct",
         fields: [
@@ -495,11 +490,6 @@ export const IDL: OndaRewards = {
     },
     {
       code: 6001,
-      name: "InvalidMint",
-      msg: "Invalid mint.",
-    },
-    {
-      code: 6002,
       name: "NumericOverflow",
       msg: "Numeric overflow.",
     },

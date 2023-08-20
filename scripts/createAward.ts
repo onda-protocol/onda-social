@@ -12,15 +12,15 @@ import {
   BUBBLEGUM_PROGRAM_ID,
   METADATA_PROGRAM_ID,
 } from "../lib/anchor/constants";
-import { getRewardsProgram } from "../lib/anchor/provider";
-import { findRewardPda, findTreeAuthorityPda } from "../utils/pda";
+import { getAwardsProgram } from "../lib/anchor/provider";
+import { findAwardPda, findTreeAuthorityPda } from "../utils/pda";
 
 dotenv.config();
 
 const connection = new anchor.web3.Connection(
   process.env.HELIUS_RPC_URL as string
 );
-const program = getRewardsProgram(connection);
+const program = getAwardsProgram(connection);
 
 function getSigner() {
   const json = fs.readFileSync(
@@ -55,13 +55,13 @@ async function createReward(
   const treeAuthorityPda = findTreeAuthorityPda(merkleTree.publicKey);
 
   const createRewardIx = await program.methods
-    .createReward(maxDepth, bufferSize, {
+    .createAward(maxDepth, bufferSize, {
       symbol: "PLANK",
       name: "Plankton",
       uri: "https://arweave.net/r1Y2R-KIE71TdOGCah4qQ8pTLjBn1WEETxqD8b7X8Lc",
     })
     .accounts({
-      reward: accounts.rewardPda,
+      award: accounts.awardPda,
       collectionMint: accounts.collectionMint,
       collectionMetadata: accounts.collectionMetadata,
       collectionAuthorityRecord: accounts.collectionAuthorityRecordPda,
@@ -120,14 +120,14 @@ async function createCollectionMint(
   const mintAddress = context.mintAddress;
   const metadataAddress = context.metadataAddress;
   const masterEditionAddress = context.masterEditionAddress;
-  const rewardPda = findRewardPda(merkleTree.publicKey);
+  const awardPda = findAwardPda(merkleTree.publicKey);
 
   const collectionAuthorityRecordPda = await metaplex
     .nfts()
     .pdas()
     .collectionAuthorityRecord({
       mint: mintAddress,
-      collectionAuthority: rewardPda,
+      collectionAuthority: awardPda,
     });
 
   try {
@@ -139,7 +139,7 @@ async function createCollectionMint(
   }
 
   return {
-    rewardPda,
+    awardPda,
     collectionAuthorityRecordPda,
     collectionMetadata: metadataAddress,
     collectionMint: mintAddress,

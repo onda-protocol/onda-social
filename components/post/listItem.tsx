@@ -27,7 +27,7 @@ export const PostListItem = ({ displayIcon, post }: PostListItemProps) => {
         displayIcon={displayIcon}
         author={post.Author}
         points={Number(post.points)}
-        awards={post.rewards as AwardsJson}
+        awards={post.awards as AwardsJson}
         forum={post.forum}
         forumNamespace={post.Forum.namespace}
         forumIcon={post.Forum.icon}
