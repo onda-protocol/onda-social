@@ -48,6 +48,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
         <Box
           aria-label={name}
           position="relative"
+          display="flex"
           minHeight="200px"
           border="1px"
           borderStyle="dotted"
@@ -68,10 +69,11 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
           />
           {dataUrl ? (
             <Box
-              position="absolute"
-              inset={0}
+              position="relative"
               display="flex"
               alignItems="center"
+              minHeight="100%"
+              minWidth="100%"
               overflow="hidden"
             >
               <Box>
@@ -110,6 +112,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
               alignItems="center"
               justifyContent="center"
               height="200px"
+              width="100%"
               padding="6"
               color="whiteAlpha.500"
             >

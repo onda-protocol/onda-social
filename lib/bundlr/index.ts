@@ -17,8 +17,8 @@ async function getBundlr(
   const useSession = session && isFreeUpload;
   const signer = useSession ? session : wallet;
 
-  if (useSession) {
-    await getOrCreateSession(session);
+  if (session && useSession) {
+    session = await getOrCreateSession(session);
   }
 
   const bundlr = new WebBundlr(BUNDLR_URL, "solana", signer, {

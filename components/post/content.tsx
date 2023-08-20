@@ -56,6 +56,7 @@ export const PostContent = memo(function PostContent({
             position="relative"
             width="100%"
             maxHeight="512px"
+            overflow="hidden"
             sx={{
               "&:before": {
                 content: '""',
@@ -64,14 +65,27 @@ export const PostContent = memo(function PostContent({
               },
             }}
           >
+            <Box>
+              <Image
+                fill
+                src={uri}
+                alt="background"
+                style={{
+                  zIndex: 0,
+                  filter: "blur(20px) brightness(.8)",
+                  opacity: 0.35,
+                }}
+              />
+            </Box>
             <Image
               fill
               src={uri}
               alt="post image"
               style={{
-                objectFit: "cover",
+                objectFit: "contain",
                 maxWidth: "100%",
                 maxHeight: "100%",
+                zIndex: 1,
               }}
             />
           </Box>

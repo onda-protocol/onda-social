@@ -83,6 +83,7 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
       onError(err) {
         console.log(err);
         // @ts-ignore
+        console.log(err.logs);
         toast.error(err.message ?? "Something went wrong!");
       },
     }
