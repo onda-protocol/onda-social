@@ -9,7 +9,6 @@ import {
 } from "@tanstack/react-query";
 import { Box, Spinner, Text } from "@chakra-ui/react";
 
-import { getProfiles } from "utils/profile";
 import { fetchFora, fetchPosts, fetchAwards } from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import {
