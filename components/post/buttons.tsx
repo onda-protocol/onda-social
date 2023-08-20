@@ -157,7 +157,7 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
         _focus={{
           backgroundColor: disabled ? undefined : "whiteAlpha.200",
         }}
-        onClick={onClick}
+        onClick={disabled ? undefined : onClick}
       >
         {icon ?? null}
         {label ? (
