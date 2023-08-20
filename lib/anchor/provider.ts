@@ -4,9 +4,9 @@ import { OndaCompression, IDL as CompressionIDL } from "./idl/onda_compression";
 import { OndaProfile, IDL as ProfileIDL } from "./idl/onda_profile";
 import { OndaModeration, IDL as ModerationIDL } from "./idl/onda_moderation";
 import { OndaNamespace, IDL as NamespaceIDL } from "./idl/onda_namespace";
-import { OndaRewards, IDL as RewardsIDL } from "./idl/onda_rewards";
+import { OndaAwards, IDL as AwardsIDL } from "./idl/onda_awards";
 import {
-  REWARDS_PROGRAM_ID,
+  AWARDS_PROGRAM_ID,
   COMPRESSION_PROGRAM_ID,
   NAMESPACE_PROGRAM_ID,
   PROFILE_PROGRAM_ID,
@@ -56,13 +56,13 @@ export function getNamespaceProgram(
   );
 }
 
-export function getRewardsProgram(
+export function getAwardsProgram(
   connection: anchor.web3.Connection,
   wallet?: AnchorWallet
-): anchor.Program<OndaRewards> {
-  return new anchor.Program<OndaRewards>(
-    RewardsIDL,
-    REWARDS_PROGRAM_ID,
+): anchor.Program<OndaAwards> {
+  return new anchor.Program<OndaAwards>(
+    AwardsIDL,
+    AWARDS_PROGRAM_ID,
     getProvider(connection, wallet)
   );
 }

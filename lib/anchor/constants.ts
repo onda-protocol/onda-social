@@ -1,9 +1,5 @@
 import { web3 } from "@project-serum/anchor";
 
-export const BLOOM_PROGRAM_ID = new web3.PublicKey(
-  "onda3Sxku2NT88Ho8WfEgbkavNEELWzaguvh4itdn3C"
-);
-
 export const COMPRESSION_PROGRAM_ID = new web3.PublicKey(
   "D3eGvVzSzcZZARAfxARQoEHiySYa1aMdkd4djc7LRQRC"
 );
@@ -16,8 +12,8 @@ export const NAMESPACE_PROGRAM_ID = new web3.PublicKey(
   "Ds9mPCckK2axyP9EVM6MhSruHG9S2qDoDeZdVdCqUtst"
 );
 
-export const REWARDS_PROGRAM_ID = new web3.PublicKey(
-  "HPQxJSGNpSGJuEp4Qs3dch8X7GvyxZADGRcw8iqqSuCg"
+export const AWARDS_PROGRAM_ID = new web3.PublicKey(
+  "EcbMFkBrsdtj1Q2KE1TCt8aQ7eLDVFQwvdsTF3XrP2RS"
 );
 
 export const PROFILE_PROGRAM_ID = new web3.PublicKey(

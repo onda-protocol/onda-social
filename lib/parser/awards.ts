@@ -4,29 +4,29 @@ import axios from "axios";
 import base58 from "bs58";
 import { Instruction } from "helius-sdk";
 
-import { IDL as RewardsIDL } from "../anchor/idl/onda_rewards";
-import { getRewardsProgram } from "../anchor/provider";
-import { RewardMetadata } from "../anchor/types";
+import { IDL as AwardsIDS } from "../anchor/idl/onda_awards";
+import { getAwardsProgram } from "../anchor/provider";
+import { AwardMetadata } from "../anchor/types";
 import prisma from "../prisma";
 import { genIxIdentifier } from "./helpers";
 
 const connection = new web3.Connection(
   process.env.NEXT_PUBLIC_RPC_ENDPOINT as string
 );
-const rewardsProgram = getRewardsProgram(connection);
+const rewardsProgram = getAwardsProgram(connection);
 
-const rewardsIxIds = RewardsIDL.instructions.map((ix) => {
+const rewardsIxIds = AwardsIDS.instructions.map((ix) => {
   return {
     name: ix.name,
     id: genIxIdentifier(ix.name),
   };
 });
 
-export async function rewardsParser(ix: Instruction) {
+export async function awardsParser(ix: Instruction) {
   const ixData = base58.decode(ix.data);
   const ixId = base58.encode(ixData.slice(0, 8));
   const ixName = rewardsIxIds.find((i) => i.id === ixId)?.name;
-  const ixAccounts = RewardsIDL.instructions.find(
+  const ixAccounts = AwardsIDS.instructions.find(
     (i) => i.name === ixName
   )?.accounts;
   console.log("Handling ix: ", ixName);
@@ -36,9 +36,9 @@ export async function rewardsParser(ix: Instruction) {
   }
 
   switch (ixName) {
-    case "createReward": {
+    case "createAward": {
       const authorityIndex = ixAccounts.findIndex((a) => a.name === "payer");
-      const rewardIndex = ixAccounts.findIndex((a) => a.name === "reward");
+      const awardIndex = ixAccounts.findIndex((a) => a.name === "award");
       const collectionMintIndex = ixAccounts.findIndex(
         (a) => a.name === "collectionMint"
       );
@@ -46,11 +46,11 @@ export async function rewardsParser(ix: Instruction) {
         (a) => a.name === "merkleTree"
       );
       const authority = ix.accounts[authorityIndex];
-      const reward = ix.accounts[rewardIndex];
+      const award = ix.accounts[awardIndex];
       const collectionMint = ix.accounts[collectionMintIndex];
       const merkleTree = ix.accounts[merkleTreeIndex];
 
-      const metadataArgs = rewardsProgram.coder.types.decode<RewardMetadata>(
+      const metadataArgs = rewardsProgram.coder.types.decode<AwardMetadata>(
         "RewardMetadata",
         Buffer.from(ixData.slice(16))
       );
@@ -58,14 +58,14 @@ export async function rewardsParser(ix: Instruction) {
       const description = metadataJson.data.description as string;
       const image = metadataJson.data.image as string;
 
-      await prisma.reward.create({
+      await prisma.award.create({
         data: {
           authority,
           collectionMint,
           description,
           merkleTree,
           image,
-          id: reward,
+          id: award,
           amount: BigInt(0),
           name: metadataArgs.name,
         },
@@ -74,26 +74,26 @@ export async function rewardsParser(ix: Instruction) {
       break;
     }
 
-    case "giveReward": {
-      const rewardIndex = ixAccounts.findIndex((a) => a.name === "reward");
+    case "giveAward": {
+      const awardIndex = ixAccounts.findIndex((a) => a.name === "award");
       const leafOwnerIndex = ixAccounts.findIndex(
         (a) => a.name === "leafOwner"
       );
-      const rewardId = ix.accounts[rewardIndex];
+      const awardId = ix.accounts[awardIndex];
       const entryId = ix.accounts[leafOwnerIndex];
 
-      const reward = await prisma.reward.findUnique({
+      const award = await prisma.award.findUnique({
         where: {
-          id: rewardId,
+          id: awardId,
         },
       });
 
       await prisma.$transaction(async (transaction) => {
         const [rewardResult, postResult, commentResult] =
           await Promise.allSettled([
-            transaction.reward.findUnique({
+            transaction.award.findUnique({
               where: {
-                id: rewardId,
+                id: awardId,
               },
             }),
             transaction.post.findUnique({
@@ -114,16 +114,16 @@ export async function rewardsParser(ix: Instruction) {
 
         if (postResult.status === "fulfilled" && postResult.value !== null) {
           const post = postResult.value;
-          const rewards = (post.rewards ?? {}) as Prisma.JsonObject;
-          const currentReward = rewards[rewardId] as
+          const awards = (post.awards ?? {}) as Prisma.JsonObject;
+          const currentReward = awards[awardId] as
             | Prisma.JsonObject
             | undefined;
-          const currentRewardParsed = currentReward ?? {
-            image: reward?.image,
+          const currentAwardParsed = currentReward ?? {
+            image: award?.image,
             count: 0,
           };
-          currentRewardParsed.count = Number(currentRewardParsed.count) + 1;
-          rewards[rewardId] = currentRewardParsed;
+          currentAwardParsed.count = Number(currentAwardParsed.count) + 1;
+          awards[awardId] = currentAwardParsed;
 
           await transaction.post.update({
             where: {
@@ -133,7 +133,7 @@ export async function rewardsParser(ix: Instruction) {
               points: {
                 increment: 1,
               },
-              rewards,
+              awards,
             },
           });
         } else if (
@@ -141,16 +141,14 @@ export async function rewardsParser(ix: Instruction) {
           commentResult.value !== null
         ) {
           const comment = commentResult.value;
-          const rewards = (comment.rewards ?? {}) as Prisma.JsonObject;
-          const currentReward = rewards[rewardId] as
-            | Prisma.JsonObject
-            | undefined;
-          const currentRewardParsed = currentReward ?? {
-            image: reward?.image,
+          const awards = (comment.awards ?? {}) as Prisma.JsonObject;
+          const currentAward = awards[awardId] as Prisma.JsonObject | undefined;
+          const currentAwardParsed = currentAward ?? {
+            image: award?.image,
             count: 0,
           };
-          currentRewardParsed.count = Number(currentRewardParsed.count) + 1;
-          rewards[rewardId] = currentRewardParsed;
+          currentAwardParsed.count = Number(currentAwardParsed.count) + 1;
+          awards[awardId] = currentAwardParsed;
 
           await transaction.comment.update({
             where: {
@@ -160,13 +158,13 @@ export async function rewardsParser(ix: Instruction) {
               points: {
                 increment: 1,
               },
-              rewards,
+              awards,
             },
           });
         }
       });
 
-      if (reward) {
+      if (award) {
         // expect one of these to fail
         try {
           await prisma.post.update({

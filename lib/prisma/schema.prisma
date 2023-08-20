@@ -61,8 +61,8 @@ model Forum {
   Posts         Post[]      @relation("ForumToPost")
 }
 
-model Reward {
-  id             String @id @unique
+model Award {
+  id             String  @id @unique
   amount         BigInt
   authority      String
   collectionMint String
@@ -91,7 +91,7 @@ model Post {
   createdAt BigInt
   editedAt  BigInt?
   nonce     BigInt
-  rewards   Json?
+  awards    Json?
   points    BigInt    @default(0)
   forum     String
   Forum     Forum     @relation("ForumToPost", fields: [forum], references: [id])
@@ -109,7 +109,7 @@ model Comment {
   createdAt BigInt
   editedAt  BigInt?
   nonce     BigInt
-  rewards   Json?
+  awards    Json?
   points    BigInt    @default(0)
   post      String
   Post      Post      @relation("PostToComment", fields: [post], references: [id])
