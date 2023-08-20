@@ -63,19 +63,34 @@ const Community: NextPage<PageProps> = () => {
     <>
       <Box>
         <Box
+          position="relative"
           height={forumQuery.data?.banner ? "180px" : "90px"}
           backgroundColor="onda.600"
-          backgroundImage={forumQuery.data?.banner as string}
-          backgroundPosition="center"
-        />
+          zIndex="0"
+        >
+          {forumQuery.data?.banner ? (
+            <Image
+              fill
+              src={forumQuery.data.banner}
+              alt={forumQuery.data.namespace + " banner"}
+            />
+          ) : null}
+        </Box>
         <Box bgColor="onda.1000">
           <Container maxW="container.lg">
             <Box display="flex" py="4" marginTop="-8">
               {forumQuery.data?.icon && (
-                <Box mr="2" p="3px" bgColor="#fff" borderRadius="100%">
+                <Box
+                  position="relative"
+                  mr="2"
+                  p="3px"
+                  bgColor="#fff"
+                  borderRadius="100%"
+                  zIndex="1"
+                >
                   <Image
                     alt={forumQuery.data.namespace + " logo"}
-                    src={forumQuery.data.icon}
+                    src={forumQuery.data.icon + "?discriminator=1"}
                     height={78}
                     width={78}
                     style={{
