@@ -20,6 +20,7 @@ import {
   fetchUser,
   PostWithCommentsCountAndForum,
   AwardsJson,
+  fetchAwards,
 } from "lib/api";
 import { CommentListItem } from "components/comment";
 import { PostButtons } from "components/post/buttons";
@@ -193,7 +194,11 @@ Comments.getInitialProps = async (ctx) => {
     try {
       const queryClient = new QueryClient();
       const id = ctx.query.address as string;
-      await queryClient.prefetchQuery(["post", id], () => fetchPost(id));
+
+      await Promise.allSettled([
+        queryClient.prefetchQuery(["post", id], () => fetchPost(id)),
+        queryClient.prefetchQuery(["awards"], fetchAwards),
+      ]);
 
       return {
         dehydratedState: dehydrate(queryClient),

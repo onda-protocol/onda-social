@@ -11,7 +11,7 @@ import {
 } from "react";
 import toast from "react-hot-toast";
 import { Modal } from "./base";
-import { SerializedAward, fetchRewards } from "lib/api";
+import { SerializedAward, fetchAwards } from "lib/api";
 import { giveAward } from "lib/anchor";
 import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
 
@@ -46,7 +46,7 @@ export const RewardModalProvider = ({ children }: RewardModalProviderProps) => {
   const [selected, setSelected] = useState<SerializedAward>();
   const isOpen = entry !== null;
 
-  const rewardsQuery = useQuery(["rewards"], fetchRewards, {
+  const rewardsQuery = useQuery(["awards"], fetchAwards, {
     enabled: isOpen,
   });
 

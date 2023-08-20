@@ -10,7 +10,7 @@ import {
 import { Box, Spinner, Text } from "@chakra-ui/react";
 
 import { getProfiles } from "utils/profile";
-import { fetchFora, fetchPosts } from "lib/api";
+import { fetchFora, fetchPosts, fetchAwards } from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import {
   Sidebar,
@@ -97,7 +97,12 @@ Home.getInitialProps = async () => {
   if (typeof window === "undefined") {
     try {
       const queryClient = new QueryClient();
-      await queryClient.prefetchQuery(["posts"], fetchPosts);
+
+      await Promise.allSettled([
+        queryClient.prefetchQuery(["posts"], fetchPosts),
+        queryClient.prefetchQuery(["fora"], fetchFora),
+        queryClient.prefetchQuery(["awards"], fetchAwards),
+      ]);
 
       return {
         dehydratedState: dehydrate(queryClient),

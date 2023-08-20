@@ -66,7 +66,7 @@ export function fetchFora(): Promise<SerializedForum[]> {
   );
 }
 
-export function fetchRewards(): Promise<SerializedAward[]> {
+export function fetchAwards(): Promise<SerializedAward[]> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/rewards`).then((res) =>
     res.json()
   );

@@ -21,7 +21,11 @@ import {
   TabPanel,
 } from "@chakra-ui/react";
 
-import { fetchForumByNamespace, fetchPostsByForumNamespace } from "lib/api";
+import {
+  fetchAwards,
+  fetchForumByNamespace,
+  fetchPostsByForumNamespace,
+} from "lib/api";
 import { PostListItem } from "components/post/listItem";
 import {
   Sidebar,
@@ -158,9 +162,13 @@ Community.getInitialProps = async (ctx) => {
     try {
       const address = ctx.query.address as string;
       const queryClient = new QueryClient();
-      await queryClient.prefetchQuery(["posts", "o", address], () =>
-        fetchPostsByForumNamespace(address)
-      );
+
+      await Promise.allSettled([
+        queryClient.prefetchQuery(["posts", "o", address], () =>
+          fetchPostsByForumNamespace(address)
+        ),
+        queryClient.prefetchQuery(["awards"], fetchAwards),
+      ]);
 
       return {
         dehydratedState: dehydrate(queryClient),
