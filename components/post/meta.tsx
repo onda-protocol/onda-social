@@ -101,7 +101,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
                     height={24}
                     width={24}
                     alt="forum icon"
-                    src={forumIcon}
+                    src={forumIcon + "?discriminator=1"}
                     style={{
                       borderRadius: "100%",
                       objectFit: "cover",
