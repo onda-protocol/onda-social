@@ -51,7 +51,7 @@ export async function awardsParser(ix: Instruction) {
       const merkleTree = ix.accounts[merkleTreeIndex];
 
       const metadataArgs = rewardsProgram.coder.types.decode<AwardMetadata>(
-        "RewardMetadata",
+        "AwardMetadata",
         Buffer.from(ixData.slice(16))
       );
       const metadataJson = await axios.get(metadataArgs.uri);
