@@ -538,7 +538,7 @@ function nestedCommentsAwardsReducer(
 ) => SerializedCommentNested[] | undefined {
   return nestedCommentsReducer(id, (comment) => ({
     ...comment,
-    rewards: incrementAward(comment.awards, award),
+    awards: incrementAward(comment.awards, award),
     points: increment(comment.points),
   }));
 }
