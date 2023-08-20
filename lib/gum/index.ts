@@ -6,15 +6,10 @@ export async function getOrCreateSession(
   session: SessionWalletInterface,
   programId: web3.PublicKey = COMPRESSION_PROGRAM_ID
 ) {
-  console.log("session: ", session);
   let sessionToken = session.sessionToken;
 
   if (!sessionToken) {
-    const newSession = await session.createSession(
-      programId,
-      true,
-      60 * 24 * 3 // 3 days
-    );
+    const newSession = await session.createSession(programId, true, 60 * 23);
 
     if (newSession) {
       session = newSession;
