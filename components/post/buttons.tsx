@@ -18,7 +18,7 @@ import {
   SerializedCommentNested,
   SerializedAward,
 } from "lib/api";
-import { useRewardModal } from "components/modal";
+import { useAwardModal } from "components/modal";
 
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
@@ -181,7 +181,7 @@ export const RewardButton = ({
   disabled,
   onSuccess,
 }: RewardButtonProps) => {
-  const rewardModal = useRewardModal();
+  const AwardModal = useAwardModal();
 
   return (
     <PostButton
@@ -190,7 +190,7 @@ export const RewardButton = ({
       disabled={disabled}
       onClick={(e) => {
         e.stopPropagation();
-        rewardModal.openModal(entryId, onSuccess);
+        AwardModal.openModal(entryId, onSuccess);
         return false;
       }}
     />

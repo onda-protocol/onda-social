@@ -1,1 +1,1 @@
-export * from "./reward";
+export * from "./award";
