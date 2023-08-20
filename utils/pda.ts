@@ -4,7 +4,7 @@ import {
   MODERATION_PROGRAM_ID,
   NAMESPACE_PROGRAM_ID,
   PROFILE_PROGRAM_ID,
-  REWARDS_PROGRAM_ID,
+  AWARDS_PROGRAM_ID,
   BUBBLEGUM_PROGRAM_ID,
   METADATA_PROGRAM_ID,
 } from "../lib/anchor/constants";
@@ -90,10 +90,10 @@ export function findTreeMarkerPda(merkleTree: web3.PublicKey) {
   )[0];
 }
 
-export function findRewardPda(merkleTree: web3.PublicKey) {
+export function findAwardPda(merkleTree: web3.PublicKey) {
   return web3.PublicKey.findProgramAddressSync(
     [merkleTree.toBuffer()],
-    REWARDS_PROGRAM_ID
+    AWARDS_PROGRAM_ID
   )[0];
 }
 

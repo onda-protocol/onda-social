@@ -77,7 +77,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           nsfw: false,
           nonce: BigInt(0).toString(),
           points: BigInt(0).toString(),
-          rewards: {},
+          awards: {},
           hash: "",
           author: userAddress,
           Author: author,
@@ -184,7 +184,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
             showRewards
             author={comment.Author}
             points={Number(comment.points)}
-            awards={comment.rewards as AwardsJson}
+            awards={comment.awards as AwardsJson}
             createdAt={comment.createdAt}
             editedAt={comment.editedAt}
           />
@@ -538,7 +538,7 @@ function nestedCommentsAwardsReducer(
 ) => SerializedCommentNested[] | undefined {
   return nestedCommentsReducer(id, (comment) => ({
     ...comment,
-    rewards: incrementAward(comment.rewards, award),
+    rewards: incrementAward(comment.awards, award),
     points: increment(comment.points),
   }));
 }

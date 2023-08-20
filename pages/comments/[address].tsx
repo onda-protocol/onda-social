@@ -81,7 +81,7 @@ const Comments: NextPage<PageProps> = () => {
             body: entry.body,
             nsfw: false,
             points: BigInt(0).toString(),
-            rewards: {},
+            awards: {},
             nonce: BigInt(0).toString(),
             hash: "",
             author: userAddress,
@@ -130,7 +130,7 @@ const Comments: NextPage<PageProps> = () => {
         body={postQuery.data?.body}
         uri={postQuery.data?.uri}
         points={Number(postQuery.data.points)}
-        awards={postQuery.data.rewards as AwardsJson}
+        awards={postQuery.data.awards as AwardsJson}
         postType={postQuery.data.postType}
         author={postQuery.data.Author}
         forum={postQuery.data.forum}

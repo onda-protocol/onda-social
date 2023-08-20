@@ -225,7 +225,7 @@ function updatePostCache(
     ["post", entryId],
     (data) => {
       if (data) {
-        const rewards = incrementAward(data.rewards, award);
+        const rewards = incrementAward(data.awards, award);
 
         return {
           ...data,
@@ -249,7 +249,7 @@ function updatePostCache(
             for (const index in posts) {
               const p = posts[index];
               if (p.id === entryId) {
-                const rewards = incrementAward(p.rewards, award);
+                const rewards = incrementAward(p.awards, award);
                 const newPost = { ...p, rewards };
                 newPost.points = Number(Number(newPost.points) + 1).toString();
                 return [
