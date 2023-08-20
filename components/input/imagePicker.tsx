@@ -68,8 +68,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
           />
           {dataUrl ? (
             <Box
-              position="absolute"
-              inset={0}
+              position="relative"
               display="flex"
               alignItems="center"
               overflow="hidden"

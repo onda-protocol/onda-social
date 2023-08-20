@@ -226,10 +226,11 @@ const Editor = ({
           toast.success(successMessage);
         }
       },
-      onError(error) {
+      onError(err) {
+        console.log(err);
         // @ts-ignore
-        console.log(error.logs);
-        toast.error("Failed to submit: " + error.message);
+        console.log(err.logs);
+        toast.error("Failed to submit: " + err.message);
       },
     }
   );
@@ -260,6 +261,7 @@ const Editor = ({
             </Button>
           )}
           <Button
+            isDisabled={sessionWallet.isLoading}
             isLoading={mutation.isLoading}
             variant="solid"
             type="submit"
@@ -385,7 +387,7 @@ const Editor = ({
               </Button>
             )}
             <Button
-              disabled={mutation.isLoading}
+              isDisabled={sessionWallet.isLoading}
               isLoading={mutation.isLoading}
               variant="solid"
               minWidth="100px"

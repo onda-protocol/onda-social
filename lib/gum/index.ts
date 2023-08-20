@@ -15,7 +15,7 @@ export async function getOrCreateSession(
     if (newSession) {
       session = newSession;
     } else {
-      console.error("Failed to create session");
+      throw new Error("Failed to create session");
     }
   }
 

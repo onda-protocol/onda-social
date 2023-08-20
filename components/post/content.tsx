@@ -69,7 +69,7 @@ export const PostContent = memo(function PostContent({
               src={uri}
               alt="post image"
               style={{
-                objectFit: "cover",
+                objectFit: "contain",
                 maxWidth: "100%",
                 maxHeight: "100%",
               }}
