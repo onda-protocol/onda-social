@@ -12,7 +12,7 @@ export const Avatar = ({ name, image, size = 24 }: AvatarProps) => {
       height={size}
       width={size}
       alt={name}
-      src={image}
+      src={image + "?discriminator=1"}
       style={{
         borderRadius: "100%",
         objectFit: "cover",
