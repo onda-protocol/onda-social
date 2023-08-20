@@ -344,11 +344,11 @@ const Editor = ({
                   value: "textPost",
                   icon: <IoDocumentText size="1.25em" />,
                 },
-                {
-                  label: "Image Post",
-                  value: "imagePost",
-                  icon: <IoImage size="1.25em" />,
-                },
+                // {
+                //   label: "Image Post",
+                //   value: "imagePost",
+                //   icon: <IoImage size="1.25em" />,
+                // },
                 {
                   label: "Link Post",
                   value: "linkPost",
