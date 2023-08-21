@@ -13,7 +13,7 @@ interface OGProps {
 export const OG = ({ url }: OGProps) => {
   const query = useQuery(["og_tags", url], () => fetchOGTags(url));
 
-  if (!query.data?.image) {
+  if (!query.data?.image || !query.data.image.includes("https")) {
     return null;
   }
 
