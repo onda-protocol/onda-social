@@ -127,14 +127,16 @@ export const PostMeta: React.FC<PostMetaProps> = ({
           alignItems="center"
           justifyContent="center"
         >
-          <Box
-            as="span"
-            color="gray.300"
-            _hover={{
-              color: "gray.400",
-            }}
-          >
-            <Link href={`/u/${author?.id}`} onClick={handleClick}>
+          <Link href={`/u/${author?.id}`} onClick={handleClick}>
+            <Box
+              as="span"
+              display="flex"
+              alignItems="center"
+              color="gray.300"
+              _hover={{
+                color: "gray.400",
+              }}
+            >
               {displayAvatar && author.avatar && author.name && (
                 <Box as="span" mr="2">
                   <Image
@@ -151,8 +153,8 @@ export const PostMeta: React.FC<PostMetaProps> = ({
               <Text as="span" color="inherit">
                 {forum ? "Posted by " : ""} {author?.name ?? authorAddress}
               </Text>
-            </Link>
-          </Box>
+            </Box>
+          </Link>
           <>&nbsp;&nbsp;</>
           <Text as="span" color="gray.500">
             {time}
