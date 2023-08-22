@@ -7,9 +7,10 @@ export async function getOrCreateSession(
   programId: web3.PublicKey = COMPRESSION_PROGRAM_ID
 ) {
   let sessionToken = session.sessionToken;
+  console.log("session", session);
 
   if (!sessionToken) {
-    const newSession = await session.createSession(programId, true, 60 * 23);
+    let newSession = await session.createSession(programId, true, 60 * 23);
 
     if (newSession) {
       session = newSession;

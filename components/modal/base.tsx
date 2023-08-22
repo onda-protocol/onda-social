@@ -1,11 +1,9 @@
 import {
-  Button,
   Modal as ChakraModal,
   ModalContent,
   ModalHeader,
   ModalOverlay,
   ModalBody,
-  ModalFooter,
 } from "@chakra-ui/react";
 
 interface ModalProps {

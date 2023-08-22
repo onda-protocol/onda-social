@@ -19,6 +19,7 @@ import theme from "../theme";
 import { Navbar } from "components/layout/navbar";
 import { DocumentHead } from "components/document";
 import { AwardModalProvider } from "components/modal";
+import { MagicProvider } from "components/providers/magic";
 
 export default function App({ Component, pageProps }: AppProps) {
   const wallets = useMemo(() => [], []);
@@ -52,20 +53,22 @@ export default function App({ Component, pageProps }: AppProps) {
           endpoint={process.env.NEXT_PUBLIC_RPC_ENDPOINT as string}
           config={connectionConfig}
         >
-          <WalletProvider wallets={wallets} autoConnect>
+          <WalletProvider wallets={wallets}>
             <WalletModalProvider>
-              <ChakraProvider theme={theme}>
-                <DocumentHead
-                  title="Onda | Find your community"
-                  description="Decentralized, community-owned, and community-driven. Discover your web3 tribe today with Onda."
-                  url={``}
-                />
-                <Navbar />
-                <AwardModalProvider>
-                  <Component {...pageProps} />
-                </AwardModalProvider>
-                <Toaster />
-              </ChakraProvider>
+              <MagicProvider>
+                <ChakraProvider theme={theme}>
+                  <DocumentHead
+                    title="Onda | Find your community"
+                    description="Decentralized, community-owned, and community-driven. Discover your web3 tribe today with Onda."
+                    url={``}
+                  />
+                  <Navbar />
+                  <AwardModalProvider>
+                    <Component {...pageProps} />
+                  </AwardModalProvider>
+                  <Toaster />
+                </ChakraProvider>
+              </MagicProvider>
             </WalletModalProvider>
           </WalletProvider>
         </ConnectionProvider>

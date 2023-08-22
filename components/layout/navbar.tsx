@@ -1,6 +1,6 @@
 import NextLink from "next/link";
 import Image from "next/image";
-import { useMemo } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { IoWallet } from "react-icons/io5";
 import {
   Box,
@@ -13,17 +13,17 @@ import {
   MenuList,
   MenuItem,
 } from "@chakra-ui/react";
-import {
-  useAnchorWallet,
-  useConnection,
-  useWallet,
-} from "@solana/wallet-adapter-react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { AccountLayout } from "@solana/spl-token";
+
+import { useMagic } from "components/providers/magic";
+import { LoginModal } from "components/modal/login";
 
 export function Navbar() {
   const modal = useWalletModal();
   const wallet = useWallet();
+  const magic = useMagic()!;
+  const [isLoggedIn, setIsLoggedIn] = useState<Boolean | null>(null);
 
   const displayAddress = useMemo(() => {
     if (wallet.publicKey) {
@@ -36,10 +36,25 @@ export function Navbar() {
     modal.setVisible(true);
   }
 
+  useEffect(() => {
+    magic.user.isLoggedIn().then(setIsLoggedIn);
+  }, [magic]);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      magic.user.getInfo().then((info) => {
+        console.log("info: ", info);
+      });
+      magic.user.getMetadata().then((metadata) => {
+        console.log("metadata: ", metadata);
+      });
+    }
+  }, [magic, isLoggedIn]);
+
   function UserMenuButton() {
     return (
       <ButtonGroup spacing="0">
-        {wallet.publicKey ? (
+        {/* {wallet.publicKey ? (
           <>
             <Menu>
               <MenuButton
@@ -71,6 +86,24 @@ export function Navbar() {
         ) : (
           <Button onClick={onConnect} size="sm">
             Connect Wallet
+          </Button>
+        )} */}
+        {isLoggedIn === true ? (
+          <>
+            <Button
+              size="sm"
+              onClick={() =>
+                magic.user.logout().catch((err) => {
+                  console.log(err);
+                })
+              }
+            >
+              Logout
+            </Button>
+          </>
+        ) : (
+          <Button size="sm" onClick={() => {}}>
+            Login
           </Button>
         )}
       </ButtonGroup>
@@ -127,6 +160,7 @@ export function Navbar() {
           </Box>
         </Container>
       </Box>
+      <LoginModal />
     </>
   );
 }
