@@ -18,7 +18,7 @@ export const OG = ({ url }: OGProps) => {
   }
 
   return (
-    <Box>
+    <Box display="flex" minWidth={120}>
       <Image
         unoptimized
         alt="Link image"
