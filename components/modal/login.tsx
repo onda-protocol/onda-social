@@ -20,9 +20,12 @@ import { useMagic } from "components/providers/magic";
 import Image from "next/image";
 import { useEffect } from "react";
 
-interface LoginModalProps {}
+interface LoginModalProps {
+  open: boolean;
+  onRequestClose: () => void;
+}
 
-export const LoginModal = ({}: LoginModalProps) => {
+export const LoginModal = ({ open, onRequestClose }: LoginModalProps) => {
   const magic = useMagic()!;
   const wallet = useWallet();
 
@@ -62,10 +65,8 @@ export const LoginModal = ({}: LoginModalProps) => {
     }
   }, [wallet]);
 
-  console.log("wallet context: ", wallet);
-
   return (
-    <Modal size="lg" isOpen={true} onClose={() => {}}>
+    <Modal size="lg" isOpen={open} onClose={onRequestClose}>
       <ModalOverlay bg="blackAlpha.900" />
       <ModalContent backgroundColor="onda.950">
         <ModalBody padding="8">
@@ -76,7 +77,7 @@ export const LoginModal = ({}: LoginModalProps) => {
             Welcome to Onda
           </Heading>
           <Text textAlign="center" color="whiteAlpha.800">
-            Sign in to continue
+            Please Sign In to continue
           </Text>
 
           <Box p="8" />
@@ -88,15 +89,17 @@ export const LoginModal = ({}: LoginModalProps) => {
             isLoading={loginWithGoogle.isLoading}
             onClick={() => loginWithGoogle.mutate()}
           >
-            Sign In with Google
+            Continue with Google
           </Button>
 
-          <Box position="relative" padding="10">
-            <Divider />
-            <AbsoluteCenter bg="onda.950" px="4">
-              <Text fontSize="sm">OR</Text>
-            </AbsoluteCenter>
-          </Box>
+          {wallet.wallets.length ? (
+            <Box position="relative" padding="10">
+              <Divider />
+              <AbsoluteCenter bg="onda.950" px="4">
+                <Text fontSize="sm">OR</Text>
+              </AbsoluteCenter>
+            </Box>
+          ) : null}
 
           {wallet.wallets.map((adapter) => (
             <Button
@@ -122,7 +125,7 @@ export const LoginModal = ({}: LoginModalProps) => {
               isLoading={loginWithGoogle.isLoading}
               onClick={() => wallet.select(adapter.adapter.name)}
             >
-              Sign In with {adapter.adapter.name}
+              Connect with {adapter.adapter.name}
             </Button>
           ))}
         </ModalBody>

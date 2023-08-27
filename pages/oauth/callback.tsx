@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { Box, Spinner } from "@chakra-ui/react";
+import { Box, Spinner, Text } from "@chakra-ui/react";
 import { useMagic } from "components/providers/magic";
 
 const Callback: NextPage = () => {
@@ -10,7 +10,7 @@ const Callback: NextPage = () => {
 
   useEffect(() => {
     if (magic && router.isReady) {
-      magic
+      magic.oauth
         .getRedirectResult()
         .then((result) => {
           console.log("result: ", result);
@@ -27,7 +27,9 @@ const Callback: NextPage = () => {
       width="100%"
       alignItems="center"
       justifyContent="center"
+      padding="12"
     >
+      <Text textAlign="center">Redirecting</Text>
       <Spinner />
     </Box>
   );

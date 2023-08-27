@@ -18,39 +18,9 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 
 import { useMagic } from "components/providers/magic";
 import { LoginModal } from "components/modal/login";
+import { useAuth } from "components/providers/auth";
 
 export function Navbar() {
-  const modal = useWalletModal();
-  const wallet = useWallet();
-  const magic = useMagic()!;
-  const [isLoggedIn, setIsLoggedIn] = useState<Boolean | null>(null);
-
-  const displayAddress = useMemo(() => {
-    if (wallet.publicKey) {
-      const base58 = wallet.publicKey.toBase58();
-      return base58.slice(0, 4) + "..." + base58.slice(-4);
-    }
-  }, [wallet]);
-
-  function onConnect() {
-    modal.setVisible(true);
-  }
-
-  useEffect(() => {
-    magic.user.isLoggedIn().then(setIsLoggedIn);
-  }, [magic]);
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      magic.user.getInfo().then((info) => {
-        console.log("info: ", info);
-      });
-      magic.user.getMetadata().then((metadata) => {
-        console.log("metadata: ", metadata);
-      });
-    }
-  }, [magic, isLoggedIn]);
-
   function UserMenuButton() {
     return (
       <ButtonGroup spacing="0">
@@ -88,24 +58,6 @@ export function Navbar() {
             Connect Wallet
           </Button>
         )} */}
-        {isLoggedIn === true ? (
-          <>
-            <Button
-              size="sm"
-              onClick={() =>
-                magic.user.logout().catch((err) => {
-                  console.log(err);
-                })
-              }
-            >
-              Logout
-            </Button>
-          </>
-        ) : (
-          <Button size="sm" onClick={() => {}}>
-            Login
-          </Button>
-        )}
       </ButtonGroup>
     );
   }
@@ -149,18 +101,65 @@ export function Navbar() {
                   />
                 </NextLink>
               </Box>
-              {/* <Box>
-              <PopoverMenu />
-            </Box> */}
             </Box>
 
             <Flex align="center">
-              <UserMenuButton />
+              <AuthMenu />
             </Flex>
           </Box>
         </Container>
       </Box>
-      <LoginModal />
     </>
   );
 }
+
+const AuthMenu = () => {
+  const auth = useAuth();
+  const [loginModal, setLoginModal] = useState(false);
+
+  useEffect(() => {
+    if (auth.isConnected) {
+      setLoginModal(false);
+    }
+  }, [auth]);
+
+  const displayAddress = useMemo(() => {
+    if (auth.address) {
+      return auth.address.slice(0, 4) + "..." + auth.address.slice(-4);
+    }
+  }, [auth.address]);
+
+  return (
+    <>
+      {auth.isConnected === true ? (
+        <>
+          <Menu>
+            <MenuButton
+              as={Button}
+              size="sm"
+              leftIcon={<Box as={IoWallet} />}
+              sx={{
+                borderLeftRadius: 0,
+              }}
+            >
+              {displayAddress}
+            </MenuButton>
+            <MenuList borderRadius="sm">
+              <MenuItem fontSize="sm" onClick={auth.logout}>
+                Disconnect
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        </>
+      ) : (
+        <Button size="sm" onClick={() => setLoginModal(true)}>
+          Login
+        </Button>
+      )}
+      <LoginModal
+        open={loginModal}
+        onRequestClose={() => setLoginModal(false)}
+      />
+    </>
+  );
+};
