@@ -244,7 +244,14 @@ export const Editor = ({
           placeholder={placeholder}
           minHeight="100px"
           backgroundColor="#090A20"
-          {...methods.register("body", { required: true })}
+          {...methods.register("body", {
+            required: true,
+            validate(value) {
+              if (Buffer.from(value, "utf-8").byteLength > 100_000) {
+                return "Must be less than 100 KiB";
+              }
+            },
+          })}
         />
         <Box display="flex" mt="2" justifyContent="right">
           {onRequestClose && (
