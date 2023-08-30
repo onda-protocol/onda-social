@@ -1,4 +1,5 @@
 import { Comment, Forum, Gate, Post, Award, User } from "@prisma/client";
+import { DataV1 } from "lib/anchor";
 
 type DeepReplaceBigInt<T, U> = {
   [K in keyof T]: T[K] extends bigint
@@ -167,4 +168,37 @@ export function fetchAssetsByOwner(address: string, page: number = 1) {
   return fetch(
     `${process.env.NEXT_PUBLIC_HOST}/api/user/${address}/assets?page=${page}`
   ).then((res) => res.json());
+}
+
+export function uploadContent(body: string) {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/upload`, {
+    method: "POST",
+    body: JSON.stringify({
+      data: body,
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  }).then(async (res) => {
+    const data = await res.json();
+    return data.uri;
+  });
+}
+
+export function postEntryIx(author: string, forum: string, data: DataV1) {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/transaction`, {
+    method: "POST",
+    body: JSON.stringify({
+      method: "addEntry",
+      author,
+      forum,
+      data,
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  }).then(async (res) => {
+    const data = await res.json();
+    return data.transaction;
+  });
 }

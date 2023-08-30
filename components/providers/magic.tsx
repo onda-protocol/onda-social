@@ -14,11 +14,11 @@ const MagicContext = createContext<Magic<
 export const MagicProvider = ({ children }: MagicProviderProps) => {
   const magic = useMemo(() => {
     if (typeof window === "undefined") return null;
-    return new Magic(process.env.NEXT_PUBLIC_MAGIC_PUBKEY as string, {
+    return new Magic(process.env.NEXT_PUBLIC_MAGIC_PUBKEY!, {
       extensions: [
         new OAuthExtension(),
         new SolanaExtension({
-          rpcUrl: process.env.NEXT_PUBLIC_RPC_ENDPOINT as string,
+          rpcUrl: process.env.NEXT_PUBLIC_RPC_ENDPOINT!,
         }),
       ],
     });
