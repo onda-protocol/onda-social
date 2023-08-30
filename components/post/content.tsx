@@ -41,7 +41,19 @@ export const PostContent = memo(function PostContent({
           <Heading my="6" as="h1" fontSize={titleSize}>
             {title}
           </Heading>
-          <Markdown>{body ?? ""}</Markdown>
+          <Box
+            position="relative"
+            width="100%"
+            maxHeight="250px"
+            overflow="hidden"
+          >
+            <Markdown>{body ?? ""}</Markdown>
+            <Box
+              position="absolute"
+              inset={0}
+              background="linear-gradient(to bottom, transparent 100px, var(--chakra-colors-onda-950))"
+            />
+          </Box>
         </>
       );
     }

@@ -16,16 +16,15 @@ export default async function handler(
   res: NextApiResponse
 ) {
   console.log("=========> ", req.body);
-  console.log(connection.rpcEndpoint);
   const method = req.body.method as Method;
   const author = req.body.author as string;
   const forum = req.body.forum as string;
-  const data = req.body.data as DataV1;
+  const data = parseData(req.body.data);
 
   switch (method) {
     case "addEntry": {
       const pass = await findPass(forum, author);
-
+      console.log("pass: ", pass);
       const instruction = await addEntryIx(connection, {
         data,
         author: new web3.PublicKey(author),
@@ -57,4 +56,20 @@ export default async function handler(
       res.status(400).json({ error: "Invalid method" });
     }
   }
+}
+
+function parseData(data: any): DataV1 {
+  if (data.comment) {
+    return {
+      comment: {
+        uri: data.comment.uri as string,
+        post: new web3.PublicKey(data.comment.post),
+        parent: data.comment.parent
+          ? new web3.PublicKey(data.comment.parent)
+          : null,
+      },
+    };
+  }
+
+  return data as DataV1;
 }

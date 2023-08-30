@@ -20,6 +20,7 @@ export async function findPass(forumId: string, owner: string) {
   }
 
   for (let gate of result.Gates) {
+    console.log("gate: ", gate);
     switch (gate.ruleType) {
       case Rule.Token: {
         const result = await searchToken(owner, gate.address[0], gate.amount);
@@ -27,6 +28,7 @@ export async function findPass(forumId: string, owner: string) {
         if (result) {
           return result;
         }
+        break;
       }
 
       case Rule.NFT: {
@@ -35,10 +37,7 @@ export async function findPass(forumId: string, owner: string) {
         if (result) {
           return result;
         }
-      }
-
-      default: {
-        continue;
+        break;
       }
     }
   }
@@ -72,7 +71,7 @@ async function searchCollection(owner: string, collection: string) {
   const { result } = await response.json();
 
   if (result.items[0]) {
-    const mint = result.items[0].id;
+    const mint = result.items[0].id as string;
     const tokenResult = await searchToken(owner, mint, BigInt(1));
 
     if (tokenResult) {
@@ -98,24 +97,23 @@ async function searchToken(owner: string, mint: string, amount: bigint) {
     const accounts = await connection.getTokenAccountsByOwner(ownerAddress, {
       mint: mintAddress,
     });
-    console.log("Token accounts: ", accounts);
 
     if (accounts.value.length === 0) {
       return null;
     }
 
-    const pass = accounts.value.find((account) => {
+    const tokenAccount = accounts.value.find((account) => {
       const decoded = AccountLayout.decode(account.account.data);
       return decoded.amount >= amount;
     });
 
-    if (!pass) {
+    if (!tokenAccount) {
       return null;
     }
 
     return {
       mint,
-      tokenAccount: pass.pubkey.toBase58(),
+      tokenAccount: tokenAccount.pubkey.toBase58(),
       metadata: null,
     };
   } catch (err) {

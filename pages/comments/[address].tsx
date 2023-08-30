@@ -26,8 +26,8 @@ import { CommentListItem } from "components/comment";
 import { PostButtons } from "components/post/buttons";
 import { PostHead } from "components/post/head";
 
-const EditorProvider = dynamic(
-  () => import("components/editor").then((mod) => mod.EditorProvider),
+const Editor = dynamic(
+  () => import("components/editor").then((mod) => mod.Editor),
   { ssr: false }
 );
 
@@ -148,7 +148,7 @@ const Comments: NextPage<PageProps> = () => {
         />
       </Box>
 
-      <EditorProvider
+      <Editor
         buttonLabel="Comment"
         placeholder="Got some thoughts?"
         successMessage="Reply added"
