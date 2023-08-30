@@ -30,17 +30,21 @@ interface PostContentProps {
 export const PostContent = memo(function PostContent({
   type,
   title,
-  titleSize = "2xl",
+  titleSize = "3xl",
   body,
   uri,
 }: PostContentProps) {
+  const heading = (
+    <Heading mt="6" mb="4" as="h2" fontSize={titleSize}>
+      {title}
+    </Heading>
+  );
+
   switch (type) {
     case PostType.TEXT: {
       return (
         <>
-          <Heading my="6" as="h1" fontSize={titleSize}>
-            {title}
-          </Heading>
+          {heading}
           <Box
             position="relative"
             width="100%"
@@ -61,9 +65,7 @@ export const PostContent = memo(function PostContent({
     case PostType.IMAGE: {
       return (
         <>
-          <Heading my="6" as="h1">
-            {title}
-          </Heading>
+          {heading}
           <Box
             position="relative"
             width="100%"
@@ -114,9 +116,7 @@ export const PostContent = memo(function PostContent({
         if (id) {
           return (
             <>
-              <Heading my="6" as="h1">
-                {title}
-              </Heading>
+              {heading}
               <Box display="flex" justifyContent="center" data-theme="dark">
                 <Tweet id={id} />
               </Box>
@@ -132,7 +132,7 @@ export const PostContent = memo(function PostContent({
       if (isYouTube) {
         return (
           <>
-            <Heading my="6" as="h1">
+            <Heading my="6" as="h1" fontSize={titleSize}>
               {title}
             </Heading>
             <YouTubeVideo uri={uri} />
@@ -143,9 +143,7 @@ export const PostContent = memo(function PostContent({
       return (
         <Box display="flex" justifyContent="space-between">
           <Box>
-            <Heading my="6" as="h1">
-              {title}
-            </Heading>
+            {heading}
             <CLink
               href={uri}
               isExternal
