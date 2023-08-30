@@ -1,26 +1,18 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { web3 } from "@project-serum/anchor";
-import {
-  useAnchorWallet,
-  useConnection,
-  useWallet,
-} from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
-import { useSessionWallet } from "@gumhq/react-sdk";
 import { IoDocumentText, IoImage, IoLink } from "react-icons/io5";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
-import { fetchFora, fetchForum } from "lib/api";
-import { addEntry } from "lib/anchor/actions";
-import { ContentType, upload } from "lib/bundlr/index";
+import { fetchFora, fetchForum, postEntryIx, uploadContent } from "lib/api";
 import { RadioCardMenu } from "components/input";
 import { ImagePicker } from "components/input/imagePicker";
-import { getOrCreateSession } from "lib/gum";
 import { useRouter } from "next/router";
-import SessionProvider from "components/providers/sessions";
-import { PublicKey } from "@metaplex-foundation/js";
+import { useAuth } from "components/providers/auth";
+import base58 from "bs58";
 
 export interface EntryForm {
   title: string;
@@ -52,15 +44,7 @@ interface EditorProps {
   onSuccess?: (signature: string, uri: string, variables: EntryForm) => void;
 }
 
-export const EditorProvider = (props: EditorProps) => {
-  return (
-    <SessionProvider>
-      <Editor {...props} />
-    </SessionProvider>
-  );
-};
-
-const Editor = ({
+export const Editor = ({
   buttonLabel,
   placeholder,
   successMessage,
@@ -71,9 +55,7 @@ const Editor = ({
   const router = useRouter();
   const forum = router.query.o as string | undefined;
   const { connection } = useConnection();
-  const wallet = useWallet();
-  const anchorWallet = useAnchorWallet();
-  const sessionWallet = useSessionWallet();
+  const auth = useAuth();
 
   const queryClient = useQueryClient();
   const foraQuery = useQuery(
@@ -127,11 +109,9 @@ const Editor = ({
     EntryForm
   >(
     async (data) => {
-      if (!anchorWallet || !wallet) {
+      if (!auth || !auth.signTransaction) {
         throw new Error("Wallet not connected");
       }
-
-      const session = await getOrCreateSession(sessionWallet);
 
       const forumAddress =
         config.type === "comment" ? config.forum : data.forum;
@@ -165,32 +145,27 @@ const Editor = ({
           }
 
           case "textPost": {
-            uri = await upload(wallet, session, data.body, "application/json");
+            uri = await uploadContent(data.body);
             dataArgs = { textPost: { title: data.title, uri } };
             break;
           }
 
-          case "imagePost": {
-            if (data.image === null) {
-              throw new Error("Image required");
-            }
-            const buffer = Buffer.from(await data.image.arrayBuffer());
-            uri = await upload(
-              wallet,
-              session,
-              buffer,
-              data.image.type as ContentType
-            );
-            dataArgs = { imagePost: { title: data.title, uri } };
-            break;
-          }
+          // case "imagePost": {
+          //   if (data.image === null) {
+          //     throw new Error("Image required");
+          //   }
+          //   const buffer = Buffer.from(await data.image.arrayBuffer());
+          //   uri = await upload(wallet, buffer, data.image.type as ContentType);
+          //   dataArgs = { imagePost: { title: data.title, uri } };
+          //   break;
+          // }
 
           default: {
             throw new Error("Invalid post type");
           }
         }
       } else {
-        uri = await upload(wallet, session, data.body, "application/json");
+        uri = await uploadContent(data.body);
         dataArgs = {
           comment: {
             uri,
@@ -200,14 +175,36 @@ const Editor = ({
         };
       }
 
-      const signature = await addEntry(connection, anchorWallet, session, {
-        forum,
-        data: dataArgs,
+      const result = await postEntryIx(auth.address!, forum.id, dataArgs);
+      const transaction = web3.Transaction.from(base58.decode(result));
+      console.log(transaction);
+      transaction.signatures.forEach((signature) => {
+        console.log(signature.publicKey.toBase58(), " : ", signature.signature);
       });
+      const payerSig = transaction.signatures.find((sig) =>
+        transaction.feePayer?.equals(sig.publicKey)
+      );
+
+      if (!payerSig || !payerSig.signature) {
+        throw new Error("Payer signature not found");
+      }
+
+      const signedTransaction = await auth.signTransaction(transaction);
+      signedTransaction.addSignature(payerSig.publicKey, payerSig.signature);
+      console.log(signedTransaction);
+      signedTransaction.signatures.forEach((signature) => {
+        console.log(signature.publicKey.toBase58(), " : ", signature.signature);
+      });
+      const txId = await connection.sendRawTransaction(
+        signedTransaction.serialize(),
+        {
+          preflightCommitment: "confirmed",
+        }
+      );
 
       return {
         uri,
-        signature,
+        signature: txId,
       };
     },
     {
@@ -261,7 +258,7 @@ const Editor = ({
             </Button>
           )}
           <Button
-            isDisabled={sessionWallet.isLoading}
+            isDisabled={!auth.isConnected}
             isLoading={mutation.isLoading}
             variant="solid"
             type="submit"
@@ -387,7 +384,7 @@ const Editor = ({
               </Button>
             )}
             <Button
-              isDisabled={sessionWallet.isLoading}
+              isDisabled={!auth.isConnected}
               isLoading={mutation.isLoading}
               variant="solid"
               minWidth="100px"

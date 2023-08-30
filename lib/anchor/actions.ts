@@ -127,75 +127,46 @@ export async function initForumAndNamespace(
   return merkleTree.toBase58();
 }
 
-export async function addEntry(
+export async function addEntryIx(
   connection: web3.Connection,
-  wallet: AnchorWallet,
-  session: SessionWalletInterface,
   options: {
-    forum: SerializedForum;
+    author: web3.PublicKey;
+    forum: web3.PublicKey;
+    mint: web3.PublicKey | null;
+    tokenAccount: web3.PublicKey | null;
+    metadata: web3.PublicKey | null;
     data: DataV1;
   }
-): Promise<string> {
-  assertSessionIsValid(session);
-  // @ts-ignore
-  const program = getCompressionProgram(connection, wallet);
-  const merkleTree = new web3.PublicKey(options.forum.id);
+): Promise<web3.TransactionInstruction> {
+  const program = getCompressionProgram(connection);
+  const merkleTree = new web3.PublicKey(options.forum);
   const forumConfig = findForumConfigPda(merkleTree);
 
-  let mint = null;
-  let tokenAccount = null;
-  let metadata = null;
-
-  if (options.forum.Gates?.length) {
-    const result = await fetchForumPass(
-      options.forum.id,
-      wallet.publicKey.toBase58()
-    );
-
-    if (result.error) {
-      throw new Error(result.error);
-    }
-
-    mint = new web3.PublicKey(result.mint);
-    tokenAccount = new web3.PublicKey(result.tokenAccount);
-    metadata = result.metadata ? new web3.PublicKey(result.metadata) : null;
-  }
-
-  const transaction = await program.methods
+  const instruction = await program.methods
     .addEntry(options.data)
     .accounts({
       forumConfig,
       merkleTree,
-      mint,
-      tokenAccount,
-      metadata,
-      author: wallet.publicKey,
-      sessionToken: new web3.PublicKey(session.sessionToken!),
+      mint: options.mint,
+      tokenAccount: options.tokenAccount,
+      metadata: options.metadata,
+      author: options.author,
+      sessionToken: null,
       additionalSigner: null,
-      signer: session.publicKey!,
+      signer: options.author,
       logWrapper: SPL_NOOP_PROGRAM_ID,
       compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
     })
-    .transaction();
+    .instruction();
 
-  const [signature] = await session.signAndSendTransaction!(
-    transaction,
-    connection,
-    {
-      preflightCommitment: "confirmed",
-    }
-  );
-  console.log("Transaction sent: ", signature);
-
-  return signature;
+  return instruction;
 }
 
 export async function getEventFromSignature(
   connection: web3.Connection,
-  wallet: AnchorWallet,
   signature: string
 ) {
-  const program = getCompressionProgram(connection, wallet);
+  const program = getCompressionProgram(connection);
   const ixAccounts = program.idl.instructions.find(
     (i) => i.name === "addEntry"
   )?.accounts;

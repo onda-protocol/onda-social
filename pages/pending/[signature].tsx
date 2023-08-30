@@ -3,7 +3,7 @@ import axios from "axios";
 import { useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
-import { PostType } from "@prisma/client";
+import { PostType, User } from "@prisma/client";
 import {
   Box,
   Button,
@@ -13,17 +13,18 @@ import {
   Textarea,
 } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
 
 import { getEventFromSignature } from "lib/anchor/actions";
 import { getPrismaPostType } from "utils/parse";
 import { PostWithCommentsCountAndForum, fetchForum, fetchUser } from "lib/api";
+import { useAuth } from "components/providers/auth";
 import { PostHead } from "components/post/head";
 import { DummyPostButtons } from "components/post/buttons";
 
 const Pending: NextPage = () => {
   const router = useRouter();
-  const wallet = useAnchorWallet()!;
+  const auth = useAuth()!;
   const { connection } = useConnection();
   const queryClient = useQueryClient();
   const signature = router.query.signature as string;
@@ -33,20 +34,35 @@ const Pending: NextPage = () => {
   );
   const signatureQuery = useQuery({
     queryKey: signatureQueryKey,
-    queryFn: () => getEventFromSignature(connection, wallet, signature),
-    enabled: Boolean(signature && wallet?.publicKey),
+    queryFn: () => getEventFromSignature(connection, signature),
+    enabled: Boolean(signature && auth.address),
   });
+
+  const data = useMemo(() => {
+    if (router.isReady) {
+      return router.query as {
+        uri: string;
+        title: string;
+        body: string | null;
+        forumNamespace: string;
+        createdAt: string;
+        author: string;
+        postType: PostType;
+      };
+    }
+  }, [router]);
 
   useEffect(() => {
     async function updateCache(
       result: Awaited<ReturnType<typeof getEventFromSignature>>
     ) {
       const postType = getPrismaPostType(result.data.type);
-      const [author, forum, response] = await Promise.all([
+      const [author, forum] = await Promise.allSettled([
         queryClient.fetchQuery(
           ["user", result.author],
-          () => fetchUser(result.author),
+          () => fetchUser(result.author as string),
           {
+            retry: 0,
             staleTime: 300_000,
           }
         ),
@@ -54,11 +70,28 @@ const Pending: NextPage = () => {
           ["forum", result.forum],
           () => fetchForum(result.forum as string),
           {
+            retry: 3,
             staleTime: 300_000,
           }
         ),
-        postType === PostType.TEXT ? axios.get<string>(result.data.uri) : null,
       ]);
+
+      const authorResult =
+        "value" in author && author.value
+          ? author.value
+          : {
+              id: result.author,
+              name: null,
+              avatar: null,
+              mint: null,
+            };
+
+      const forumResult =
+        "value" in forum && forum.value
+          ? forum.value
+          : {
+              id: result.forum,
+            };
 
       queryClient.setQueryData<PostWithCommentsCountAndForum>(
         ["post", result.id],
@@ -69,7 +102,7 @@ const Pending: NextPage = () => {
             nonce: BigInt(result.nonce).toString(),
             author: result.author,
             title: result.data.title!,
-            body: response?.data ?? null,
+            body: data?.body ?? null,
             uri: result.data.uri,
             nsfw: result.data.nsfw ?? false,
             hash: "",
@@ -78,14 +111,12 @@ const Pending: NextPage = () => {
             createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
             editedAt: null,
             Author: {
-              id: result.author,
-              name: author.name,
-              mint: author.mint,
-              avatar: author.avatar,
+              ...authorResult,
             },
             forum: result.forum,
+            // @ts-ignore
             Forum: {
-              ...forum,
+              ...forumResult,
             },
             _count: {
               Comments: 0,
@@ -100,6 +131,7 @@ const Pending: NextPage = () => {
     }
 
     const result = signatureQuery.data;
+    console.log(result);
 
     if (result) {
       updateCache(result).catch((err) => {
@@ -107,35 +139,30 @@ const Pending: NextPage = () => {
         toast.error(err.message);
       });
     }
-  }, [router, queryClient, signatureQuery.data]);
-
-  const data = router.query as {
-    uri: string;
-    title: string;
-    body: string | null;
-    forumNamespace: string;
-    createdAt: string;
-    author: string;
-    postType: PostType;
-  };
+  }, [router, queryClient, data, signatureQuery.data]);
 
   const authorQuery = useQuery(
-    ["user", data.author],
-    () => fetchUser(data.author),
+    ["user", data?.author],
+    () => fetchUser(data!.author),
     {
+      enabled: Boolean(data?.author),
+      refetchOnMount: false,
+      retry: 0,
       staleTime: 300_000,
     }
   );
 
   const forumQuery = useQuery(
-    ["forum", data.forumNamespace],
-    () => fetchForum(data.forumNamespace),
+    ["forum", data?.forumNamespace],
+    () => fetchForum(data!.forumNamespace),
     {
+      enabled: Boolean(data?.forumNamespace),
+      refetchOnMount: false,
       staleTime: 300_000,
     }
   );
 
-  if (!authorQuery.data || !forumQuery.data) {
+  if (!data || !forumQuery.data) {
     return (
       <Box pb="12" mx="-2">
         <Box display="flex" alignItems="center" justifyContent="center" pt="12">
@@ -155,7 +182,14 @@ const Pending: NextPage = () => {
         points={0}
         awards={null}
         postType={data.postType}
-        author={authorQuery.data}
+        author={
+          authorQuery.data ?? {
+            id: data.author,
+            name: null,
+            avatar: null,
+            mint: null,
+          }
+        }
         forum={forumQuery.data.id}
         forumNamespace={forumQuery.data.namespace}
         forumIcon={forumQuery.data?.icon}
