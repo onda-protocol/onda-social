@@ -27,14 +27,38 @@ export type LinkPostArgs = {
 
 export type EntryDataArgs = CommentArgs | TextPostArgs | LinkPostArgs;
 
-export type TransactionArgs = {
-  method: Method;
+export type AddEntryTransaction = {
+  method: "addEntry";
   data: EntryDataArgs;
 };
 
+export type DeleteEntryTransaction = {
+  method: "deleteEntry";
+  data: {
+    author: string;
+    forum: string;
+    entryId: string;
+    entryType: "comment" | "post";
+  };
+};
+
+export type GiveAwardArgs = {
+  method: "giveAward";
+  data: {
+    entryId: string;
+    payer: string;
+    award: string;
+  };
+};
+
+export type TransactionArgs =
+  | AddEntryTransaction
+  | DeleteEntryTransaction
+  | GiveAwardArgs;
+
 export type SerializedTransactionResponse = {
   transaction: string;
-  uri: string;
+  uri?: string;
 };
 export type TransactionResponse =
   | SerializedTransactionResponse

@@ -9,7 +9,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { IoDocumentText, IoLink } from "react-icons/io5";
 import base58 from "bs58";
 
-import { fetchFora, postEntryIx } from "lib/api";
+import { fetchFora, getInstruction } from "lib/api";
 import {
   EntryDataArgs,
   CommentArgs,
@@ -135,35 +135,42 @@ export const Editor = ({
           body: data.body,
         };
         dataArgs = comment;
+      } else {
+        switch (data.postType) {
+          case "textPost": {
+            const textPost: TextPostArgs = {
+              type: "textPost",
+              author: auth.address,
+              forum: data.forum,
+              title: data.title,
+              body: data.body,
+            };
+            dataArgs = textPost;
+            break;
+          }
+
+          case "linkPost": {
+            const linkPost: LinkPostArgs = {
+              type: "linkPost",
+              author: auth.address,
+              forum: data.forum,
+              title: data.title,
+              url: data.url,
+            };
+            dataArgs = linkPost;
+            break;
+          }
+
+          default: {
+            throw new Error("Invalid post type");
+          }
+        }
       }
 
-      switch (data.postType) {
-        case "textPost": {
-          const textPost: TextPostArgs = {
-            type: "textPost",
-            author: auth.address,
-            forum: data.forum,
-            title: data.title,
-            body: data.body,
-          };
-          dataArgs = textPost;
-          break;
-        }
-
-        case "linkPost": {
-          const linkPost: LinkPostArgs = {
-            type: "linkPost",
-            author: auth.address,
-            forum: data.forum,
-            title: data.title,
-            url: data.url,
-          };
-          dataArgs = linkPost;
-          break;
-        }
-      }
-
-      const response = await postEntryIx(dataArgs);
+      const response = await getInstruction({
+        method: "addEntry",
+        data: dataArgs,
+      });
       const transaction = web3.Transaction.from(
         base58.decode(response.transaction)
       );
@@ -174,16 +181,16 @@ export const Editor = ({
       if (!payerSig || !payerSig.signature) {
         throw new Error("Payer signature not found");
       }
-      console.log("address: ", auth.address);
+
       const signedTransaction = await auth.signTransaction(transaction);
       signedTransaction.addSignature(payerSig.publicKey, payerSig.signature);
+
       const txId = await connection.sendRawTransaction(
         signedTransaction.serialize(),
         {
           preflightCommitment: "confirmed",
         }
       );
-
       console.log("txId: ", txId);
       const blockhash = await connection.getLatestBlockhash();
       const result = await connection.confirmTransaction(
@@ -199,7 +206,7 @@ export const Editor = ({
       }
 
       return {
-        uri: response.uri,
+        uri: response.uri!,
         signature: txId,
       };
     },

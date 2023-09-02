@@ -1,9 +1,5 @@
 import { Comment, Forum, Gate, Post, Award, User } from "@prisma/client";
-import {
-  EntryDataArgs,
-  SerializedTransactionResponse,
-  TransactionResponse,
-} from "./types";
+import { SerializedTransactionResponse, TransactionArgs } from "./types";
 
 type DeepReplaceBigInt<T, U> = {
   [K in keyof T]: T[K] extends bigint
@@ -189,15 +185,12 @@ export function uploadContent(body: string) {
   });
 }
 
-export function postEntryIx(
-  args: EntryDataArgs
+export function getInstruction(
+  args: TransactionArgs
 ): Promise<SerializedTransactionResponse> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/transaction`, {
     method: "POST",
-    body: JSON.stringify({
-      method: "addEntry",
-      data: args,
-    }),
+    body: JSON.stringify(args),
     headers: {
       "Content-Type": "application/json",
     },

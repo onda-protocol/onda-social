@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Box, Text } from "@chakra-ui/react";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
+import { web3 } from "@project-serum/anchor";
+import { useConnection } from "@solana/wallet-adapter-react";
 import {
   useQueryClient,
   useMutation,
@@ -10,15 +11,17 @@ import { IoChatbox, IoTrash } from "react-icons/io5";
 import { GiSadCrab } from "react-icons/gi";
 import { MouseEventHandler, forwardRef, useCallback } from "react";
 import toast from "react-hot-toast";
+import base58 from "bs58";
 
-import { deleteEntry, getDataHash } from "lib/anchor";
 import {
   AwardsJson,
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
   SerializedAward,
+  getInstruction,
 } from "lib/api";
 import { useAwardModal } from "components/modal";
+import { useAuth } from "components/providers/auth";
 
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
@@ -52,7 +55,8 @@ export const PostButtons = ({
       {displayDelete && (
         <DeleteButton
           forumId={post.forum}
-          entry={post}
+          entryId={post.id}
+          entryType="post"
           label="Delete"
           onDeleted={onDeleted}
         />
@@ -71,7 +75,8 @@ export const DummyPostButtons = () => (
 interface PostDeleteButtonProps {
   disabled?: boolean;
   forumId: string;
-  entry: PostWithCommentsCountAndForum | SerializedCommentNested;
+  entryId: string;
+  entryType: "post" | "comment";
   label?: string;
   onDeleted?: () => void;
 }
@@ -79,29 +84,67 @@ interface PostDeleteButtonProps {
 export const DeleteButton = ({
   disabled,
   forumId,
-  entry,
+  entryId,
+  entryType,
   label,
   onDeleted,
 }: PostDeleteButtonProps) => {
   const { connection } = useConnection();
-  const anchorWallet = useAnchorWallet();
+  const auth = useAuth();
 
   const mutation = useMutation(
     async () => {
-      if (!anchorWallet) {
+      if (!auth.address) {
         throw new Error("Wallet not connected");
       }
 
-      const dataHash = getDataHash(connection, anchorWallet, entry);
+      if (!auth.signTransaction) {
+        throw new Error("Wallet not connected");
+      }
 
-      return deleteEntry(connection, anchorWallet, {
-        forumId,
-        dataHash,
-        entryId: entry.id,
-        createdAt: Number(entry.createdAt),
-        editedAt: Number(entry.editedAt),
-        nonce: Number(entry.nonce),
+      const response = await getInstruction({
+        method: "deleteEntry",
+        data: {
+          author: auth.address,
+          forum: forumId,
+          entryId,
+          entryType,
+        },
       });
+
+      const transaction = web3.Transaction.from(
+        base58.decode(response.transaction)
+      );
+      const payerSig = transaction.signatures.find((sig) =>
+        transaction.feePayer?.equals(sig.publicKey)
+      );
+
+      if (!payerSig?.signature) {
+        throw new Error("Payer signature not found");
+      }
+
+      const signedTransaction = await auth.signTransaction(transaction);
+      signedTransaction.addSignature(payerSig.publicKey, payerSig.signature);
+
+      const txId = await connection.sendRawTransaction(
+        signedTransaction.serialize(),
+        {
+          preflightCommitment: "confirmed",
+        }
+      );
+
+      const blockhash = await connection.getLatestBlockhash();
+      const result = await connection.confirmTransaction(
+        {
+          signature: txId,
+          ...blockhash,
+        },
+        "confirmed"
+      );
+
+      if (result.value.err) {
+        throw new Error(result.value.err.toString());
+      }
     },
     {
       onError(err) {

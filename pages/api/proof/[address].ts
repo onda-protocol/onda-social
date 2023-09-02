@@ -20,6 +20,16 @@ export default async function handler(
   const { address } = req.query;
 
   const { forum, hash, nonce } = await getEntry(address as string);
+
+  const proof = await getProof(forum, nonce);
+
+  return res.json({
+    hash,
+    proof,
+  });
+}
+
+export async function getProof(forum: string, nonce: bigint | number) {
   const merkleTree = new web3.PublicKey(forum);
   const merkleTreeAccount =
     await ConcurrentMerkleTreeAccount.fromAccountAddress(
@@ -41,7 +51,7 @@ export default async function handler(
   );
   const leafHashes = await fetchLeafHashes(entryIds);
 
-  const proof = leafIndexPath.map((path) => {
+  return leafIndexPath.map((path) => {
     if (typeof path === "number") {
       const leafHash = leafHashes.find((leaf) => leaf.nonce === path);
       return new web3.PublicKey(
@@ -50,11 +60,6 @@ export default async function handler(
     } else {
       return new web3.PublicKey(recursiveHash(leafHashes, path)).toBase58();
     }
-  });
-
-  res.json({
-    hash,
-    proof,
   });
 }
 

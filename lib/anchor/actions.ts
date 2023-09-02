@@ -1,6 +1,6 @@
 import type { SessionWalletInterface } from "@gumhq/react-sdk";
 import { web3, BN } from "@project-serum/anchor";
-import { PostType } from "@prisma/client";
+import { Comment, Post, PostType } from "@prisma/client";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
   ConcurrentMerkleTreeAccount,
@@ -25,9 +25,7 @@ import {
 import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
-  SerializedForum,
   SerializedAward,
-  fetchForumPass,
   fetchProof,
 } from "lib/api";
 import { parseDataV1Fields } from "utils/parse";
@@ -127,41 +125,6 @@ export async function initForumAndNamespace(
   return merkleTree.toBase58();
 }
 
-export async function addEntryIx(
-  connection: web3.Connection,
-  options: {
-    author: web3.PublicKey;
-    forum: web3.PublicKey;
-    mint: web3.PublicKey | null;
-    tokenAccount: web3.PublicKey | null;
-    metadata: web3.PublicKey | null;
-    data: DataV1;
-  }
-): Promise<web3.TransactionInstruction> {
-  const program = getCompressionProgram(connection);
-  const merkleTree = new web3.PublicKey(options.forum);
-  const forumConfig = findForumConfigPda(merkleTree);
-
-  const instruction = await program.methods
-    .addEntry(options.data)
-    .accounts({
-      forumConfig,
-      merkleTree,
-      mint: options.mint,
-      tokenAccount: options.tokenAccount,
-      metadata: options.metadata,
-      author: options.author,
-      sessionToken: null,
-      additionalSigner: null,
-      signer: options.author,
-      logWrapper: SPL_NOOP_PROGRAM_ID,
-      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-    })
-    .instruction();
-
-  return instruction;
-}
-
 export async function getEventFromSignature(
   connection: web3.Connection,
   signature: string
@@ -257,10 +220,9 @@ function waitForConfirmation(
 
 export function getDataHash(
   connection: web3.Connection,
-  wallet: AnchorWallet,
-  entry: PostWithCommentsCountAndForum | SerializedCommentNested
+  entry: Post | Comment
 ) {
-  const program = getCompressionProgram(connection, wallet);
+  const program = getCompressionProgram(connection);
 
   if ("postType" in entry) {
     switch (entry.postType) {
@@ -435,24 +397,6 @@ export async function createNamepace(
       forumConfig: forumConfigPda,
     })
     .rpc();
-}
-
-function assertSessionIsValid(session: SessionWalletInterface) {
-  if (!session.sessionToken) {
-    throw new Error("Session token not found");
-  }
-
-  if (!session.publicKey) {
-    throw new Error("Session publicKey not found");
-  }
-
-  if (!session.ownerPublicKey) {
-    throw new Error("Session owner not found");
-  }
-
-  if (!session.signAndSendTransaction) {
-    throw new Error("Session signAndSendTransaction not found");
-  }
 }
 
 export async function giveAward(

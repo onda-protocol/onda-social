@@ -2,7 +2,6 @@ import dynamic from "next/dynamic";
 import { web3 } from "@project-serum/anchor";
 import { Box, Button } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
@@ -22,9 +21,10 @@ import {
   RewardButton,
   DeleteButton,
 } from "components/post/buttons";
+import { useAuth } from "components/providers/auth";
 
-const EditorProvider = dynamic(
-  () => import("components/editor").then((mod) => mod.EditorProvider),
+const Editor = dynamic(
+  () => import("components/editor").then((mod) => mod.Editor),
   { ssr: false }
 );
 
@@ -49,18 +49,18 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
     const toggleReply = useCallback(() => setReply((reply) => !reply), []);
     const [collapsed, setCollapsed] = useState(false);
 
-    const anchorWallet = useAnchorWallet();
+    const auth = useAuth();
     const queryClient = useQueryClient();
     const isAuthor = useMemo(
-      () => anchorWallet?.publicKey.toBase58() === comment.author,
-      [anchorWallet, comment.author]
+      () => auth.isConnected && auth.address === comment.author,
+      [auth, comment.author]
     );
 
     const onReplyAdded = useCallback(
       async (_: string, uri: string, entry: EntryForm) => {
-        if (anchorWallet === undefined) return;
+        if (!auth.address) return;
 
-        const userAddress = anchorWallet.publicKey.toBase58();
+        const userAddress = auth.address;
         const author = await queryClient.fetchQuery(["user", userAddress], () =>
           fetchUser(userAddress)
         );
@@ -160,7 +160,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           );
         }
       },
-      [comment, queryKey, anchorWallet, queryClient]
+      [comment, queryKey, auth, queryClient]
     );
 
     // Disable comment replies if parent is not a valid public key
@@ -216,7 +216,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                 )}
               </Box>
               {reply && disableReplies === false && (
-                <EditorProvider
+                <Editor
                   buttonLabel="Reply"
                   placeholder={`Reply to ${
                     comment.Author.name ?? comment.author
@@ -319,7 +319,8 @@ const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
     <DeleteButton
       disabled={disabled}
       forumId={forumId}
-      entry={comment}
+      entryId={comment.id}
+      entryType="comment"
       onDeleted={onCommentDeleted}
     />
   );

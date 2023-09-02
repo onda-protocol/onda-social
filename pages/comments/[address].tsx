@@ -25,6 +25,7 @@ import {
 import { CommentListItem } from "components/comment";
 import { PostButtons } from "components/post/buttons";
 import { PostHead } from "components/post/head";
+import { useAuth } from "components/providers/auth";
 
 const Editor = dynamic(
   () => import("components/editor").then((mod) => mod.Editor),
@@ -37,7 +38,7 @@ interface PageProps {
 
 const Comments: NextPage<PageProps> = () => {
   const router = useRouter();
-  const anchorWallet = useAnchorWallet();
+  const auth = useAuth();
   const queryClient = useQueryClient();
   const id = router.query.address as string;
 
@@ -51,8 +52,8 @@ const Comments: NextPage<PageProps> = () => {
   const commentsQuery = useQuery(commentsQueryKey, () => fetchComments(id));
 
   const isAuthor = useMemo(
-    () => anchorWallet?.publicKey?.toBase58() === postQuery.data?.author,
-    [anchorWallet, postQuery.data?.author]
+    () => auth.isConnected && auth.address === postQuery.data?.author,
+    [auth, postQuery.data?.author]
   );
   const isDeleted = useMemo(
     () => postQuery.data?.body === "[deleted]",
@@ -61,9 +62,9 @@ const Comments: NextPage<PageProps> = () => {
 
   const onCommentCreated = useCallback(
     async (_: string, uri: string, entry: EntryForm) => {
-      if (anchorWallet === undefined) return;
+      if (!auth.address) return;
 
-      const userAddress = anchorWallet.publicKey.toBase58();
+      const userAddress = auth.address;
       const author = await queryClient.fetchQuery(["user", userAddress], () =>
         fetchUser(userAddress)
       );
@@ -94,7 +95,7 @@ const Comments: NextPage<PageProps> = () => {
         }
       );
     },
-    [anchorWallet, id, queryClient, commentsQueryKey]
+    [auth, id, queryClient, commentsQueryKey]
   );
 
   const onPostDeleted = useCallback(() => {
