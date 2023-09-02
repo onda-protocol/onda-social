@@ -48,7 +48,7 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { Gate, initForumAndNamespace } from "lib/anchor";
-import { ContentType, upload } from "lib/bundlr/index";
+import { ContentType, webUpload } from "lib/bundlr";
 import { ImagePicker } from "components/input/imagePicker";
 import { findNamespacePda } from "utils/pda";
 
@@ -631,9 +631,8 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
       if (metadata.icon) {
         const buffer = Buffer.from(await metadata.icon.arrayBuffer());
 
-        const iconUri = await upload(
+        const iconUri = await webUpload(
           wallet,
-          null,
           buffer,
           metadata.icon.type as ContentType
         );
@@ -643,16 +642,15 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
       if (metadata.banner) {
         const buffer = Buffer.from(await metadata.banner.arrayBuffer());
 
-        const bannerUri = await upload(
+        const bannerUri = await webUpload(
           wallet,
-          null,
           buffer,
           metadata.banner.type as ContentType
         );
         json.banner = bannerUri;
       }
 
-      return upload(wallet, null, JSON.stringify(json), "application/json");
+      return webUpload(wallet, JSON.stringify(json), "application/json");
     },
     {
       onSuccess: (uri) => {

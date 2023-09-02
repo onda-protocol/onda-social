@@ -1,10 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { web3 } from "@project-serum/anchor";
 import base58 from "bs58";
+
+import prisma from "lib/prisma";
 import { DataV1, addEntryIx } from "lib/anchor";
 import { findPass } from "lib/api/pass";
-
-type Method = "addEntry";
+import {
+  EntryDataArgs,
+  TransactionArgs,
+  TransactionResponse,
+} from "lib/api/types";
+import { nodeUpload } from "lib/bundlr";
 
 const connection = new web3.Connection(process.env.HELIUS_RPC_URL!);
 const signer = web3.Keypair.fromSecretKey(
@@ -13,25 +19,39 @@ const signer = web3.Keypair.fromSecretKey(
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse<TransactionResponse>
 ) {
-  console.log("=========> ", req.body);
-  const method = req.body.method as Method;
-  const author = req.body.author as string;
-  const forum = req.body.forum as string;
-  const data = parseData(req.body.data);
+  const { data, method } = req.body as TransactionArgs;
 
   switch (method) {
     case "addEntry": {
-      const pass = await findPass(forum, author);
-      console.log("pass: ", pass);
+      const result = await prisma.forum.findUnique({
+        where: {
+          id: data.forum,
+        },
+        include: {
+          Gates: true,
+        },
+      });
+
+      if (!result) {
+        return res.status(401).json({ error: "Forum not found" });
+      }
+
+      const pass = await findPass(result.Gates, data.author);
+
+      if (result.Gates.length && pass === undefined) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const [dataV1Args, uri] = await parseData(req.body.data);
       const instruction = await addEntryIx(connection, {
-        data,
-        author: new web3.PublicKey(author),
-        forum: new web3.PublicKey(forum),
-        mint: pass.mint ? new web3.PublicKey(pass.mint) : null,
-        metadata: pass.metadata ? new web3.PublicKey(pass.metadata) : null,
-        tokenAccount: pass.tokenAccount
+        data: dataV1Args,
+        author: new web3.PublicKey(data.author),
+        forum: new web3.PublicKey(data.forum),
+        mint: pass?.mint ? new web3.PublicKey(pass.mint) : null,
+        metadata: pass?.metadata ? new web3.PublicKey(pass.metadata) : null,
+        tokenAccount: pass?.tokenAccount
           ? new web3.PublicKey(pass.tokenAccount)
           : null,
       });
@@ -41,14 +61,17 @@ export default async function handler(
         feePayer: signer.publicKey,
         ...latestBlockhash,
       }).add(instruction);
+
       transaction.partialSign(signer);
 
+      const serializedTransaction = base58.encode(
+        transaction.serialize({
+          requireAllSignatures: false,
+        })
+      );
       res.status(200).json({
-        transaction: base58.encode(
-          transaction.serialize({
-            requireAllSignatures: false,
-          })
-        ),
+        uri,
+        transaction: serializedTransaction,
       });
     }
 
@@ -58,18 +81,53 @@ export default async function handler(
   }
 }
 
-function parseData(data: any): DataV1 {
-  if (data.comment) {
-    return {
-      comment: {
-        uri: data.comment.uri as string,
-        post: new web3.PublicKey(data.comment.post),
-        parent: data.comment.parent
-          ? new web3.PublicKey(data.comment.parent)
-          : null,
-      },
-    };
-  }
+async function parseData(data: EntryDataArgs): Promise<[DataV1, string]> {
+  switch (data.type) {
+    case "comment": {
+      const uri = await nodeUpload(signer, data.body, "application/json");
 
-  return data as DataV1;
+      return [
+        {
+          comment: {
+            uri,
+            post: new web3.PublicKey(data.post),
+            parent: data.parent ? new web3.PublicKey(data.parent) : null,
+          },
+        },
+        uri,
+      ];
+    }
+
+    case "textPost": {
+      const uri = await nodeUpload(signer, data.body, "application/json");
+      return [{ textPost: { title: data.title, uri, nsfw: false } }, uri];
+    }
+
+    case "linkPost": {
+      return [
+        {
+          linkPost: {
+            uri: data.url,
+            title: data.title,
+            nsfw: false,
+          },
+        },
+        data.url,
+      ];
+    }
+
+    // case "imagePost": {
+    //   if (data.image === null) {
+    //     throw new Error("Image required");
+    //   }
+    //   const buffer = Buffer.from(await data.image.arrayBuffer());
+    //   uri = await upload(wallet, buffer, data.image.type as ContentType);
+    //   dataArgs = { imagePost: { title: data.title, uri } };
+    //   break;
+    // }
+
+    default: {
+      throw new Error("Invalid post type");
+    }
+  }
 }

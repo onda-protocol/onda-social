@@ -1,18 +1,24 @@
+import { useRouter } from "next/router";
 import React, { useEffect } from "react";
 import { web3 } from "@project-serum/anchor";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
 import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
-import { IoDocumentText, IoImage, IoLink } from "react-icons/io5";
+import toast from "react-hot-toast";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { IoDocumentText, IoLink } from "react-icons/io5";
+import base58 from "bs58";
 
-import { fetchFora, fetchForum, postEntryIx, uploadContent } from "lib/api";
+import { fetchFora, postEntryIx } from "lib/api";
+import {
+  EntryDataArgs,
+  CommentArgs,
+  TextPostArgs,
+  LinkPostArgs,
+} from "lib/api/types";
 import { RadioCardMenu } from "components/input";
 import { ImagePicker } from "components/input/imagePicker";
-import { useRouter } from "next/router";
 import { useAuth } from "components/providers/auth";
-import base58 from "bs58";
 
 export interface EntryForm {
   title: string;
@@ -20,7 +26,7 @@ export interface EntryForm {
   image: File | null;
   forum: string;
   url: string;
-  postType: "textPost" | "imagePost" | "linkPost";
+  postType: "textPost" | "linkPost";
 }
 
 type EntryConfig =
@@ -109,78 +115,58 @@ export const Editor = ({
     EntryForm
   >(
     async (data) => {
-      if (!auth || !auth.signTransaction) {
+      if (!auth.address) {
         throw new Error("Wallet not connected");
       }
 
-      const forumAddress =
-        config.type === "comment" ? config.forum : data.forum;
-
-      const forum = await queryClient.fetchQuery(
-        ["forum", forumAddress],
-        () => fetchForum(forumAddress),
-        {
-          staleTime: 300_000,
-        }
-      );
-
-      if (!forum) {
-        throw new Error("Forum not found");
+      if (!auth.signTransaction) {
+        throw new Error("Wallet not connected");
       }
 
-      let uri: string;
-      let dataArgs = {};
+      let dataArgs: EntryDataArgs;
 
-      if (config.type === "post") {
-        switch (data.postType) {
-          case "linkPost": {
-            uri = data.url;
-            dataArgs = {
-              linkPost: {
-                uri,
-                title: data.title,
-              },
-            };
-            break;
-          }
-
-          case "textPost": {
-            uri = await uploadContent(data.body);
-            dataArgs = { textPost: { title: data.title, uri } };
-            break;
-          }
-
-          // case "imagePost": {
-          //   if (data.image === null) {
-          //     throw new Error("Image required");
-          //   }
-          //   const buffer = Buffer.from(await data.image.arrayBuffer());
-          //   uri = await upload(wallet, buffer, data.image.type as ContentType);
-          //   dataArgs = { imagePost: { title: data.title, uri } };
-          //   break;
-          // }
-
-          default: {
-            throw new Error("Invalid post type");
-          }
-        }
-      } else {
-        uri = await uploadContent(data.body);
-        dataArgs = {
-          comment: {
-            uri,
-            post: new web3.PublicKey(config.post),
-            parent: config.parent ? new web3.PublicKey(config.parent) : null,
-          },
+      if (config.type === "comment") {
+        const comment: CommentArgs = {
+          type: "comment",
+          author: auth.address,
+          forum: config.forum,
+          parent: config.parent,
+          post: config.post,
+          body: data.body,
         };
+        dataArgs = comment;
       }
 
-      const result = await postEntryIx(auth.address!, forum.id, dataArgs);
-      const transaction = web3.Transaction.from(base58.decode(result));
-      console.log(transaction);
-      transaction.signatures.forEach((signature) => {
-        console.log(signature.publicKey.toBase58(), " : ", signature.signature);
-      });
+      switch (data.postType) {
+        case "textPost": {
+          const textPost: TextPostArgs = {
+            type: "textPost",
+            author: auth.address,
+            forum: data.forum,
+            title: data.title,
+            body: data.body,
+          };
+          dataArgs = textPost;
+          break;
+        }
+
+        case "linkPost": {
+          const linkPost: LinkPostArgs = {
+            type: "linkPost",
+            author: auth.address,
+            forum: data.forum,
+            title: data.title,
+            url: data.url,
+          };
+          dataArgs = linkPost;
+          break;
+        }
+      }
+
+      const response = await postEntryIx(dataArgs);
+      const transaction = web3.Transaction.from(
+        base58.decode(response.transaction)
+      );
       const payerSig = transaction.signatures.find((sig) =>
         transaction.feePayer?.equals(sig.publicKey)
       );
@@ -188,13 +174,9 @@ export const Editor = ({
       if (!payerSig || !payerSig.signature) {
         throw new Error("Payer signature not found");
       }
-
+      console.log("address: ", auth.address);
       const signedTransaction = await auth.signTransaction(transaction);
       signedTransaction.addSignature(payerSig.publicKey, payerSig.signature);
-      console.log(signedTransaction);
-      signedTransaction.signatures.forEach((signature) => {
-        console.log(signature.publicKey.toBase58(), " : ", signature.signature);
-      });
       const txId = await connection.sendRawTransaction(
         signedTransaction.serialize(),
         {
@@ -202,8 +184,22 @@ export const Editor = ({
         }
       );
 
+      console.log("txId: ", txId);
+      const blockhash = await connection.getLatestBlockhash();
+      const result = await connection.confirmTransaction(
+        {
+          signature: txId,
+          ...blockhash,
+        },
+        "confirmed"
+      );
+
+      if (result.value.err) {
+        throw new Error(result.value.err.toString());
+      }
+
       return {
-        uri,
+        uri: response.uri,
         signature: txId,
       };
     },
@@ -292,22 +288,22 @@ export const Editor = ({
         );
       }
 
-      case "imagePost": {
-        return (
-          <Controller
-            control={methods.control}
-            name="image"
-            render={({ field }) => (
-              <ImagePicker
-                name={field.name}
-                // @ts-ignore
-                value={field.value}
-                onChange={field.onChange}
-              />
-            )}
-          />
-        );
-      }
+      // case "imagePost": {
+      //   return (
+      //     <Controller
+      //       control={methods.control}
+      //       name="image"
+      //       render={({ field }) => (
+      //         <ImagePicker
+      //           name={field.name}
+      //           // @ts-ignore
+      //           value={field.value}
+      //           onChange={field.onChange}
+      //         />
+      //       )}
+      //     />
+      //   );
+      // }
 
       case "linkPost": {
         return (

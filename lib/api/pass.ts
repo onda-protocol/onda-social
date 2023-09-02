@@ -1,26 +1,11 @@
-import { Rule } from "@prisma/client/edge";
+import { Rule, Gate } from "@prisma/client/edge";
 import { web3 } from "@project-serum/anchor";
 import { AccountLayout } from "@solana/spl-token";
 
-import prisma from "lib/prisma";
 import { findMetadataPda } from "utils/pda";
 
-export async function findPass(forumId: string, owner: string) {
-  const result = await prisma.forum.findUnique({
-    where: {
-      id: forumId,
-    },
-    include: {
-      Gates: true,
-    },
-  });
-
-  if (!result) {
-    throw new Error("Forum not found");
-  }
-
-  for (let gate of result.Gates) {
-    console.log("gate: ", gate);
+export async function findPass(gates: Gate[], owner: string) {
+  for (let gate of gates) {
     switch (gate.ruleType) {
       case Rule.Token: {
         const result = await searchToken(owner, gate.address[0], gate.amount);
@@ -41,12 +26,6 @@ export async function findPass(forumId: string, owner: string) {
       }
     }
   }
-
-  return {
-    mint: null,
-    tokenAccount: null,
-    metadata: null,
-  };
 }
 
 async function searchCollection(owner: string, collection: string) {
@@ -79,7 +58,7 @@ async function searchCollection(owner: string, collection: string) {
 
       return {
         mint,
-        metadata,
+        metadata: metadata.toBase58(),
         tokenAccount: tokenResult.tokenAccount,
       };
     }
