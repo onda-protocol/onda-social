@@ -45,9 +45,9 @@ export type DeleteEntryTransaction = {
 export type GiveAwardArgs = {
   method: "giveAward";
   data: {
-    entryId: string;
     payer: string;
     award: string;
+    entryId: string;
   };
 };
 

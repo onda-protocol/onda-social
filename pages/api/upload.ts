@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { web3 } from "@project-serum/anchor";
 import base58 from "bs58";
 
-import { upload } from "lib/bundlr";
+import { nodeUpload } from "lib/bundlr";
 
 const MAX_UPLOAD_SIZE_BYTES = 100_000;
 
@@ -20,7 +20,7 @@ export default async function handler(
   const keypair = web3.Keypair.fromSecretKey(
     base58.decode(process.env.SIGNER_SECRET_KEY as string)
   );
-  const uri = await upload(keypair, data, "application/json");
+  const uri = await nodeUpload(keypair, data, "application/json");
 
   res.json({ uri });
 }

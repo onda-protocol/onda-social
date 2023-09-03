@@ -1,5 +1,6 @@
 import { Box, Button, Heading, Spinner, Text } from "@chakra-ui/react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { web3 } from "@project-serum/anchor";
 import Image from "next/image";
 import {
   createContext,
@@ -11,9 +12,10 @@ import {
 } from "react";
 import toast from "react-hot-toast";
 import { Modal } from "./base";
-import { SerializedAward, fetchAwards } from "lib/api";
-import { giveAward } from "lib/anchor";
-import { useAnchorWallet, useConnection } from "@solana/wallet-adapter-react";
+import { SerializedAward, fetchAwards, getTransaction } from "lib/api";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { useAuth } from "components/providers/auth";
+import base58 from "bs58";
 
 const AwardModalContext = createContext({
   isOpen: false,
@@ -41,7 +43,7 @@ interface AwardMutationArgs {
 
 export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
   const { connection } = useConnection();
-  const anchorWallet = useAnchorWallet();
+  const auth = useAuth();
   const [entry, setEntry] = useState<SelectedEntry | null>(null);
   const [selected, setSelected] = useState<SerializedAward>();
   const isOpen = entry !== null;
@@ -65,14 +67,56 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
 
   const giveRewardMutation = useMutation<void, Error, AwardMutationArgs>(
     async ({ entryId, award }) => {
-      if (!anchorWallet) {
+      if (!auth.address) {
         throw new Error("Please connect your wallet");
       }
 
-      return giveAward(connection, anchorWallet, {
-        entryId,
-        award,
+      if (!auth.signTransaction) {
+        throw new Error("Please connect your wallet");
+      }
+
+      const response = await getTransaction({
+        method: "giveAward",
+        data: {
+          entryId,
+          award: award.id,
+          payer: auth.address,
+        },
       });
+
+      const transaction = web3.Transaction.from(
+        base58.decode(response.transaction)
+      );
+      const payerSig = transaction.signatures.find((sig) =>
+        transaction.feePayer?.equals(sig.publicKey)
+      );
+
+      if (!payerSig?.signature) {
+        throw new Error("Payer signature not found");
+      }
+
+      const signedTransaction = await auth.signTransaction(transaction);
+      signedTransaction.addSignature(payerSig.publicKey, payerSig.signature);
+
+      const txId = await connection.sendRawTransaction(
+        signedTransaction.serialize(),
+        {
+          preflightCommitment: "confirmed",
+        }
+      );
+
+      const blockhash = await connection.getLatestBlockhash();
+      const result = await connection.confirmTransaction(
+        {
+          signature: txId,
+          ...blockhash,
+        },
+        "confirmed"
+      );
+
+      if (result.value.err) {
+        throw new Error(result.value.err.toString());
+      }
     },
     {
       onSuccess(_, variables) {

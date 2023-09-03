@@ -18,7 +18,7 @@ import {
   PostWithCommentsCountAndForum,
   SerializedCommentNested,
   SerializedAward,
-  getInstruction,
+  getTransaction,
 } from "lib/api";
 import { useAwardModal } from "components/modal";
 import { useAuth } from "components/providers/auth";
@@ -102,7 +102,7 @@ export const DeleteButton = ({
         throw new Error("Wallet not connected");
       }
 
-      const response = await getInstruction({
+      const response = await getTransaction({
         method: "deleteEntry",
         data: {
           author: auth.address,

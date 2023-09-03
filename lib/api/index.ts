@@ -185,7 +185,7 @@ export function uploadContent(body: string) {
   });
 }
 
-export function getInstruction(
+export function getTransaction(
   args: TransactionArgs
 ): Promise<SerializedTransactionResponse> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/transaction`, {

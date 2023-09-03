@@ -9,7 +9,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { IoDocumentText, IoLink } from "react-icons/io5";
 import base58 from "bs58";
 
-import { fetchFora, getInstruction } from "lib/api";
+import { fetchFora, getTransaction } from "lib/api";
 import {
   EntryDataArgs,
   CommentArgs,
@@ -167,7 +167,7 @@ export const Editor = ({
         }
       }
 
-      const response = await getInstruction({
+      const response = await getTransaction({
         method: "addEntry",
         data: dataArgs,
       });
