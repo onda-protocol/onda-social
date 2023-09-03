@@ -162,56 +162,51 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
       </AwardModalContext.Provider>
       <Modal isOpen={isOpen} onRequestClose={closeModal}>
         <Box display="flex">
-          <Box
-            display="flex"
-            flexDirection="column"
-            p="6"
-            flex={1}
-            minHeight={300}
-          >
+          <Box flex={1} p="6" minHeight={300}>
             <Heading fontSize="xl" pb="5">
               Awards
             </Heading>
-
-            {rewardsQuery.data === undefined ? (
-              <Spinner />
-            ) : (
-              rewardsQuery.data.map((reward) => (
-                <Box
-                  as="button"
-                  key={reward.id}
-                  sx={{
-                    borderWidth: "1px",
-                    borderColor:
-                      selected?.id === reward.id
-                        ? "whiteAlpha.700"
-                        : "transparent",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    height: "42px",
-                    width: "42px",
-                    "&:hover": {
-                      borderColor: "whiteAlpha.700",
-                      boxShadow:
-                        "0 0 6px 3px var(--chakra-colors-whiteAlpha-600)",
-                    },
-                  }}
-                  onClick={() => setSelected(reward)}
-                >
-                  {reward.image && (
-                    <Image
-                      src={reward.image}
-                      alt={reward.name}
-                      height={42}
-                      width={42}
-                      style={{
-                        borderRadius: "3px",
-                      }}
-                    />
-                  )}
-                </Box>
-              ))
-            )}
+            <Box display="flex" gap="2">
+              {rewardsQuery.data === undefined ? (
+                <Spinner />
+              ) : (
+                rewardsQuery.data.map((reward) => (
+                  <Box
+                    as="button"
+                    key={reward.id}
+                    sx={{
+                      borderWidth: "1px",
+                      borderColor:
+                        selected?.id === reward.id
+                          ? "whiteAlpha.700"
+                          : "transparent",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      height: "42px",
+                      width: "42px",
+                      "&:hover": {
+                        borderColor: "whiteAlpha.700",
+                        boxShadow:
+                          "0 0 6px 3px var(--chakra-colors-whiteAlpha-600)",
+                      },
+                    }}
+                    onClick={() => setSelected(reward)}
+                  >
+                    {reward.image && (
+                      <Image
+                        src={reward.image}
+                        alt={reward.name}
+                        height={42}
+                        width={42}
+                        style={{
+                          borderRadius: "3px",
+                        }}
+                      />
+                    )}
+                  </Box>
+                ))
+              )}
+            </Box>
           </Box>
           <Box
             width={206}

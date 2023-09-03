@@ -7,8 +7,7 @@ import {
   useMutation,
   QueryClient,
 } from "@tanstack/react-query";
-import { IoChatbox, IoTrash } from "react-icons/io5";
-import { GiSadCrab } from "react-icons/gi";
+import { IoChatbox, IoTrash, IoGift } from "react-icons/io5";
 import { MouseEventHandler, forwardRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import base58 from "bs58";
@@ -16,7 +15,6 @@ import base58 from "bs58";
 import {
   AwardsJson,
   PostWithCommentsCountAndForum,
-  SerializedCommentNested,
   SerializedAward,
   getTransaction,
 } from "lib/api";
@@ -228,8 +226,8 @@ export const RewardButton = ({
 
   return (
     <PostButton
-      icon={<GiSadCrab />}
-      label="Reward"
+      icon={<IoGift />}
+      label="Award"
       disabled={disabled}
       onClick={(e) => {
         e.stopPropagation();
@@ -241,7 +239,7 @@ export const RewardButton = ({
 };
 
 const DummyRewardButton = () => (
-  <PostButton disabled icon={<GiSadCrab />} label="Reward" />
+  <PostButton disabled icon={<IoGift />} label="Reward" />
 );
 
 function incrementAward(awardJson: AwardsJson, award: SerializedAward) {
