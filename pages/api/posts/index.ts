@@ -9,7 +9,10 @@ export const config = {
   runtime: "edge",
 };
 
-export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
+export async function queryPosts(
+  where: Prisma.Sql = Prisma.empty,
+  offset: number = 0
+) {
   const result: any = await prisma.$queryRaw`
     SELECT 
       "Post".*,
@@ -33,7 +36,9 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
     LEFT JOIN 
       "Forum" ON "Post"."forum" = "Forum"."id"
     ${where}
-    ORDER BY points_per_created_at DESC;
+    ORDER BY points_per_created_at DESC
+    LIMIT 20
+    OFFSET ${offset};
   `;
 
   return result.map((post: any) => {
@@ -76,8 +81,10 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
   });
 }
 
-export default async function handler(_req: NextRequest, _ctx: NextFetchEvent) {
-  const result = await queryPosts();
+export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
+  const searchParams = req.nextUrl.searchParams;
+  const offset = parseInt(searchParams.get("offset") ?? "0");
+  const result = await queryPosts(undefined, offset);
   const parsedResult = parseBigInt(result);
   return NextResponse.json(parsedResult);
 }

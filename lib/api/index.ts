@@ -79,10 +79,12 @@ export function fetchPost(id: string): Promise<PostWithCommentsCountAndForum> {
   );
 }
 
-export function fetchPosts(): Promise<PostWithCommentsCountAndForum[]> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/posts`).then((res) =>
-    res.json()
-  );
+export function fetchPosts(
+  offset: number = 0
+): Promise<PostWithCommentsCountAndForum[]> {
+  return fetch(
+    `${process.env.NEXT_PUBLIC_HOST}/api/posts?offset=${offset}`
+  ).then((res) => res.json());
 }
 
 export function fetchPostsByForumNamespace(

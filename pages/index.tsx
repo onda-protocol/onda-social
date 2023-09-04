@@ -1,9 +1,10 @@
 import type { NextPage } from "next";
-import { useEffect } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import {
   DehydratedState,
   QueryClient,
   dehydrate,
+  useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -25,25 +26,27 @@ interface PageProps {
 
 const Home: NextPage<PageProps> = () => {
   const queryClient = useQueryClient();
-  const postsQuery = useQuery(["posts"], fetchPosts);
-  const foraQuery = useQuery(["fora"], fetchFora);
 
-  // Seed posts to cache
-  useEffect(() => {
-    if (postsQuery.data) {
-      for (const post of postsQuery.data) {
+  const foraQuery = useQuery(["fora"], async () => {
+    const fora = await fetchFora();
+    for (const forum of fora) {
+      queryClient.setQueryData(["forum", forum.namespace], forum);
+    }
+    return fora;
+  });
+
+  const postsQuery = useInfiniteQuery({
+    queryKey: ["posts"],
+    queryFn: async ({ pageParam = 0 }) => {
+      const posts = await fetchPosts(pageParam);
+      for (const post of posts) {
         queryClient.setQueryData(["post", post.id], post);
       }
-    }
-  }, [queryClient, postsQuery.data]);
-
-  useEffect(() => {
-    if (foraQuery.data) {
-      for (const forum of foraQuery.data) {
-        queryClient.setQueryData(["forum", forum.namespace], forum);
-      }
-    }
-  }, [queryClient, foraQuery.data]);
+      return posts;
+    },
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === 20 ? allPages.length * 20 : undefined,
+  });
 
   return (
     <Box mt="4">
@@ -51,13 +54,28 @@ const Home: NextPage<PageProps> = () => {
         leftColumn={
           <Box mt="2">
             {postsQuery.isLoading ? (
-              <Box display="flex" alignItems="center" justifyContent="center">
+              <Box
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                my="12"
+              >
                 <Spinner />
               </Box>
             ) : (
-              postsQuery.data?.map((post) => (
-                <PostListItem key={post.id} post={post} />
+              postsQuery.data?.pages?.map((page, index) => (
+                <Fragment key={index}>
+                  {page.map((post) => (
+                    <PostListItem key={post.id} post={post} />
+                  ))}
+                </Fragment>
               )) ?? null
+            )}
+            {!postsQuery.isLoading && postsQuery.hasNextPage && (
+              <FetchMore
+                isFetching={postsQuery.isFetchingNextPage}
+                onFetchMore={postsQuery.fetchNextPage}
+              />
             )}
           </Box>
         }
@@ -98,7 +116,6 @@ Home.getInitialProps = async () => {
       const queryClient = new QueryClient();
 
       await Promise.allSettled([
-        queryClient.prefetchQuery(["posts"], fetchPosts),
         queryClient.prefetchQuery(["fora"], fetchFora),
         queryClient.prefetchQuery(["awards"], fetchAwards),
       ]);
@@ -114,6 +131,48 @@ Home.getInitialProps = async () => {
   return {
     dehydratedState: undefined,
   };
+};
+
+interface FetchMoreProps {
+  isFetching: boolean;
+  onFetchMore: () => void;
+}
+
+const FetchMore = ({ isFetching, onFetchMore }: FetchMoreProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const options = {
+      root: null,
+      rootMargin: "0px",
+      threshold: 1,
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        onFetchMore();
+      }
+    }, options);
+
+    if (!isFetching && ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [onFetchMore, isFetching, ref]);
+
+  return (
+    <Box
+      ref={ref}
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      my="12"
+    >
+      <Spinner />
+    </Box>
+  );
 };
 
 export default Home;
