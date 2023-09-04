@@ -23,13 +23,16 @@ const Callback: NextPage = () => {
   return (
     <Box
       display="flex"
+      flexDirection="column"
       height="100%"
       width="100%"
       alignItems="center"
       justifyContent="center"
-      padding="12"
+      padding="20"
     >
-      <Text textAlign="center">Redirecting</Text>
+      <Text my="6" textAlign="center">
+        Redirecting. Please wait...
+      </Text>
       <Spinner />
     </Box>
   );
