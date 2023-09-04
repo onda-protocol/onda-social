@@ -88,11 +88,12 @@ export function fetchPosts(
 }
 
 export function fetchPostsByForumNamespace(
-  namespace: string
+  namespace: string,
+  offset: number = 0
 ): Promise<PostWithCommentsCountAndForum[]> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/posts/${namespace}`).then(
-    (res) => res.json()
-  );
+  return fetch(
+    `${process.env.NEXT_PUBLIC_HOST}/api/posts/${namespace}?offset=${offset}`
+  ).then((res) => res.json());
 }
 
 export function fetchComments(id: string): Promise<SerializedCommentNested[]> {

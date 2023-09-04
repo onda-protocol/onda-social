@@ -5,6 +5,7 @@ import {
   QueryClient,
   DehydratedState,
   dehydrate,
+  useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -35,6 +36,8 @@ import {
   SidebarLink,
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
+import { Fragment } from "react";
+import { FetchMore } from "components/fetchMore";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -55,9 +58,18 @@ const Community: NextPage<PageProps> = () => {
     return forum;
   });
 
-  const postsQuery = useQuery(["posts", "o", namespace], () =>
-    fetchPostsByForumNamespace(namespace)
-  );
+  const postsQuery = useInfiniteQuery({
+    queryKey: ["posts", "o", namespace],
+    queryFn: async ({ pageParam = 0 }) => {
+      const posts = await fetchPostsByForumNamespace(namespace, pageParam);
+      for (const post of posts) {
+        queryClient.setQueryData(["post", post.id], post);
+      }
+      return posts;
+    },
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === 20 ? allPages.length * 20 : undefined,
+  });
 
   return (
     <>
@@ -131,13 +143,24 @@ const Community: NextPage<PageProps> = () => {
                       <Spinner />
                     </Box>
                   ) : (
-                    postsQuery.data?.map((post) => (
-                      <PostListItem
-                        key={post.id}
-                        displayIcon={false}
-                        post={post}
-                      />
-                    ))
+                    postsQuery.data?.pages?.map((post, index) => (
+                      <Fragment key={index}>
+                        {post.map((post) => (
+                          <PostListItem
+                            key={post.id}
+                            displayIcon={false}
+                            post={post}
+                          />
+                        ))}
+                      </Fragment>
+                    )) ?? null
+                  )}
+
+                  {!postsQuery.isLoading && postsQuery.hasNextPage && (
+                    <FetchMore
+                      isFetching={postsQuery.isFetchingNextPage}
+                      onFetchMore={postsQuery.fetchNextPage}
+                    />
                   )}
                 </Box>
               }
@@ -175,13 +198,16 @@ const Community: NextPage<PageProps> = () => {
 Community.getInitialProps = async (ctx) => {
   if (typeof window === "undefined") {
     try {
-      const address = ctx.query.address as string;
+      const namespace = ctx.query.namespace as string;
       const queryClient = new QueryClient();
 
       await Promise.allSettled([
-        queryClient.prefetchQuery(["posts", "o", address], () =>
-          fetchPostsByForumNamespace(address)
+        queryClient.prefetchQuery(["forum", "namespace", namespace], () =>
+          fetchForumByNamespace(namespace)
         ),
+        // queryClient.prefetchQuery(["posts", "o", address], () =>
+        //   fetchPostsByForumNamespace(address)
+        // ),
         queryClient.prefetchQuery(["awards"], fetchAwards),
       ]);
 

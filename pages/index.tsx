@@ -1,5 +1,5 @@
 import type { NextPage } from "next";
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment } from "react";
 import {
   DehydratedState,
   QueryClient,
@@ -19,6 +19,7 @@ import {
   SidebarItem,
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
+import { FetchMore } from "components/fetchMore";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -131,48 +132,6 @@ Home.getInitialProps = async () => {
   return {
     dehydratedState: undefined,
   };
-};
-
-interface FetchMoreProps {
-  isFetching: boolean;
-  onFetchMore: () => void;
-}
-
-const FetchMore = ({ isFetching, onFetchMore }: FetchMoreProps) => {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const options = {
-      root: null,
-      rootMargin: "0px",
-      threshold: 1,
-    };
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        onFetchMore();
-      }
-    }, options);
-
-    if (!isFetching && ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [onFetchMore, isFetching, ref]);
-
-  return (
-    <Box
-      ref={ref}
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      my="12"
-    >
-      <Spinner />
-    </Box>
-  );
 };
 
 export default Home;

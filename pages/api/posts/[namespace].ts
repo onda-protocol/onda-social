@@ -12,9 +12,12 @@ export const config = {
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const url = new URL(req.url);
   const namespace = url.pathname.split("/")[3] as string;
+  const searchParams = req.nextUrl.searchParams;
+  const offset = parseInt(searchParams.get("offset") ?? "0");
 
   const results = await queryPosts(
-    Prisma.sql`WHERE "Forum"."namespace" = ${namespace}`
+    Prisma.sql`WHERE "Forum"."namespace" = ${namespace}`,
+    offset
   );
 
   return NextResponse.json(parseBigInt(results));
