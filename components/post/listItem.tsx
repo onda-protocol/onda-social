@@ -1,4 +1,5 @@
-import { Box, Heading } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 
 import { AwardsJson, PostWithCommentsCountAndForum } from "lib/api";
@@ -14,6 +15,12 @@ interface PostListItemProps {
 
 export const PostListItem = ({ displayIcon, post }: PostListItemProps) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const handlePostClick = () => {
+    queryClient.setQueryData(["post", post.id], post);
+    router.push(`/comments/${post.id}`);
+  };
 
   return (
     <Panel
@@ -21,7 +28,7 @@ export const PostListItem = ({ displayIcon, post }: PostListItemProps) => {
         cursor: "pointer",
         borderColor: "gray.600",
       }}
-      onClick={() => router.push(`/comments/${post.id}`)}
+      onClick={handlePostClick}
     >
       <PostMeta
         displayIcon={displayIcon}

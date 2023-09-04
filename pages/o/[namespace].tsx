@@ -60,13 +60,8 @@ const Community: NextPage<PageProps> = () => {
 
   const postsQuery = useInfiniteQuery({
     queryKey: ["posts", "o", namespace],
-    queryFn: async ({ pageParam = 0 }) => {
-      const posts = await fetchPostsByForumNamespace(namespace, pageParam);
-      for (const post of posts) {
-        queryClient.setQueryData(["post", post.id], post);
-      }
-      return posts;
-    },
+    queryFn: async ({ pageParam = 0 }) =>
+      fetchPostsByForumNamespace(namespace, pageParam),
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === 20 ? allPages.length * 20 : undefined,
   });

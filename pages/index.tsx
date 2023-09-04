@@ -31,20 +31,15 @@ const Home: NextPage<PageProps> = () => {
   const foraQuery = useQuery(["fora"], async () => {
     const fora = await fetchFora();
     for (const forum of fora) {
-      queryClient.setQueryData(["forum", forum.namespace], forum);
+      queryClient.setQueryData(["forum", forum.id], forum);
+      queryClient.setQueryData(["forum", "namespace", forum.namespace], forum);
     }
     return fora;
   });
 
   const postsQuery = useInfiniteQuery({
     queryKey: ["posts"],
-    queryFn: async ({ pageParam = 0 }) => {
-      const posts = await fetchPosts(pageParam);
-      for (const post of posts) {
-        queryClient.setQueryData(["post", post.id], post);
-      }
-      return posts;
-    },
+    queryFn: async ({ pageParam = 0 }) => fetchPosts(pageParam),
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === 20 ? allPages.length * 20 : undefined,
   });
