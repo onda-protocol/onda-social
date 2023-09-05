@@ -11,7 +11,6 @@ export const config = {
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const url = new URL(req.url);
   const address = url.pathname.split("/")[3] as string;
-  console.log("address: ", address);
   const searchParams = req.nextUrl.searchParams;
   const parent = searchParams.get("parent");
   const limit = parseInt(searchParams.get("limit") ?? "100");

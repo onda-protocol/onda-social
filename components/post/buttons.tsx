@@ -23,6 +23,7 @@ import {
   PostWithCommentsCountAndForum,
   SerializedAward,
   getTransaction,
+  vote,
 } from "lib/api";
 import { useAwardModal } from "components/modal";
 import { useAuth } from "components/providers/auth";
@@ -42,18 +43,14 @@ export const PostButtons = ({
 
   const handleCacheUpdate = useCallback(
     (award: SerializedAward) => {
-      updatePostCache(queryClient, post.id, award);
+      updatePostAwardsCache(queryClient, post.id, award);
     },
     [queryClient, post]
   );
 
   return (
     <Box display="flex" flexDirection="row" gap="2" mt="6">
-      <PointsButton
-        points={Number(post.points)}
-        onUpvote={() => {}}
-        onDownvote={() => {}}
-      />
+      <PostPointsButton post={post} />
       <Link href={`/comments/${post.id}`}>
         <PostButton icon={<IoChatbox />} label={`${post?._count?.Comments}`} />
       </Link>
@@ -226,6 +223,38 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
   }
 );
 
+interface PostPointsButtonProps {
+  post: PostWithCommentsCountAndForum;
+}
+
+export const PostPointsButton = ({ post }: PostPointsButtonProps) => {
+  const auth = useAuth();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation(
+    async (dir: "up" | "down") => {
+      if (!auth.address) {
+        throw new Error("Wallet not connected");
+      }
+
+      return vote(post.id, auth.address, "post", dir);
+    },
+    {
+      onMutate(dir) {
+        updatePostPointsCache(queryClient, post.id, dir);
+      },
+    }
+  );
+
+  return (
+    <PointsButton
+      points={Number(post.points)}
+      onUpvote={() => mutation.mutate("up")}
+      onDownvote={() => mutation.mutate("down")}
+    />
+  );
+};
+
 interface PointsButtonProps {
   points: number;
   onUpvote: () => void;
@@ -303,7 +332,7 @@ export const AwardButton = ({
   disabled,
   onSuccess,
 }: AwardButtonProps) => {
-  const AwardModal = useAwardModal();
+  const modal = useAwardModal();
 
   return (
     <PostButton
@@ -312,7 +341,7 @@ export const AwardButton = ({
       disabled={disabled}
       onClick={(e) => {
         e.stopPropagation();
-        AwardModal.openModal(entryId, onSuccess);
+        modal.openModal(entryId, onSuccess);
         return false;
       }}
     />
@@ -338,22 +367,16 @@ function incrementAward(awardJson: AwardsJson, award: SerializedAward) {
   return { ...awards };
 }
 
-function updatePostCache(
+function updatePostsCache(
   queryClient: QueryClient,
   entryId: string,
-  award: SerializedAward
+  reducer: (p: PostWithCommentsCountAndForum) => PostWithCommentsCountAndForum
 ) {
   queryClient.setQueryData<PostWithCommentsCountAndForum>(
     ["post", entryId],
     (data) => {
       if (data) {
-        const awards = incrementAward(data.awards, award);
-
-        return {
-          ...data,
-          awards,
-          points: Number(Number(data.points) + 1).toString(),
-        };
+        return reducer(data);
       }
     }
   );
@@ -371,9 +394,7 @@ function updatePostCache(
             for (const index in posts) {
               const p = posts[index];
               if (p.id === entryId) {
-                const awards = incrementAward(p.awards, award);
-                const newPost = { ...p, awards };
-                newPost.points = Number(Number(newPost.points) + 1).toString();
+                const newPost = reducer(p);
                 return [
                   ...posts.slice(0, Number(index)),
                   newPost,
@@ -385,4 +406,32 @@ function updatePostCache(
         }
       );
     });
+}
+
+function updatePostAwardsCache(
+  queryClient: QueryClient,
+  entryId: string,
+  award: SerializedAward
+) {
+  updatePostsCache(queryClient, entryId, (post) => {
+    const awards = incrementAward(post.awards, award);
+    return {
+      ...post,
+      awards,
+      points: Number(Number(post.points) + 1).toString(),
+    };
+  });
+}
+
+function updatePostPointsCache(
+  queryClient: QueryClient,
+  entryId: string,
+  dir: "up" | "down"
+) {
+  updatePostsCache(queryClient, entryId, (post) => {
+    return {
+      ...post,
+      points: Number(Number(post.points) + (dir === "up" ? 1 : -1)).toString(),
+    };
+  });
 }

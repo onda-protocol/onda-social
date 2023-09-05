@@ -207,3 +207,28 @@ export function getTransaction(
     return data;
   });
 }
+
+export function vote(
+  address: string,
+  user: string,
+  type: "post" | "comment",
+  vote: "up" | "down"
+): Promise<void> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/vote`, {
+    method: "POST",
+    body: JSON.stringify({
+      address,
+      user,
+      type,
+      vote,
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  }).then(async (res) => {
+    if (res.status !== 200) {
+      throw new Error(await res.text());
+    }
+    return res.json();
+  });
+}
