@@ -16,11 +16,7 @@ import {
 } from "lib/api";
 import { Markdown } from "../markdown";
 import { PostMeta } from "../post/meta";
-import {
-  PostButton,
-  RewardButton,
-  DeleteButton,
-} from "components/post/buttons";
+import { PostButton, AwardButton, DeleteButton } from "components/post/buttons";
 import { useAuth } from "components/providers/auth";
 
 const Editor = dynamic(
@@ -285,7 +281,7 @@ const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
   );
 
   return (
-    <RewardButton
+    <AwardButton
       disabled={disabled}
       entryId={comment.id}
       onSuccess={handleCacheUpdate}

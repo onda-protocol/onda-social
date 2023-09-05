@@ -1,6 +1,6 @@
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { Prisma, VoteType } from "@prisma/client/edge";
+import { VoteType } from "@prisma/client/edge";
 
 import prisma from "lib/prisma";
 
