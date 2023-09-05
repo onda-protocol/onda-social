@@ -59,6 +59,7 @@ model Forum {
   Gates         Gate[]      @relation("ForumToGate")
   Moderators    Moderator[] @relation("ForumToModerator")
   Posts         Post[]      @relation("ForumToPost")
+  @@index(fields: [namespace, displayName])
 }
 
 model Award {
@@ -70,6 +71,7 @@ model Award {
   name           String
   description    String?
   image          String
+  @@index(fields: [name])
 }
 
 enum PostType {
@@ -96,6 +98,7 @@ model Post {
   forum     String
   Forum     Forum     @relation("ForumToPost", fields: [forum], references: [id])
   Comments  Comment[] @relation("PostToComment")
+  @@index(fields: [author, title, createdAt(sort: Desc), points, forum])
 }
 
 model Comment {
@@ -116,6 +119,7 @@ model Comment {
   parent    String?
   Parent    Comment?  @relation("CommentToParent", fields: [parent], references: [id])
   Children  Comment[] @relation("CommentToParent")
+  @@index(fields: [author, createdAt(sort: Desc), points, post])
 }
 
 model User {
@@ -125,4 +129,11 @@ model User {
   avatar   String?
   Posts    Post[]    @relation("UserToPost")
   Comments Comment[] @relation("UserToComment")
+  @@index(fields: [name])
+}
+
+model Vote {
+  author    String
+  entry     String
+  @@id([author, entry])
 }

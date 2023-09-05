@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Box, Text } from "@chakra-ui/react";
+import { Box, IconButton, Text } from "@chakra-ui/react";
 import { web3 } from "@project-serum/anchor";
 import { useConnection } from "@solana/wallet-adapter-react";
 import {
@@ -7,7 +7,13 @@ import {
   useMutation,
   QueryClient,
 } from "@tanstack/react-query";
-import { IoChatbox, IoTrash, IoGift } from "react-icons/io5";
+import {
+  IoChatbox,
+  IoTrash,
+  IoGift,
+  IoArrowUp,
+  IoArrowDown,
+} from "react-icons/io5";
 import { MouseEventHandler, forwardRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import base58 from "bs58";
@@ -43,13 +49,15 @@ export const PostButtons = ({
 
   return (
     <Box display="flex" flexDirection="row" gap="2" mt="6">
+      <PointsButton
+        points={Number(post.points)}
+        onUpvote={() => {}}
+        onDownvote={() => {}}
+      />
       <Link href={`/comments/${post.id}`}>
-        <PostButton
-          icon={<IoChatbox />}
-          label={`${post?._count?.Comments} comments`}
-        />
+        <PostButton icon={<IoChatbox />} label={`${post?._count?.Comments}`} />
       </Link>
-      <RewardButton entryId={post.id} onSuccess={handleCacheUpdate} />
+      <AwardButton entryId={post.id} onSuccess={handleCacheUpdate} />
       {displayDelete && (
         <DeleteButton
           forumId={post.forum}
@@ -65,6 +73,7 @@ export const PostButtons = ({
 
 export const DummyPostButtons = () => (
   <Box display="flex" flexDirection="row" gap="2" mt="6">
+    <PointsButton points={0} onUpvote={() => {}} onDownvote={() => {}} />
     <PostButton icon={<IoChatbox />} label={`0 comments`} />
     <DummyRewardButton />
   </Box>
@@ -202,7 +211,13 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
       >
         {icon ?? null}
         {label ? (
-          <Text as="span" fontSize="sm" color="gray.600" ml={icon ? "2" : "0"}>
+          <Text
+            as="span"
+            color="whiteAlpha.700"
+            fontSize="sm"
+            fontWeight="semibold"
+            ml={icon ? "2" : "0"}
+          >
             {label}
           </Text>
         ) : null}
@@ -211,17 +226,83 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
   }
 );
 
-interface RewardButtonProps {
+interface PointsButtonProps {
+  points: number;
+  onUpvote: () => void;
+  onDownvote: () => void;
+}
+
+export const PointsButton = ({
+  points,
+  onUpvote,
+  onDownvote,
+}: PointsButtonProps) => {
+  return (
+    <Box
+      display="flex"
+      alignItems="center"
+      borderRadius="md"
+      bgColor="whiteAlpha.100"
+      width="fit-content"
+      userSelect="none"
+    >
+      <Box
+        as="button"
+        aria-label="Upvote Button"
+        p="2"
+        borderRadius="md"
+        _hover={{
+          color: "green.500",
+          backgroundColor: "whiteAlpha.300",
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onUpvote();
+          return false;
+        }}
+      >
+        <IoArrowUp />
+      </Box>
+      <Text
+        as="span"
+        color="whiteAlpha.700"
+        fontSize="sm"
+        fontWeight="semibold"
+      >
+        {points}
+      </Text>
+      <Box
+        as="button"
+        aria-label="Downvote Button"
+        p="2"
+        borderRadius="md"
+        _hover={{
+          color: "red.500",
+          backgroundColor: "whiteAlpha.300",
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDownvote();
+          return false;
+        }}
+      >
+        <IoArrowDown />
+      </Box>
+    </Box>
+  );
+};
+
+interface AwardButtonProps {
   entryId: string;
   disabled?: boolean;
   onSuccess: (award: SerializedAward) => void;
 }
 
-export const RewardButton = ({
+export const AwardButton = ({
   entryId,
   disabled,
   onSuccess,
-}: RewardButtonProps) => {
+}: AwardButtonProps) => {
   const AwardModal = useAwardModal();
 
   return (
