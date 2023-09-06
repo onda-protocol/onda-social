@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Box, IconButton, Text } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 import { web3 } from "@project-serum/anchor";
 import { useConnection } from "@solana/wallet-adapter-react";
 import {
   useQueryClient,
   useMutation,
   QueryClient,
+  InfiniteData,
 } from "@tanstack/react-query";
 import {
   IoChatbox,
@@ -27,6 +28,7 @@ import {
 } from "lib/api";
 import { useAwardModal } from "components/modal";
 import { useAuth } from "components/providers/auth";
+import { VoteType } from "@prisma/client";
 
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
@@ -70,7 +72,12 @@ export const PostButtons = ({
 
 export const DummyPostButtons = () => (
   <Box display="flex" flexDirection="row" gap="2" mt="6">
-    <PointsButton points={0} onUpvote={() => {}} onDownvote={() => {}} />
+    <PointsButton
+      points={0}
+      vote={null}
+      onUpvote={() => {}}
+      onDownvote={() => {}}
+    />
     <PostButton icon={<IoChatbox />} label={`0 comments`} />
     <DummyRewardButton />
   </Box>
@@ -232,16 +239,21 @@ export const PostPointsButton = ({ post }: PostPointsButtonProps) => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation(
-    async (dir: "up" | "down") => {
+    async (voteType: VoteType) => {
       if (!auth.address) {
         throw new Error("Wallet not connected");
       }
 
-      return vote(post.id, auth.address, "post", dir);
+      return vote(
+        post.id,
+        auth.address,
+        "post",
+        voteType === VoteType.UP ? "up" : "down"
+      );
     },
     {
-      onMutate(dir) {
-        updatePostPointsCache(queryClient, post.id, dir);
+      onMutate(voteType) {
+        updatePostVoteCache(queryClient, post.id, voteType);
       },
     }
   );
@@ -249,20 +261,23 @@ export const PostPointsButton = ({ post }: PostPointsButtonProps) => {
   return (
     <PointsButton
       points={Number(post.points)}
-      onUpvote={() => mutation.mutate("up")}
-      onDownvote={() => mutation.mutate("down")}
+      vote={post._vote}
+      onUpvote={() => mutation.mutate(VoteType.UP)}
+      onDownvote={() => mutation.mutate(VoteType.DOWN)}
     />
   );
 };
 
 interface PointsButtonProps {
   points: number;
+  vote: VoteType | null;
   onUpvote: () => void;
   onDownvote: () => void;
 }
 
 export const PointsButton = ({
   points,
+  vote,
   onUpvote,
   onDownvote,
 }: PointsButtonProps) => {
@@ -280,13 +295,16 @@ export const PointsButton = ({
         aria-label="Upvote Button"
         p="2"
         borderRadius="md"
+        color={vote === VoteType.UP ? "green.300" : "whiteAlpha.700"}
         _hover={{
           color: "green.500",
           backgroundColor: "whiteAlpha.300",
         }}
         onClick={(e) => {
           e.stopPropagation();
-          onUpvote();
+          if (vote !== VoteType.UP) {
+            onUpvote();
+          }
           return false;
         }}
       >
@@ -305,13 +323,16 @@ export const PointsButton = ({
         aria-label="Downvote Button"
         p="2"
         borderRadius="md"
+        color={vote === VoteType.DOWN ? "red.300" : "whiteAlpha.700"}
         _hover={{
           color: "red.500",
           backgroundColor: "whiteAlpha.300",
         }}
         onClick={(e) => {
           e.stopPropagation();
-          onDownvote();
+          if (vote !== VoteType.DOWN) {
+            onDownvote();
+          }
           return false;
         }}
       >
@@ -387,19 +408,32 @@ function updatePostsCache(
       exact: false,
     })
     .forEach((query) => {
-      queryClient.setQueryData<PostWithCommentsCountAndForum[]>(
+      queryClient.setQueryData<InfiniteData<PostWithCommentsCountAndForum[]>>(
         query.queryKey,
-        (posts) => {
-          if (posts) {
+        (data) => {
+          if (!data) return;
+
+          for (const page in data.pages) {
+            const posts = data.pages[page];
+
             for (const index in posts) {
               const p = posts[index];
+
               if (p.id === entryId) {
                 const newPost = reducer(p);
-                return [
-                  ...posts.slice(0, Number(index)),
-                  newPost,
-                  ...posts.slice(Number(index) + 1),
-                ];
+
+                return {
+                  ...data,
+                  pages: [
+                    ...data.pages.slice(0, Number(page)),
+                    [
+                      ...posts.slice(0, Number(index)),
+                      newPost,
+                      ...posts.slice(Number(index) + 1),
+                    ],
+                    ...data.pages.slice(0, Number(page) + 1),
+                  ],
+                };
               }
             }
           }
@@ -423,15 +457,18 @@ function updatePostAwardsCache(
   });
 }
 
-function updatePostPointsCache(
+function updatePostVoteCache(
   queryClient: QueryClient,
   entryId: string,
-  dir: "up" | "down"
+  vote: VoteType | null
 ) {
   updatePostsCache(queryClient, entryId, (post) => {
     return {
       ...post,
-      points: Number(Number(post.points) + (dir === "up" ? 1 : -1)).toString(),
+      points: Number(
+        Number(post.points) + (vote === VoteType.UP ? 1 : -1)
+      ).toString(),
+      _vote: vote,
     };
   });
 }

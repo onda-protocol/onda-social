@@ -15,7 +15,7 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
 
   try {
     const json = await req.json();
-    console.log(json);
+
     if (!isValidBody(json)) {
       return new Response(null, { status: 400, statusText: "Bad Request" });
     }
@@ -32,12 +32,6 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
       }
 
       await prisma.$transaction(async (transaction) => {
-        const data = {
-          user: json.user,
-          post: json.address,
-          vote: json.type === "up" ? VoteType.UP : VoteType.DOWN,
-        };
-
         const vote = await transaction.postVote.findUnique({
           where: {
             user_post: {
@@ -47,30 +41,47 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
           },
         });
 
+        console.log("vote: ", vote);
+
+        const data = {
+          user: json.user as string,
+          vote: json.vote === "up" ? VoteType.UP : VoteType.DOWN,
+        };
+
         if (vote !== null && vote.vote === data.vote) {
           throw new StatusError(304, "Not Modified");
         }
 
-        return Promise.all([
-          transaction.postVote.upsert({
-            where: {
-              user_post: {
-                user: json.user,
-                post: json.address,
+        await transaction.post.update({
+          where: {
+            id: json.address,
+          },
+          data: {
+            Votes: {
+              upsert: {
+                where: {
+                  user_post: {
+                    user: json.user,
+                    post: json.address,
+                  },
+                },
+                create: data,
+                update: data,
               },
             },
-            create: data,
-            update: data,
-          }),
-          transaction.post.update({
-            where: {
-              id: json.address,
+          },
+        });
+
+        return transaction.post.update({
+          where: {
+            id: json.address,
+          },
+          data: {
+            points: {
+              [json.vote === "up" ? "increment" : "decrement"]: 1,
             },
-            data: {
-              points: getOperation(json.type),
-            },
-          }),
-        ]);
+          },
+        });
       });
     } else {
       const comment = prisma.comment.findUnique({

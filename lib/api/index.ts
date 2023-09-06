@@ -1,4 +1,12 @@
-import { Comment, Forum, Gate, Post, Award, User } from "@prisma/client";
+import {
+  Comment,
+  Forum,
+  Gate,
+  Post,
+  Award,
+  User,
+  VoteType,
+} from "@prisma/client";
 import { SerializedTransactionResponse, TransactionArgs } from "./types";
 
 type DeepReplaceBigInt<T, U> = {
@@ -24,6 +32,7 @@ export type PostWithCommentsCountAndForum = DeepReplaceBigInt<
   SerializedPost & {
     Author: User;
     Forum: Forum;
+    _vote: VoteType | null;
     _count: { Comments: number };
   },
   string

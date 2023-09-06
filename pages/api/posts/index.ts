@@ -24,6 +24,7 @@ export async function queryPosts(
       "Forum".config AS "Forum.config",
       "Forum".namespace AS "Forum.namespace",
       "Forum".icon AS "Forum.icon",
+      "PostVote".vote AS "Vote.vote",
       (
         SELECT COUNT(*)
         FROM "Comment"
@@ -35,6 +36,8 @@ export async function queryPosts(
       "User" ON "Post"."author" = "User"."id"
     LEFT JOIN 
       "Forum" ON "Post"."forum" = "Forum"."id"
+    LEFT JOIN 
+      "PostVote" ON "Post"."id" = "PostVote"."post" AND "PostVote"."user" = 'EYMKhavgXsRL9HjqGCkdqtdoRJWkrSkBr1iMYq4inEtH'
     ${where}
     ORDER BY points_per_created_at DESC
     LIMIT 20
@@ -51,6 +54,7 @@ export async function queryPosts(
     const forumNamespace = post["Forum.namespace"];
     const forumIcon = post["Forum.icon"];
     const commentsCount = post["_count.Comments"];
+    const vote = post["Vote.vote"];
 
     delete post["Author.id"];
     delete post["Author.name"];
@@ -59,6 +63,7 @@ export async function queryPosts(
     delete post["Forum.id"];
     delete post["Forum.config"];
     delete post["_count.Comments"];
+    delete post["Vote.vote"];
 
     return {
       ...post,
@@ -74,6 +79,7 @@ export async function queryPosts(
         namespace: forumNamespace,
         icon: forumIcon,
       },
+      _vote: vote ?? null,
       _count: {
         Comments: commentsCount,
       },
