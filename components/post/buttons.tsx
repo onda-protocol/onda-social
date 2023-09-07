@@ -243,13 +243,8 @@ export const PostPointsButton = ({ post }: PostPointsButtonProps) => {
       if (!auth.address) {
         throw new Error("Wallet not connected");
       }
-
-      return vote(
-        post.id,
-        auth.address,
-        "post",
-        voteType === VoteType.UP ? "up" : "down"
-      );
+      console.log(`Voting ${voteType} on ${post._vote}`);
+      return vote(post.id, "post", voteType);
     },
     {
       onMutate(voteType) {

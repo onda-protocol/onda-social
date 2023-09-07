@@ -9,6 +9,8 @@ import { useMagic } from "./magic";
 
 type Provider = null | "magic" | "wallet";
 
+const AUTH_MESSAGE = process.env.NEXT_PUBLIC_AUTH_MESSAGE!;
+
 interface AuthContext {
   address?: string;
   isConnected: boolean;
@@ -33,12 +35,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
 
   const [isConnected, setConnected] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const [provider, setProvider] = useState<Provider>(null);
 
   const queryClient = useQueryClient();
   const userInfoQuery = useQuery(["user-info"], () => magic.user.getInfo(), {
     enabled: isConnected && provider === "magic",
   });
+
+  useEffect(() => {
+    const userInfo = userInfoQuery.data;
+
+    if (userInfo && magic.solana) {
+      magic.solana
+        .signMessage(new TextEncoder().encode(AUTH_MESSAGE))
+        .then((signature) => {
+          // Set cookie
+          import("bs58").then((base58) => {
+            return fetch("/api/auth", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                address: userInfo.publicAddress,
+                signature: base58.encode(signature),
+              }),
+            });
+          });
+        });
+    }
+  }, [userInfoQuery.data, magic?.solana]);
 
   useEffect(() => {
     if (

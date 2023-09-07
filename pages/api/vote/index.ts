@@ -1,8 +1,10 @@
 import type { NextFetchEvent, NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { RequestCookies } from "@edge-runtime/cookies";
 import { VoteType } from "@prisma/client/edge";
+import { NextResponse } from "next/server";
 
 import prisma from "lib/prisma";
+import { verifySignature } from "utils/verify";
 
 export const config = {
   runtime: "edge",
@@ -17,25 +19,29 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
     const json = await req.json();
 
     if (!isValidBody(json)) {
-      return new Response(null, { status: 400, statusText: "Bad Request" });
+      throw new StatusError(400, "Bad Request");
+    }
+
+    const cookies = new RequestCookies(req.headers);
+    const token = cookies.get("token")?.value;
+    const user = cookies.get("currentUser")?.value;
+
+    if (!token || !user) {
+      throw new StatusError(401, "Unauthorized");
+    }
+
+    const verified = verifySignature(token, user);
+
+    if (verified !== true) {
+      throw new StatusError(401, "Unauthorized");
     }
 
     if (json.type === "post") {
-      const post = prisma.post.findUnique({
-        where: {
-          id: json.address,
-        },
-      });
-
-      if (post === null) {
-        throw new Response(null, { status: 400, statusText: "Bad Request" });
-      }
-
       await prisma.$transaction(async (transaction) => {
         const vote = await transaction.postVote.findUnique({
           where: {
             user_post: {
-              user: json.user,
+              user,
               post: json.address,
             },
           },
@@ -44,9 +50,11 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
         console.log("vote: ", vote);
 
         const data = {
-          user: json.user as string,
-          vote: json.vote === "up" ? VoteType.UP : VoteType.DOWN,
+          user,
+          vote: json.vote,
         };
+
+        console.log("data: ", data);
 
         if (vote !== null && vote.vote === data.vote) {
           throw new StatusError(304, "Not Modified");
@@ -61,7 +69,7 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
               upsert: {
                 where: {
                   user_post: {
-                    user: json.user,
+                    user,
                     post: json.address,
                   },
                 },
@@ -69,36 +77,16 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
                 update: data,
               },
             },
-          },
-        });
-
-        return transaction.post.update({
-          where: {
-            id: json.address,
-          },
-          data: {
-            points: {
-              [json.vote === "up" ? "increment" : "decrement"]: 1,
-            },
+            points: getOperation(json.vote),
           },
         });
       });
     } else {
-      const comment = prisma.comment.findUnique({
-        where: {
-          id: json.address,
-        },
-      });
-
-      if (comment === null) {
-        throw new Response(null, { status: 400, statusText: "Bad Request" });
-      }
-
       await prisma.$transaction(async (transaction) => {
         const data = {
-          user: json.user,
+          user,
           comment: json.address,
-          vote: json.type === "up" ? VoteType.UP : VoteType.DOWN,
+          vote: json.type,
         };
 
         const vote = await transaction.commentVote.findUnique({
@@ -111,26 +99,26 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
           throw new StatusError(304, "Not Modified");
         }
 
-        return Promise.all([
-          transaction.commentVote.upsert({
-            where: {
-              user_comment: {
-                user: json.user,
-                comment: json.address,
+        await transaction.comment.update({
+          where: {
+            id: json.address,
+          },
+          data: {
+            Votes: {
+              upsert: {
+                where: {
+                  user_comment: {
+                    user,
+                    comment: data.comment,
+                  },
+                },
+                create: data,
+                update: data,
               },
             },
-            create: data,
-            update: data,
-          }),
-          transaction.comment.update({
-            where: {
-              id: json.address,
-            },
-            data: {
-              points: getOperation(json.type),
-            },
-          }),
-        ]);
+            points: getOperation(json.vote),
+          },
+        });
       });
     }
   } catch (err) {
@@ -160,7 +148,7 @@ function isValidBody(body: any) {
     return false;
   }
 
-  if (body.vote !== "up" && body.vote !== "down") {
+  if (body.vote !== VoteType.UP && body.vote !== VoteType.DOWN) {
     return false;
   }
 

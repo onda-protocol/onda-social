@@ -1,7 +1,8 @@
-import type { NextFetchEvent, NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
+import { RequestCookies } from "@edge-runtime/cookies";
 import { Prisma } from "@prisma/client/edge";
 
+import { verifySignature } from "utils/verify";
 import { parseBigInt } from "utils/format";
 import prisma from "lib/prisma";
 
@@ -10,6 +11,7 @@ export const config = {
 };
 
 export async function queryPosts(
+  select: Prisma.Sql = Prisma.empty,
   where: Prisma.Sql = Prisma.empty,
   offset: number = 0
 ) {
@@ -24,7 +26,7 @@ export async function queryPosts(
       "Forum".config AS "Forum.config",
       "Forum".namespace AS "Forum.namespace",
       "Forum".icon AS "Forum.icon",
-      "PostVote".vote AS "Vote.vote",
+      ${select}
       (
         SELECT COUNT(*)
         FROM "Comment"
@@ -36,8 +38,6 @@ export async function queryPosts(
       "User" ON "Post"."author" = "User"."id"
     LEFT JOIN 
       "Forum" ON "Post"."forum" = "Forum"."id"
-    LEFT JOIN 
-      "PostVote" ON "Post"."id" = "PostVote"."post" AND "PostVote"."user" = 'EYMKhavgXsRL9HjqGCkdqtdoRJWkrSkBr1iMYq4inEtH'
     ${where}
     ORDER BY points_per_created_at DESC
     LIMIT 20
@@ -90,7 +90,29 @@ export async function queryPosts(
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const searchParams = req.nextUrl.searchParams;
   const offset = parseInt(searchParams.get("offset") ?? "0");
-  const result = await queryPosts(undefined, offset);
+
+  let select = Prisma.empty;
+  let where = Prisma.empty;
+
+  try {
+    const cookies = new RequestCookies(req.headers);
+    const token = cookies.get("token")?.value;
+    const currentUser = cookies.get("currentUser")?.value;
+
+    if (token && currentUser) {
+      const verified = verifySignature(token, currentUser);
+
+      if (verified === true) {
+        select = Prisma.sql`"PostVote".vote AS "Vote.vote",`;
+        where = Prisma.sql`LEFT JOIN "PostVote" ON "Post"."id" = "PostVote"."post" AND "PostVote"."user" = ${currentUser}`;
+      }
+    }
+  } catch (err) {
+    console.log("err: ", err);
+    // Do nothing
+  }
+
+  const result = await queryPosts(select, where, offset);
   const parsedResult = parseBigInt(result);
   return NextResponse.json(parsedResult);
 }

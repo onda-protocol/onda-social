@@ -219,15 +219,13 @@ export function getTransaction(
 
 export function vote(
   address: string,
-  user: string,
   type: "post" | "comment",
-  vote: "up" | "down"
+  vote: VoteType
 ): Promise<void> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/vote`, {
     method: "POST",
     body: JSON.stringify({
       address,
-      user,
       type,
       vote,
     }),
