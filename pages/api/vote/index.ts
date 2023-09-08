@@ -47,14 +47,10 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
           },
         });
 
-        console.log("vote: ", vote);
-
         const data = {
           user,
           vote: json.vote,
         };
-
-        console.log("data: ", data);
 
         if (vote !== null && vote.vote === data.vote) {
           throw new StatusError(304, "Not Modified");

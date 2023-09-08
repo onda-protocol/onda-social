@@ -52,7 +52,7 @@ export const PostButtons = ({
 
   return (
     <Box display="flex" flexDirection="row" gap="2" mt="6">
-      <PostPointsButton post={post} />
+      <PostVoteButton post={post} />
       <Link href={`/comments/${post.id}`}>
         <PostButton icon={<IoChatbox />} label={`${post?._count?.Comments}`} />
       </Link>
@@ -72,7 +72,7 @@ export const PostButtons = ({
 
 export const DummyPostButtons = () => (
   <Box display="flex" flexDirection="row" gap="2" mt="6">
-    <PointsButton
+    <VoteButton
       points={0}
       vote={null}
       onUpvote={() => {}}
@@ -230,11 +230,11 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
   }
 );
 
-interface PostPointsButtonProps {
+interface PostVoteButtonProps {
   post: PostWithCommentsCountAndForum;
 }
 
-export const PostPointsButton = ({ post }: PostPointsButtonProps) => {
+export const PostVoteButton = ({ post }: PostVoteButtonProps) => {
   const auth = useAuth();
   const queryClient = useQueryClient();
 
@@ -254,7 +254,7 @@ export const PostPointsButton = ({ post }: PostPointsButtonProps) => {
   );
 
   return (
-    <PointsButton
+    <VoteButton
       points={Number(post.points)}
       vote={post._vote}
       onUpvote={() => mutation.mutate(VoteType.UP)}
@@ -270,7 +270,7 @@ interface PointsButtonProps {
   onDownvote: () => void;
 }
 
-export const PointsButton = ({
+export const VoteButton = ({
   points,
   vote,
   onUpvote,

@@ -13,55 +13,10 @@ import {
   MenuList,
   MenuItem,
 } from "@chakra-ui/react";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 
-import { useMagic } from "components/providers/magic";
-import { LoginModal } from "components/modal/login";
-import { useAuth } from "components/providers/auth";
+import { AuthStatus, useAuth } from "components/providers/auth";
 
 export function Navbar() {
-  function UserMenuButton() {
-    return (
-      <ButtonGroup spacing="0">
-        {/* {wallet.publicKey ? (
-          <>
-            <Menu>
-              <MenuButton
-                as={Button}
-                size="sm"
-                leftIcon={<Box as={IoWallet} />}
-                sx={{
-                  borderLeftRadius: 0,
-                }}
-              >
-                {displayAddress}
-              </MenuButton>
-              <MenuList borderRadius="sm">
-                <MenuItem
-                  fontSize="sm"
-                  onClick={async () => {
-                    try {
-                      await wallet.disconnect();
-                    } catch {
-                      // nada
-                    }
-                  }}
-                >
-                  Disconnect
-                </MenuItem>
-              </MenuList>
-            </Menu>
-          </>
-        ) : (
-          <Button onClick={onConnect} size="sm">
-            Connect Wallet
-          </Button>
-        )} */}
-      </ButtonGroup>
-    );
-  }
-
   return (
     <>
       <Box height="56px" />
@@ -115,13 +70,6 @@ export function Navbar() {
 
 const AuthMenu = () => {
   const auth = useAuth();
-  const [loginModal, setLoginModal] = useState(false);
-
-  useEffect(() => {
-    if (auth.isConnected) {
-      setLoginModal(false);
-    }
-  }, [auth]);
 
   const displayAddress = useMemo(() => {
     if (auth.address) {
@@ -129,37 +77,35 @@ const AuthMenu = () => {
     }
   }, [auth.address]);
 
-  return (
-    <>
-      {auth.isConnected === true ? (
-        <>
-          <Menu>
-            <MenuButton
-              as={Button}
-              size="sm"
-              leftIcon={<Box as={IoWallet} />}
-              sx={{
-                borderLeftRadius: 0,
-              }}
-            >
-              {displayAddress}
-            </MenuButton>
-            <MenuList borderRadius="sm">
-              <MenuItem fontSize="sm" onClick={auth.logout}>
-                Disconnect
-              </MenuItem>
-            </MenuList>
-          </Menu>
-        </>
-      ) : (
-        <Button size="sm" onClick={() => setLoginModal(true)}>
+  switch (auth.status) {
+    case AuthStatus.AUTHENTICATED: {
+      return (
+        <Menu>
+          <MenuButton
+            as={Button}
+            size="sm"
+            leftIcon={<Box as={IoWallet} />}
+            sx={{
+              borderLeftRadius: 0,
+            }}
+          >
+            {displayAddress}
+          </MenuButton>
+          <MenuList borderRadius="sm">
+            <MenuItem fontSize="sm" onClick={auth.logout}>
+              Disconnect
+            </MenuItem>
+          </MenuList>
+        </Menu>
+      );
+    }
+
+    default: {
+      return (
+        <Button size="sm" onClick={auth.showUI}>
           Login
         </Button>
-      )}
-      <LoginModal
-        open={loginModal}
-        onRequestClose={() => setLoginModal(false)}
-      />
-    </>
-  );
+      );
+    }
+  }
 };

@@ -1,6 +1,5 @@
-import type { NextFetchEvent, NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { ResponseCookies } from "@edge-runtime/cookies";
+import { NextResponse, NextFetchEvent, NextRequest } from "next/server";
+import { RequestCookies, ResponseCookies } from "@edge-runtime/cookies";
 import { verifySignature } from "utils/verify";
 
 export const config = {
@@ -12,6 +11,16 @@ const MAX_AGE = 60 * 60 * 24 * 5; // 5 days
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   if (req.method !== "POST") {
     return new NextResponse(null, { status: 404, statusText: "Not Found" });
+  }
+
+  let shouldInvalidate = true;
+
+  const cookies = new RequestCookies(req.headers);
+  const token = cookies.get("token")?.value;
+  const currentUser = cookies.get("currentUser")?.value;
+  if (token && currentUser) {
+    const result = verifySignature(token, currentUser);
+    shouldInvalidate = !result;
   }
 
   try {
@@ -31,7 +40,10 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
         httpOnly: true,
         expires: new Date(Date.now() + MAX_AGE),
       });
-      return new NextResponse(null, { status: 200, headers });
+      return NextResponse.json(
+        { message: shouldInvalidate ? "SHOULD_INVALIDATE" : "OK" },
+        { status: 200, headers }
+      );
     } else {
       return new NextResponse(null, {
         status: 401,
