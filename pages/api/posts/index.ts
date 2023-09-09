@@ -1,8 +1,7 @@
 import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
-import { RequestCookies } from "@edge-runtime/cookies";
 import { Prisma } from "@prisma/client/edge";
 
-import { verifySignature } from "utils/verify";
+import { getCurrentUser } from "utils/verify";
 import { parseBigInt } from "utils/format";
 import prisma from "lib/prisma";
 
@@ -85,18 +84,6 @@ export async function queryPosts(
       },
     };
   });
-}
-
-export function getCurrentUser(req: NextRequest) {
-  const cookies = new RequestCookies(req.headers);
-  const token = cookies.get("token")?.value;
-  const currentUser = cookies.get("currentUser")?.value;
-
-  if (token && currentUser) {
-    const verified = verifySignature(token, currentUser);
-    return verified === true ? currentUser : null;
-  }
-  return null;
 }
 
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {

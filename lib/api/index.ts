@@ -7,6 +7,7 @@ import {
   Award,
   User,
   VoteType,
+  CommentVote,
 } from "@prisma/client";
 import { SerializedTransactionResponse, TransactionArgs } from "./types";
 
@@ -51,9 +52,12 @@ export type SerializedAward = DeepReplaceBigInt<Award, string>;
 export type SerializedComment = DeepReplaceBigInt<Comment, string> & {
   awards: AwardsJson;
   Author: User;
+  Votes: CommentVote[];
+  _vote: VoteType | null;
   _count: { Children: number };
 };
 export type SerializedCommentNested = SerializedComment & {
+  _vote: VoteType | null;
   Children?: SerializedCommentNested[];
 };
 

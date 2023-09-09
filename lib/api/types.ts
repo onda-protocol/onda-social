@@ -1,5 +1,3 @@
-type Method = "addEntry";
-
 export type CommentArgs = {
   type: "comment";
   author: string;

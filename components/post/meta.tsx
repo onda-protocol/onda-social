@@ -30,7 +30,7 @@ const Dot = () => (
 
 export const PostMeta: React.FC<PostMetaProps> = ({
   author,
-  points,
+  // points,
   awards,
   createdAt,
   editedAt,
@@ -38,7 +38,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
   forumNamespace,
   forumIcon,
   displayIcon = true,
-  showRewards = false,
+  // showRewards = false,
   displayAvatar = false,
 }) => {
   const authorAddress = useMemo(
@@ -137,7 +137,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
                 color: "gray.400",
               }}
             >
-              {displayAvatar && author.avatar && author.name && (
+              {displayAvatar && author?.avatar && author?.name && (
                 <Box as="span" mr="2">
                   <Image
                     height={28}

@@ -1,9 +1,9 @@
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { parseBigInt } from "utils/format";
 import prisma from "lib/prisma";
-import { getCurrentUser } from "../../posts";
+import { parseBigInt } from "utils/format";
+import { getCurrentUser } from "utils/verify";
 
 export const config = {
   runtime: "edge",

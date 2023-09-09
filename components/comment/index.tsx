@@ -48,7 +48,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
     const auth = useAuth();
     const queryClient = useQueryClient();
     const isAuthor = useMemo(
-      () => auth.isConnected && auth.address === comment.author,
+      () => Boolean(auth.address && auth.address === comment.author),
       [auth, comment.author]
     );
 
@@ -77,6 +77,8 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           hash: "",
           author: userAddress,
           Author: author,
+          Votes: [],
+          _vote: null,
           _count: { Children: 0 },
           Children: [],
         };
@@ -215,7 +217,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                 <Editor
                   buttonLabel="Reply"
                   placeholder={`Reply to ${
-                    comment.Author.name ?? comment.author
+                    comment.Author?.name ?? comment.author
                   }`}
                   successMessage="Reply added"
                   config={{
@@ -232,7 +234,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           )}
         </Box>
 
-        {comment._count.Children > 0 && !collapsed ? (
+        {comment._count?.Children > 0 && !collapsed ? (
           <CommentReplies forum={forum} comment={comment} queryKey={queryKey} />
         ) : null}
 

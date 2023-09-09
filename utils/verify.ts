@@ -1,3 +1,5 @@
+import { NextRequest } from "next/server";
+import { RequestCookies } from "@edge-runtime/cookies";
 import base58 from "bs58";
 import nacl from "tweetnacl";
 
@@ -9,4 +11,16 @@ export function verifySignature(signature: string, publicKey: string) {
     base58.decode(signature),
     base58.decode(publicKey)
   );
+}
+
+export function getCurrentUser(req: NextRequest) {
+  const cookies = new RequestCookies(req.headers);
+  const token = cookies.get("token")?.value;
+  const currentUser = cookies.get("currentUser")?.value;
+
+  if (token && currentUser) {
+    const verified = verifySignature(token, currentUser);
+    return verified === true ? currentUser : null;
+  }
+  return null;
 }

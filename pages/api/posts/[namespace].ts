@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client/edge";
 
 import { parseBigInt } from "utils/format";
-import { queryPosts, getCurrentUser } from "./index";
+import { getCurrentUser } from "utils/verify";
+import { queryPosts } from "./index";
 
 export const config = {
   runtime: "edge",

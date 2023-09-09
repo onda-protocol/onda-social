@@ -18,7 +18,7 @@ import {
 } from "lib/api/types";
 import { RadioCardMenu } from "components/input";
 import { ImagePicker } from "components/input/imagePicker";
-import { useAuth } from "components/providers/auth";
+import { AuthStatus, useAuth } from "components/providers/auth";
 
 export interface EntryForm {
   title: string;
@@ -268,7 +268,7 @@ export const Editor = ({
             </Button>
           )}
           <Button
-            isDisabled={!auth.isConnected}
+            isDisabled={auth.status !== AuthStatus.AUTHENTICATED}
             isLoading={mutation.isLoading}
             variant="solid"
             type="submit"
@@ -394,7 +394,7 @@ export const Editor = ({
               </Button>
             )}
             <Button
-              isDisabled={!auth.isConnected}
+              isDisabled={auth.status !== AuthStatus.AUTHENTICATED}
               isLoading={mutation.isLoading}
               variant="solid"
               minWidth="100px"
