@@ -42,6 +42,7 @@ export const PostListItem = ({ displayIcon, post }: PostListItemProps) => {
       />
       <Box overflow="hidden">
         <PostContent
+          clip
           type={post.postType}
           title={post.title}
           body={post.body}

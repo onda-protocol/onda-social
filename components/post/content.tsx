@@ -25,6 +25,7 @@ interface PostContentProps {
   titleSize?: TypographyProps["fontSize"];
   body: string | null;
   uri: string;
+  clip?: boolean;
 }
 
 export const PostContent = memo(function PostContent({
@@ -33,6 +34,7 @@ export const PostContent = memo(function PostContent({
   titleSize = "3xl",
   body,
   uri,
+  clip,
 }: PostContentProps) {
   const heading = (
     <Heading mt="6" mb="4" as="h2" fontSize={titleSize}>
@@ -48,15 +50,17 @@ export const PostContent = memo(function PostContent({
           <Box
             position="relative"
             width="100%"
-            maxHeight="250px"
+            maxHeight={clip ? "250px" : "auto"}
             overflow="hidden"
           >
             <Markdown>{body ?? ""}</Markdown>
-            <Box
-              position="absolute"
-              inset={0}
-              background="linear-gradient(to bottom, transparent 100px, var(--chakra-colors-onda-950))"
-            />
+            {clip ? (
+              <Box
+                position="absolute"
+                inset={0}
+                background="linear-gradient(to bottom, transparent 100px, var(--chakra-colors-onda-950))"
+              />
+            ) : null}
           </Box>
         </>
       );
