@@ -14,31 +14,38 @@ import {
   Spinner,
 } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
-import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useMemo } from "react";
+import toast from "react-hot-toast";
 
 import { shortenAddress } from "utils/format";
 import { fetchUser, fetchUserComments, fetchUserPosts } from "lib/api";
 import { CommentListItem } from "components/comment";
 import { PostListItem } from "components/post/listItem";
+import { useAuth } from "components/providers/auth";
 
 const User: NextPage = () => {
   const router = useRouter();
-  const anchorWallet = useAnchorWallet();
+  const auth = useAuth();
   const address = router.query.address as string;
   const query = useQuery(["user", address], () => fetchUser(address));
 
   const isCurrentUser = useMemo(
-    () => anchorWallet?.publicKey?.toBase58() === address,
-    [address, anchorWallet]
+    () => auth.address === address,
+    [address, auth.address]
   );
 
-  const authorAddress = useMemo(
-    () => (query.data ? shortenAddress(query.data.id) : null),
-    [query.data]
-  );
+  const authorAddress = useMemo(() => shortenAddress(address), [address]);
+
+  async function handleCopyAddress() {
+    try {
+      await navigator.clipboard.writeText(address);
+      toast.success("Copied address to clipboard");
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   return (
     <Container maxW="container.md">
@@ -49,13 +56,31 @@ const User: NextPage = () => {
           src={query.data?.avatar ?? undefined}
         />
         <Box mt="6">
-          <Heading size="md" textAlign="center">
-            {query.data?.name ?? authorAddress}
-          </Heading>
-          {query.data?.name && (
-            <Text size="xs" textAlign="center" color="gray.500">
+          {query.data?.name ? (
+            <>
+              <Heading size="md" textAlign="center">
+                {query.data.name}
+              </Heading>
+              <Box
+                aria-label="Copy address to clipboard"
+                fontSize="xs"
+                textAlign="center"
+                color="gray.500"
+                onClick={handleCopyAddress}
+              >
+                {authorAddress}
+              </Box>
+            </>
+          ) : (
+            <Box
+              aria-label="Copy address to clipboard"
+              fontSize="xl"
+              fontWeight="bold"
+              textAlign="center"
+              onClick={handleCopyAddress}
+            >
               {authorAddress}
-            </Text>
+            </Box>
           )}
         </Box>
         {isCurrentUser && (

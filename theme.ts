@@ -1,7 +1,44 @@
-import { extendTheme } from "@chakra-ui/react";
+import { menuAnatomy } from "@chakra-ui/anatomy";
+import {
+  extendTheme,
+  createMultiStyleConfigHelpers,
+  defineStyle,
+} from "@chakra-ui/react";
 import { Inter } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"], variable: "--inter-font" });
+
+const { definePartsStyle, defineMultiStyleConfig } =
+  createMultiStyleConfigHelpers(menuAnatomy.keys);
+
+const menuTheme = defineMultiStyleConfig({
+  sizes: {
+    xl: definePartsStyle({
+      list: defineStyle({
+        minWidth: "xs",
+      }),
+      item: defineStyle({
+        fontSize: "md",
+        fontWeight: "semibold",
+        px: "6",
+        py: "2",
+      }),
+    }),
+  },
+  baseStyle: definePartsStyle({
+    list: {
+      bg: "#1A1A1B",
+      borderRadius: "base",
+    },
+    item: {
+      bgColor: "transparent",
+      borderRadius: "sm",
+      _hover: {
+        bgColor: "whiteAlpha.300",
+      },
+    },
+  }),
+});
 
 const theme = extendTheme({
   config: {
@@ -9,6 +46,7 @@ const theme = extendTheme({
     useSystemColorMode: false,
   },
   components: {
+    Menu: menuTheme,
     Tabs: {
       defaultProps: {
         colorScheme: "gray",

@@ -8,6 +8,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
@@ -32,7 +33,7 @@ interface AuthContext {
   status: AuthStatus;
   address?: string;
   showUI: () => void;
-  logout: () => Promise<void>;
+  signOut: () => Promise<void>;
   signIn: () => Promise<void>;
   signMessage: (message: string) => Promise<string>;
   signTransaction:
@@ -44,7 +45,7 @@ const AuthContext = createContext<AuthContext>({
   status: AuthStatus.IDLE,
   address: undefined,
   showUI: () => {},
-  logout: async () => {},
+  signOut: async () => {},
   signIn: async () => {},
   signMessage: async () => "",
   signTransaction: null,
@@ -59,14 +60,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [provider, setProvider] = useState<Provider>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus>(AuthStatus.IDLE);
 
-  const isConnected =
-    authStatus === AuthStatus.CONNECTED ||
-    authStatus === AuthStatus.AUTHENTICATED;
   const isAuthenticated = authStatus === AuthStatus.AUTHENTICATED;
+  const isResolvingRef = useRef(false);
 
   const queryClient = useQueryClient();
   const userInfoQuery = useQuery(["user-info"], () => magic.user.getInfo(), {
-    enabled: isConnected && provider === "magic",
+    enabled: isAuthenticated && provider === "magic",
   });
 
   useEffect(() => {
@@ -76,46 +75,60 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    const userInfo = userInfoQuery.data;
-    const address = userInfo?.publicAddress;
-
-    if (address && magic.solana) {
-      magic.solana
-        .signMessage(new TextEncoder().encode(AUTH_MESSAGE))
-        .then((signature) => {
-          // Set cookie
-          authenticate(address, signature)
-            .then(({ message }) => {
-              setAuthStatus(AuthStatus.AUTHENTICATED);
-              toast.success("Signed in");
-              if (message === "SHOULD_INVALIDATE") {
-                queryClient.invalidateQueries(["posts"]);
-              }
-            })
-            .catch((err) => {
-              setAuthStatus(AuthStatus.ERROR);
-              console.error("Failed to authenticate");
-              console.error(err);
-            });
-        });
-    }
-  }, [queryClient, userInfoQuery.data, magic?.solana]);
-
-  useEffect(() => {
     if (
       router.isReady &&
       !router.pathname.includes("/oauth/callback") &&
-      magic?.user
+      magic?.user &&
+      authStatus === AuthStatus.IDLE &&
+      isResolvingRef.current === false
     ) {
+      isResolvingRef.current = true;
       setAuthStatus(AuthStatus.RESOLVING);
-      magic.user.isLoggedIn().then((isLoggedIn) => {
+
+      magic.user.isLoggedIn().then(async (isLoggedIn) => {
         if (isLoggedIn) {
           setAuthStatus(AuthStatus.AUTHENTICATING);
           setProvider("magic");
+
+          const userInfo = await queryClient.fetchQuery(["user-info"], () =>
+            magic.user.getInfo()
+          );
+          const address = userInfo.publicAddress;
+
+          if (!address) {
+            isResolvingRef.current = false;
+            setAuthStatus(AuthStatus.ERROR);
+            setProvider(null);
+            console.error("Failed to get publicAddress");
+            toast.error("Failed to sign in");
+            return;
+          }
+
+          magic.solana
+            .signMessage(new TextEncoder().encode(AUTH_MESSAGE))
+            .then((signature) => {
+              // Set cookie
+              return authenticate(address, signature).then(({ message }) => {
+                setAuthStatus(AuthStatus.AUTHENTICATED);
+                toast.success("Signed in");
+                if (message === "SHOULD_INVALIDATE") {
+                  queryClient.invalidateQueries(["posts"]);
+                }
+              });
+            })
+            .catch((err) => {
+              setAuthStatus(AuthStatus.ERROR);
+              toast.error("Failed to sign in");
+              console.error("Failed to authenticate");
+              console.error(err);
+            })
+            .finally(() => {
+              isResolvingRef.current = false;
+            });
         }
       });
     }
-  }, [magic, router]);
+  }, [magic, queryClient, router, authStatus]);
 
   const signIn = useCallback(async () => {
     if (
@@ -162,6 +175,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (wallet.connected) {
+      debugger;
       setAuthStatus(AuthStatus.CONNECTED);
       setProvider("wallet");
     }
@@ -176,7 +190,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           ? userInfoQuery.data?.publicAddress ?? undefined
           : wallet.publicKey?.toBase58(),
       showUI: () => setLoginModal(true),
-      logout: async () => {
+      signOut: async () => {
         await clearCookies();
 
         if (provider === "magic") {
@@ -189,7 +203,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               queryClient.setQueryData(["user-info"], undefined);
             })
             .catch((err) => {
-              console.error("Failed to logout");
+              console.error("Failed to signOut");
               console.error(err);
             });
         } else if (provider === "wallet") {
