@@ -95,17 +95,11 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   let where = Prisma.empty;
 
   try {
-    const cookies = new RequestCookies(req.headers);
-    const token = cookies.get("token")?.value;
-    const currentUser = cookies.get("currentUser")?.value;
+    const currentUser = await getCurrentUser(req);
 
-    if (token && currentUser) {
-      const verified = verifySignature(token, currentUser);
-
-      if (verified === true) {
-        select = Prisma.sql`"PostVote".vote AS "Vote.vote",`;
-        where = Prisma.sql`LEFT JOIN "PostVote" ON "Post"."id" = "PostVote"."post" AND "PostVote"."user" = ${currentUser}`;
-      }
+    if (currentUser) {
+      select = Prisma.sql`"PostVote".vote AS "Vote.vote",`;
+      where = Prisma.sql`LEFT JOIN "PostVote" ON "Post"."id" = "PostVote"."post" AND "PostVote"."user" = ${currentUser}`;
     }
   } catch (err) {
     console.log("err: ", err);
@@ -115,4 +109,16 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const result = await queryPosts(select, where, offset);
   const parsedResult = parseBigInt(result);
   return NextResponse.json(parsedResult);
+}
+
+export function getCurrentUser(req: NextRequest) {
+  const cookies = new RequestCookies(req.headers);
+  const token = cookies.get("token")?.value;
+  const currentUser = cookies.get("currentUser")?.value;
+
+  if (token && currentUser) {
+    const verified = verifySignature(token, currentUser);
+    return verified === true ? currentUser : null;
+  }
+  return null;
 }

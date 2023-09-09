@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client/edge";
 
 import { parseBigInt } from "utils/format";
-import { queryPosts } from "./index";
+import { queryPosts, getCurrentUser } from "./index";
 
 export const config = {
   runtime: "edge",
@@ -15,8 +15,18 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const searchParams = req.nextUrl.searchParams;
   const offset = parseInt(searchParams.get("offset") ?? "0");
 
+  const currentUser = await getCurrentUser(req);
+
   const results = await queryPosts(
-    Prisma.sql`WHERE "Forum"."namespace" = ${namespace}`,
+    currentUser ? Prisma.sql`"PostVote".vote AS "Vote.vote",` : Prisma.empty,
+    Prisma.sql`
+      ${
+        currentUser
+          ? Prisma.sql`LEFT JOIN "PostVote" ON "Post"."id" = "PostVote"."post" AND "PostVote"."user" = ${currentUser}`
+          : Prisma.empty
+      }
+      WHERE "Forum"."namespace" = ${namespace}
+    `,
     offset
   );
 
