@@ -12,6 +12,8 @@ export const config = {
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const url = new URL(req.url);
   const address = url.pathname.split("/")[3] as string;
+  const searchParams = req.nextUrl.searchParams;
+  const offset = parseInt(searchParams.get("offset") ?? "0");
 
   const currentUser = await getCurrentUser(req);
   const votes = currentUser
@@ -43,6 +45,8 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
           },
         },
       },
+      take: 20,
+      skip: offset,
     })
     .then((posts) =>
       posts.map((post) => ({

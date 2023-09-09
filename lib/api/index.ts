@@ -112,10 +112,11 @@ export function fetchComments(id: string): Promise<SerializedCommentNested[]> {
 }
 
 export function fetchUserPosts(
-  address: string
+  address: string,
+  offset: number = 0
 ): Promise<PostWithCommentsCountAndForum[]> {
   return fetch(
-    `${process.env.NEXT_PUBLIC_HOST}/api/user/${address}/posts`
+    `${process.env.NEXT_PUBLIC_HOST}/api/user/${address}/posts?offset=${offset}`
   ).then((res) => res.json());
 }
 

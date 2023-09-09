@@ -87,6 +87,18 @@ export async function queryPosts(
   });
 }
 
+export function getCurrentUser(req: NextRequest) {
+  const cookies = new RequestCookies(req.headers);
+  const token = cookies.get("token")?.value;
+  const currentUser = cookies.get("currentUser")?.value;
+
+  if (token && currentUser) {
+    const verified = verifySignature(token, currentUser);
+    return verified === true ? currentUser : null;
+  }
+  return null;
+}
+
 export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const searchParams = req.nextUrl.searchParams;
   const offset = parseInt(searchParams.get("offset") ?? "0");
@@ -109,16 +121,4 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const result = await queryPosts(select, where, offset);
   const parsedResult = parseBigInt(result);
   return NextResponse.json(parsedResult);
-}
-
-export function getCurrentUser(req: NextRequest) {
-  const cookies = new RequestCookies(req.headers);
-  const token = cookies.get("token")?.value;
-  const currentUser = cookies.get("currentUser")?.value;
-
-  if (token && currentUser) {
-    const verified = verifySignature(token, currentUser);
-    return verified === true ? currentUser : null;
-  }
-  return null;
 }

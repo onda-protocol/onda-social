@@ -8,15 +8,14 @@ import {
   TabList,
   TabPanels,
   Tab,
-  Text,
   TabPanel,
   Heading,
   Spinner,
 } from "@chakra-ui/react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import toast from "react-hot-toast";
 
 import { shortenAddress } from "utils/format";
@@ -24,6 +23,7 @@ import { fetchUser, fetchUserComments, fetchUserPosts } from "lib/api";
 import { CommentListItem } from "components/comment";
 import { PostListItem } from "components/post/listItem";
 import { useAuth } from "components/providers/auth";
+import { FetchMore } from "components/fetchMore";
 
 const User: NextPage = () => {
   const router = useRouter();
@@ -142,18 +142,34 @@ interface PostsTabProps {
 }
 
 const PostsTab: React.FC<PostsTabProps> = ({ id }) => {
-  const postsQueryKey = ["user", "posts", id];
-  const postsQuery = useQuery(postsQueryKey, () => fetchUserPosts(id));
+  const postsQuery = useInfiniteQuery({
+    queryKey: ["posts", { user: id }],
+    queryFn: async ({ pageParam = 0 }) => fetchUserPosts(id, pageParam),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === 20 ? allPages.length * 20 : undefined,
+  });
 
-  return postsQuery.isLoading ? (
-    <Box display="flex" alignItems="center" justifyContent="center">
-      <Spinner />
-    </Box>
-  ) : (
+  return (
     <Box pb="12">
-      {postsQuery.data?.map((post) => (
-        <PostListItem key={post.id} post={post} />
-      )) ?? null}
+      {postsQuery.isLoading ? (
+        <Box display="flex" alignItems="center" justifyContent="center" my="12">
+          <Spinner />
+        </Box>
+      ) : (
+        postsQuery.data?.pages?.map((page, index) => (
+          <Fragment key={index}>
+            {page.map((post) => (
+              <PostListItem key={post.id} post={post} />
+            ))}
+          </Fragment>
+        )) ?? null
+      )}
+      {!postsQuery.isLoading && postsQuery.hasNextPage && (
+        <FetchMore
+          isFetching={postsQuery.isFetchingNextPage}
+          onFetchMore={postsQuery.fetchNextPage}
+        />
+      )}
     </Box>
   );
 };
