@@ -4,7 +4,7 @@ import { VoteType } from "@prisma/client/edge";
 import { NextResponse } from "next/server";
 
 import prisma from "lib/prisma";
-import { verifySignature } from "utils/verify";
+import { getCurrentUser, verifySignature } from "utils/verify";
 
 export const config = {
   runtime: "edge",
@@ -22,17 +22,9 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
       throw new StatusError(400, "Bad Request");
     }
 
-    const cookies = new RequestCookies(req.headers);
-    const token = cookies.get("token")?.value;
-    const user = cookies.get("currentUser")?.value;
+    const currentUser = await getCurrentUser(req);
 
-    if (!token || !user) {
-      throw new StatusError(401, "Unauthorized");
-    }
-
-    const verified = verifySignature(token, user);
-
-    if (verified !== true) {
+    if (currentUser === null) {
       throw new StatusError(401, "Unauthorized");
     }
 
@@ -41,14 +33,14 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
         const vote = await transaction.postVote.findUnique({
           where: {
             user_post: {
-              user,
+              user: currentUser,
               post: json.address,
             },
           },
         });
 
         const data = {
-          user,
+          user: currentUser,
           vote: json.vote,
         };
 
@@ -65,7 +57,7 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
               upsert: {
                 where: {
                   user_post: {
-                    user,
+                    user: currentUser,
                     post: json.address,
                   },
                 },
@@ -80,14 +72,16 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
     } else {
       await prisma.$transaction(async (transaction) => {
         const data = {
-          user,
-          comment: json.address,
-          vote: json.type,
+          user: currentUser,
+          vote: json.vote,
         };
 
         const vote = await transaction.commentVote.findUnique({
           where: {
-            user_comment: data,
+            user_comment: {
+              user: currentUser,
+              comment: json.address,
+            },
           },
         });
 
@@ -104,8 +98,8 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
               upsert: {
                 where: {
                   user_comment: {
-                    user,
-                    comment: data.comment,
+                    user: currentUser,
+                    comment: json.address,
                   },
                 },
                 create: data,

@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 import { web3 } from "@project-serum/anchor";
 import { Box, Button } from "@chakra-ui/react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useState } from "react";
 import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
@@ -13,11 +13,18 @@ import {
   SerializedCommentNested,
   fetchReplies,
   fetchUser,
+  vote,
 } from "lib/api";
 import { Markdown } from "../markdown";
 import { PostMeta } from "../post/meta";
-import { PostButton, AwardButton, DeleteButton } from "components/post/buttons";
+import {
+  PostButton,
+  AwardButton,
+  DeleteButton,
+  VoteButton,
+} from "components/post/buttons";
 import { useAuth } from "components/providers/auth";
+import { VoteType } from "@prisma/client";
 
 const Editor = dynamic(
   () => import("components/editor").then((mod) => mod.Editor),
@@ -189,8 +196,11 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
 
           {!collapsed && (
             <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
-              <Markdown>{comment.body}</Markdown>
+              <Box pt="2">
+                <Markdown>{comment.body}</Markdown>
+              </Box>
               <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
+                <CommentVoteButton comment={comment} queryKey={queryKey} />
                 <CommentAwardButton
                   disabled={disabled}
                   comment={comment}
@@ -287,6 +297,39 @@ const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
       disabled={disabled}
       entryId={comment.id}
       onSuccess={handleCacheUpdate}
+    />
+  );
+};
+
+interface CommentVoteButtonProps {
+  comment: SerializedCommentNested;
+  queryKey: (string | { offset: number })[];
+}
+
+const CommentVoteButton = ({ comment }: CommentVoteButtonProps) => {
+  const auth = useAuth();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation(
+    async (voteType: VoteType) => {
+      if (!auth.address) {
+        throw new Error("Wallet not connected");
+      }
+      console.log(`Voting ${voteType} on ${comment._vote}`);
+      return vote(comment.id, "comment", voteType);
+    },
+    {
+      onMutate(voteType) {
+        // updatePostVoteCache(queryClient, post.id, voteType);
+      },
+    }
+  );
+  return (
+    <VoteButton
+      points={Number(comment.points)}
+      vote={comment._vote}
+      onUpvote={() => mutation.mutate(VoteType.UP)}
+      onDownvote={() => mutation.mutate(VoteType.DOWN)}
     />
   );
 };
@@ -488,11 +531,11 @@ const Branch = ({ dashed, onClick }: BranchProps) => (
     px="4px"
     zIndex={1}
     cursor={onClick ? "pointer" : "default"}
-    borderColor="gray.800"
+    borderColor="whiteAlpha.200"
     _hover={
       onClick
         ? {
-            borderColor: "gray.600",
+            borderColor: "whiteAlpha.400",
           }
         : undefined
     }

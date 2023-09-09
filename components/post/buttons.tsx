@@ -56,7 +56,11 @@ export const PostButtons = ({
       <Link href={`/comments/${post.id}`}>
         <PostButton icon={<IoChatbox />} label={`${post?._count?.Comments}`} />
       </Link>
-      <AwardButton entryId={post.id} onSuccess={handleCacheUpdate} />
+      <AwardButton
+        label="Award"
+        entryId={post.id}
+        onSuccess={handleCacheUpdate}
+      />
       {displayDelete && (
         <DeleteButton
           forumId={post.forum}
@@ -338,28 +342,35 @@ export const VoteButton = ({
 };
 
 interface AwardButtonProps {
+  label?: string;
   entryId: string;
   disabled?: boolean;
   onSuccess: (award: SerializedAward) => void;
 }
 
 export const AwardButton = ({
+  label,
   entryId,
   disabled,
   onSuccess,
 }: AwardButtonProps) => {
   const modal = useAwardModal();
 
+  const handleAward = useCallback(
+    (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      e.stopPropagation();
+      modal.openModal(entryId, onSuccess);
+      return false;
+    },
+    [modal, entryId, onSuccess]
+  );
+
   return (
     <PostButton
       icon={<IoGift />}
-      label="Award"
+      label={label}
       disabled={disabled}
-      onClick={(e) => {
-        e.stopPropagation();
-        modal.openModal(entryId, onSuccess);
-        return false;
-      }}
+      onClick={handleAward}
     />
   );
 };

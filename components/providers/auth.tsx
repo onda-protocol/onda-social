@@ -70,7 +70,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      setLoginModal(false);
+      setLoginModal((open) => {
+        if (open) {
+          toast.success("Signed in");
+        }
+        return false;
+      });
     }
   }, [isAuthenticated]);
 
@@ -110,7 +115,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               // Set cookie
               return authenticate(address, signature).then(({ message }) => {
                 setAuthStatus(AuthStatus.AUTHENTICATED);
-                toast.success("Signed in");
                 if (message === "SHOULD_INVALIDATE") {
                   queryClient.invalidateQueries(["posts"]);
                 }
@@ -146,7 +150,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         authenticate(wallet.publicKey.toBase58(), signature)
           .then(({ message }) => {
             setAuthStatus(AuthStatus.AUTHENTICATED);
-            toast.success("Signed in");
             if (message === "SHOULD_INVALIDATE") {
               queryClient.invalidateQueries(["posts"]);
             }

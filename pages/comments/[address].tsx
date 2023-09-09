@@ -50,7 +50,7 @@ const Comments: NextPage<PageProps> = () => {
   });
   const commentsQueryKey = useMemo(() => ["comments", id], [id]);
   const commentsQuery = useQuery(commentsQueryKey, () => fetchComments(id));
-  console.log("commentsQuery", commentsQuery);
+
   const isAuthor = useMemo(
     () => Boolean(auth.address && auth.address === postQuery.data?.author),
     [auth, postQuery.data?.author]
