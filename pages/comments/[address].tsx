@@ -52,7 +52,7 @@ const Comments: NextPage<PageProps> = () => {
   const commentsQuery = useQuery(commentsQueryKey, () => fetchComments(id));
 
   const isAuthor = useMemo(
-    () => auth.isConnected && auth.address === postQuery.data?.author,
+    () => Boolean(auth.address && auth.address === postQuery.data?.author),
     [auth, postQuery.data?.author]
   );
   const isDeleted = useMemo(
@@ -197,7 +197,9 @@ Comments.getInitialProps = async (ctx) => {
       const id = ctx.query.address as string;
 
       await Promise.allSettled([
-        queryClient.prefetchQuery(["post", id], () => fetchPost(id)),
+        queryClient.prefetchQuery(["post", id], () =>
+          fetchPost(id, ctx.req?.headers)
+        ),
         queryClient.prefetchQuery(["awards"], fetchAwards),
       ]);
 

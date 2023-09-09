@@ -1,3 +1,4 @@
+import { IncomingHttpHeaders } from "http";
 import {
   Comment,
   Forum,
@@ -82,10 +83,15 @@ export function fetchAwards(): Promise<SerializedAward[]> {
   );
 }
 
-export function fetchPost(id: string): Promise<PostWithCommentsCountAndForum> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/post/${id}`).then((res) =>
-    res.json()
-  );
+export function fetchPost(
+  id: string,
+  incomingHttpHeaders?: IncomingHttpHeaders
+): Promise<PostWithCommentsCountAndForum> {
+  const headers = new Headers();
+  headers.append("Cookie", incomingHttpHeaders?.cookie ?? "");
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/post/${id}`, {
+    headers,
+  }).then((res) => res.json());
 }
 
 export function fetchPosts(
