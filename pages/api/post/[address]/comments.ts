@@ -15,8 +15,8 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const address = url.pathname.split("/")[3] as string;
   const searchParams = req.nextUrl.searchParams;
   const parent = searchParams.get("parent");
-  const limit = parseInt(searchParams.get("limit") ?? "20");
   const offset = parseInt(searchParams.get("offset") ?? "0");
+  const limit = Math.max(parseInt(searchParams.get("limit") ?? "20"), 80);
 
   const currentUser = await getCurrentUser(req);
   const votes = currentUser

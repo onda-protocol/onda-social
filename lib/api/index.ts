@@ -115,10 +115,14 @@ export function fetchPostsByForumNamespace(
   ).then((res) => res.json());
 }
 
-export function fetchComments(id: string): Promise<SerializedCommentNested[]> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/post/${id}/comments`).then(
-    (res) => res.json()
-  );
+export function fetchComments(
+  id: string,
+  offset: number = 0,
+  limit: number = 20
+): Promise<SerializedCommentNested[]> {
+  return fetch(
+    `${process.env.NEXT_PUBLIC_HOST}/api/post/${id}/comments?offset=${offset}&limit=${limit}`
+  ).then((res) => res.json());
 }
 
 export function fetchUserPosts(

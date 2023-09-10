@@ -1,7 +1,13 @@
 import dynamic from "next/dynamic";
 import { web3 } from "@project-serum/anchor";
 import { Box, Button } from "@chakra-ui/react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  InfiniteData,
+  QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useState } from "react";
 import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
@@ -31,11 +37,13 @@ const Editor = dynamic(
   { ssr: false }
 );
 
+type CommentsQueryKey = (string | { offset: number })[];
+
 interface CommentListItemProps {
   forum: string;
   comment: SerializedCommentNested;
   depth?: number;
-  queryKey: (string | { offset: number })[];
+  queryKey: CommentsQueryKey;
   isRoot?: boolean;
   disableReplies?: boolean;
 }
@@ -90,69 +98,96 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           Children: [],
         };
 
-        queryClient.setQueryData<SerializedCommentNested[]>(
+        queryClient.setQueryData<InfiniteData<SerializedCommentNested[]>>(
           queryKey,
           (data) => {
-            // If the comment has a nested comment i.e. SerializedCommentNested
-            // then we need to update the comment's children
-            for (const index in data) {
-              const c = data[parseInt(index)];
+            if (!data) {
+              return;
+            }
 
-              if (comment.id === c.id) {
-                const updatedComment = {
-                  ...c,
-                  _count: {
-                    ...c._count,
-                    Children: c._count.Children + 1,
-                  },
-                };
+            const pages = data?.pages ?? [];
 
-                if (c.Children !== undefined) {
-                  updatedComment.Children = [newComment, ...(c.Children ?? [])];
-                }
-                return [
-                  ...data.slice(0, parseInt(index)),
-                  updatedComment,
-                  ...data.slice(parseInt(index) + 1),
-                ];
-              } else if (c.Children !== undefined) {
-                for (const i in c.Children) {
-                  const child = c.Children[parseInt(i)];
+            for (const pageIndex in pages) {
+              const page = pages[pageIndex];
 
-                  if (child.id === comment.id) {
-                    const updatedComment = {
-                      ...c,
-                    };
-                    const updatedChild = {
-                      ...child,
-                      _count: {
-                        ...child._count,
-                        Children: child._count.Children + 1,
-                      },
-                    };
+              for (const index in page) {
+                const c = page[index];
 
-                    if ("Children" in updatedChild) {
-                      updatedChild.Children = [
-                        newComment,
-                        ...(updatedChild.Children ?? []),
-                      ];
-                    }
+                if (comment.id === c.id) {
+                  const updatedComment = {
+                    ...c,
+                    _count: {
+                      ...c._count,
+                      Children: c._count.Children + 1,
+                    },
+                  };
 
+                  if (c.Children !== undefined) {
                     updatedComment.Children = [
-                      ...c.Children.slice(0, parseInt(i)),
-                      updatedChild,
-                      ...c.Children.slice(parseInt(i) + 1),
+                      newComment,
+                      ...(c.Children ?? []),
                     ];
+                  }
+                  return {
+                    ...data,
+                    pages: [
+                      ...pages.slice(0, Number(pageIndex)),
+                      [
+                        ...page.slice(0, Number(index)),
+                        updatedComment,
+                        ...page.slice(Number(index) + 1),
+                      ],
+                      ...pages.slice(Number(pageIndex) + 1),
+                    ],
+                  };
+                } else if (c.Children !== undefined) {
+                  for (const childIndex in c.Children) {
+                    const child = c.Children[childIndex];
 
-                    return [
-                      ...data.slice(0, parseInt(index)),
-                      updatedComment,
-                      ...data.slice(parseInt(index) + 1),
-                    ];
+                    if (child.id === comment.id) {
+                      const updatedComment = {
+                        ...c,
+                      };
+                      const updatedChild = {
+                        ...child,
+                        _count: {
+                          ...child._count,
+                          Children: child._count.Children + 1,
+                        },
+                      };
+
+                      if ("Children" in updatedChild) {
+                        updatedChild.Children = [
+                          newComment,
+                          ...(updatedChild.Children ?? []),
+                        ];
+                      }
+
+                      updatedComment.Children = [
+                        ...c.Children.slice(0, Number(childIndex)),
+                        updatedChild,
+                        ...c.Children.slice(Number(childIndex) + 1),
+                      ];
+
+                      return {
+                        ...data,
+                        pages: [
+                          ...pages.slice(0, Number(pageIndex)),
+                          [
+                            ...page.slice(0, Number(index)),
+                            updatedComment,
+                            ...page.slice(Number(index) + 1),
+                          ],
+                          ...pages.slice(Number(pageIndex) + 1),
+                        ],
+                      };
+                    }
                   }
                 }
               }
             }
+
+            return data;
           }
         );
 
@@ -272,7 +307,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
 interface CommentAwardButtonProps {
   disabled?: boolean;
   comment: SerializedCommentNested;
-  queryKey: (string | { offset: number })[];
+  queryKey: CommentsQueryKey;
 }
 
 const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
@@ -284,10 +319,11 @@ const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
 
   const handleCacheUpdate = useCallback(
     (award: SerializedAward) => {
-      queryClient.setQueryData<Array<SerializedCommentNested>>(
-        queryKey,
-        nestedCommentsAwardsReducer(comment.id, award)
-      );
+      updateCommentsCache(queryClient, queryKey, comment.id, (comment) => ({
+        ...comment,
+        awards: incrementAward(comment.awards, award),
+        points: increment(comment.points),
+      }));
     },
     [queryClient, comment, queryKey]
   );
@@ -303,10 +339,10 @@ const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
 
 interface CommentVoteButtonProps {
   comment: SerializedCommentNested;
-  queryKey: (string | { offset: number })[];
+  queryKey: CommentsQueryKey;
 }
 
-const CommentVoteButton = ({ comment }: CommentVoteButtonProps) => {
+const CommentVoteButton = ({ comment, queryKey }: CommentVoteButtonProps) => {
   const auth = useAuth();
   const queryClient = useQueryClient();
 
@@ -320,7 +356,14 @@ const CommentVoteButton = ({ comment }: CommentVoteButtonProps) => {
     },
     {
       onMutate(voteType) {
-        // updatePostVoteCache(queryClient, post.id, voteType);
+        updateCommentsCache(queryClient, queryKey, comment.id, (comment) => ({
+          ...comment,
+          points:
+            voteType === VoteType.UP
+              ? increment(comment.points)
+              : decrement(comment.points),
+          _vote: voteType,
+        }));
       },
     }
   );
@@ -338,7 +381,7 @@ interface CommentDeleteButtonProps {
   disabled?: boolean;
   forumId: string;
   comment: SerializedCommentNested;
-  queryKey: (string | { offset: number })[];
+  queryKey: CommentsQueryKey;
 }
 
 const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
@@ -350,10 +393,12 @@ const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
   const queryClient = useQueryClient();
 
   const onCommentDeleted = useCallback(() => {
-    queryClient.setQueryData<Array<SerializedCommentNested>>(
-      queryKey,
-      nestedCommentsDeleteReducer(comment.id)
-    );
+    updateCommentsCache(queryClient, queryKey, comment.id, (comment) => ({
+      ...comment,
+      body: "[deleted]",
+      uri: "[deleted]",
+      editedAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
+    }));
   }, [queryClient, queryKey, comment]);
 
   return (
@@ -370,7 +415,7 @@ const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
 interface CommentRepliesProps {
   forum: string;
   comment: SerializedCommentNested;
-  queryKey: (string | { offset: number })[];
+  queryKey: CommentsQueryKey;
 }
 
 const CommentReplies: React.FC<CommentRepliesProps> = ({
@@ -553,8 +598,35 @@ const Branch = ({ dashed, onClick }: BranchProps) => (
   </Box>
 );
 
-function increment(like: string) {
-  return Number(Number(like) + 1).toString();
+function updateCommentsCache(
+  queryClient: QueryClient,
+  queryKey: CommentsQueryKey,
+  commentId: string,
+  updater: (comment: SerializedCommentNested) => SerializedCommentNested
+) {
+  if (queryKey[0] === "comments") {
+    queryClient.setQueryData<InfiniteData<SerializedCommentNested[]>>(
+      queryKey,
+      createPagedCommentsReducer(commentId, updater)
+    );
+  } else {
+    queryClient.setQueryData<SerializedCommentNested[]>(
+      queryKey,
+      (comments) => {
+        if (comments) {
+          return nestedCommentsReducer(commentId, comments, updater);
+        }
+      }
+    );
+  }
+}
+
+function increment(num: string) {
+  return Number(Number(num) + 1).toString();
+}
+
+function decrement(num: string) {
+  return Number(Number(num) - 1).toString();
 }
 
 function incrementAward(awardJson: AwardsJson, award: SerializedAward) {
@@ -572,71 +644,73 @@ function incrementAward(awardJson: AwardsJson, award: SerializedAward) {
   return { ...awards };
 }
 
-function nestedCommentsAwardsReducer(
+function createPagedCommentsReducer(
   id: string,
-  award: SerializedAward
+  updater: (comment: SerializedCommentNested) => SerializedCommentNested
 ): (
-  input: SerializedCommentNested[] | undefined
-) => SerializedCommentNested[] | undefined {
-  return nestedCommentsReducer(id, (comment) => ({
-    ...comment,
-    awards: incrementAward(comment.awards, award),
-    points: increment(comment.points),
-  }));
-}
+  data: InfiniteData<SerializedCommentNested[]> | undefined
+) => InfiniteData<SerializedCommentNested[]> | undefined {
+  return (data) => {
+    if (!data) return;
 
-function nestedCommentsDeleteReducer(
-  id: string
-): (
-  comments: SerializedCommentNested[] | undefined
-) => SerializedCommentNested[] | undefined {
-  return nestedCommentsReducer(id, (comment) => ({
-    ...comment,
-    body: "[deleted]",
-    uri: "[deleted]",
-    editedAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
-  }));
+    const pages = data?.pages ?? [];
+
+    for (const pageIndex in pages) {
+      const page = pages[pageIndex];
+
+      const update = nestedCommentsReducer(id, page, updater);
+
+      if (update) {
+        return {
+          ...data,
+          pages: [
+            ...pages.slice(0, Number(pageIndex)),
+            update,
+            ...pages.slice(Number(pageIndex) + 1),
+          ],
+        };
+      }
+    }
+
+    return data;
+  };
 }
 
 function nestedCommentsReducer(
   id: string,
+  comments: SerializedCommentNested[],
   updater: (comment: SerializedCommentNested) => SerializedCommentNested
-): (
-  input: SerializedCommentNested[] | undefined
-) => SerializedCommentNested[] | undefined {
-  return (comments) => {
-    if (!comments) {
-      return;
-    }
+): SerializedCommentNested[] | undefined {
+  if (!comments) {
+    return;
+  }
 
-    for (const index in comments) {
-      const comment: SerializedCommentNested = comments[index];
+  for (const index in comments) {
+    const comment: SerializedCommentNested = comments[index];
 
-      if (comment.id === id) {
+    if (comment.id === id) {
+      return [
+        ...comments.slice(0, Number(index)),
+        updater(comment),
+        ...comments.slice(Number(index) + 1),
+      ];
+    } else if (comment.Children && comment.Children.length > 0) {
+      const updatedChildren = nestedCommentsReducer(
+        id,
+        comment.Children,
+        updater
+      );
+
+      if (updatedChildren) {
         return [
           ...comments.slice(0, Number(index)),
-          updater(comment),
+          {
+            ...comments[index],
+            Children: updatedChildren,
+          },
           ...comments.slice(Number(index) + 1),
         ];
-      } else if (comment.Children && comment.Children.length > 0) {
-        const updatedChildren = nestedCommentsReducer(
-          id,
-          updater
-        )(comment.Children);
-
-        if (updatedChildren) {
-          return [
-            ...comments.slice(0, Number(index)),
-            {
-              ...comments[index],
-              Children: updatedChildren,
-            },
-            ...comments.slice(Number(index) + 1),
-          ];
-        }
       }
     }
-
-    return comments;
-  };
+  }
 }

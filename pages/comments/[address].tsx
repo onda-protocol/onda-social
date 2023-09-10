@@ -1,18 +1,18 @@
 import type { NextPage } from "next";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
-import { useCallback, useMemo } from "react";
+import { Fragment, useCallback, useMemo } from "react";
 import { Box, Container, Divider, Spinner } from "@chakra-ui/react";
 import {
   DehydratedState,
+  InfiniteData,
   QueryClient,
   dehydrate,
+  useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useAnchorWallet } from "@solana/wallet-adapter-react";
 
-import type { EntryForm } from "components/editor";
 import {
   SerializedCommentNested,
   fetchPost,
@@ -22,10 +22,12 @@ import {
   AwardsJson,
   fetchAwards,
 } from "lib/api";
+import type { EntryForm } from "components/editor";
 import { CommentListItem } from "components/comment";
 import { PostButtons } from "components/post/buttons";
 import { PostHead } from "components/post/head";
 import { useAuth } from "components/providers/auth";
+import { FetchMore } from "components/fetchMore";
 
 const Editor = dynamic(
   () => import("components/editor").then((mod) => mod.Editor),
@@ -48,8 +50,14 @@ const Comments: NextPage<PageProps> = () => {
     queryFn: () => fetchPost(id),
     refetchOnMount: false,
   });
+  const limit = 20;
   const commentsQueryKey = useMemo(() => ["comments", id], [id]);
-  const commentsQuery = useQuery(commentsQueryKey, () => fetchComments(id));
+  const commentsQuery = useInfiniteQuery({
+    queryKey: commentsQueryKey,
+    queryFn: async ({ pageParam = 0 }) => fetchComments(id, pageParam),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === 20 ? allPages.length * limit : undefined,
+  });
 
   const isAuthor = useMemo(
     () => Boolean(auth.address && auth.address === postQuery.data?.author),
@@ -69,31 +77,39 @@ const Comments: NextPage<PageProps> = () => {
         fetchUser(userAddress)
       );
 
-      queryClient.setQueryData<SerializedCommentNested[]>(
+      queryClient.setQueryData<InfiniteData<SerializedCommentNested[]>>(
         commentsQueryKey,
         (data) => {
-          const newComment: SerializedCommentNested = {
-            uri,
-            id: Math.random().toString(36),
-            createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
-            editedAt: null,
-            parent: null,
-            post: id,
-            body: entry.body,
-            nsfw: false,
-            points: BigInt(0).toString(),
-            awards: {},
-            nonce: BigInt(0).toString(),
-            hash: "",
-            author: userAddress,
-            Author: author,
-            Votes: [],
-            _vote: null,
-            Children: [],
-            _count: { Children: 0 },
-          } as SerializedCommentNested;
+          if (data) {
+            const firstPage = data?.pages[0] ?? [];
+            const rest = data?.pages.slice(1) ?? [];
 
-          return [newComment, ...(data ?? [])];
+            const newComment: SerializedCommentNested = {
+              uri,
+              id: Math.random().toString(36),
+              createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
+              editedAt: null,
+              parent: null,
+              post: id,
+              body: entry.body,
+              nsfw: false,
+              points: BigInt(0).toString(),
+              awards: {},
+              nonce: BigInt(0).toString(),
+              hash: "",
+              author: userAddress,
+              Author: author,
+              Votes: [],
+              _vote: null,
+              Children: [],
+              _count: { Children: 0 },
+            } as SerializedCommentNested;
+
+            return {
+              ...data,
+              pages: [[newComment, ...firstPage], ...rest],
+            };
+          }
         }
       );
     },
@@ -177,15 +193,25 @@ const Comments: NextPage<PageProps> = () => {
             <Spinner />
           </Box>
         ) : (
-          commentsQuery.data?.map((comment) => (
-            <CommentListItem
-              isRoot
-              key={comment.id}
-              comment={comment}
-              forum={postQuery.data?.forum}
-              queryKey={commentsQueryKey}
-            />
+          commentsQuery.data?.pages?.map((page, index) => (
+            <Fragment key={index}>
+              {page.map((comment) => (
+                <CommentListItem
+                  isRoot
+                  key={comment.id}
+                  comment={comment}
+                  forum={postQuery.data?.forum}
+                  queryKey={commentsQueryKey}
+                />
+              ))}
+            </Fragment>
           )) ?? null
+        )}
+        {!commentsQuery.isLoading && commentsQuery.hasNextPage && (
+          <FetchMore
+            isFetching={commentsQuery.isFetchingNextPage}
+            onFetchMore={commentsQuery.fetchNextPage}
+          />
         )}
       </Box>
     </Container>
