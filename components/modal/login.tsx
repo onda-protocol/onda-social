@@ -150,7 +150,7 @@ export const LoginModal = ({ open, onRequestClose }: LoginModalProps) => {
             {wallet.wallets.length ? (
               <Box position="relative" padding="10">
                 <Divider />
-                <AbsoluteCenter bg="onda.950" px="4">
+                <AbsoluteCenter bg="onda.1000" px="4">
                   <Text fontSize="sm">OR</Text>
                 </AbsoluteCenter>
               </Box>
@@ -192,7 +192,7 @@ export const LoginModal = ({ open, onRequestClose }: LoginModalProps) => {
   return (
     <Modal size="lg" isOpen={open} onClose={onRequestClose}>
       <ModalOverlay bg="blackAlpha.900" />
-      <ModalContent backgroundColor="onda.950">
+      <ModalContent backgroundColor="onda.1000">
         <ModalBody padding="8">{renderBody()}</ModalBody>
       </ModalContent>
     </Modal>

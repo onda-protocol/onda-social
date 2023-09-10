@@ -221,7 +221,7 @@ const DummyCommentEditor = () => (
       mt="2"
       placeholder="Loading..."
       minHeight="100px"
-      backgroundColor="#090A20"
+      backgroundColor="blackAlpha.100"
     />
     <Box display="flex" mt="2" justifyContent="right">
       <Button isDisabled variant="solid" type="submit" cursor="pointer">

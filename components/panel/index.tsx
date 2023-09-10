@@ -10,7 +10,7 @@ export const Panel: React.FC<BoxProps> = ({ children, ...other }) => (
     mb="2"
     borderWidth="1px"
     borderRadius="md"
-    backgroundColor="onda.950"
+    backgroundColor="onda.1000"
     borderColor="gray.800"
     {...other}
   >

@@ -246,7 +246,7 @@ export const Editor = ({
           mt="2"
           placeholder={placeholder}
           minHeight="100px"
-          backgroundColor="#090A20"
+          backgroundColor="blackAlpha.100"
           {...methods.register("body", {
             required: true,
             validate(value) {
@@ -289,7 +289,7 @@ export const Editor = ({
             mt="4"
             placeholder={placeholder || "Text"}
             minHeight={config.type === "post" ? "200px" : "100px"}
-            backgroundColor="#090A20"
+            backgroundColor="onda.900"
             {...methods.register("body", { required: true })}
           />
         );

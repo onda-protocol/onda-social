@@ -39,7 +39,7 @@ export function Navbar() {
         width="100%"
         height="56px"
         display="flex"
-        backgroundColor="onda.900"
+        backgroundColor="oxfordBlue"
         borderBottomWidth="1px"
         borderColor="gray.800"
         zIndex="docked"

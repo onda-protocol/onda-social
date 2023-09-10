@@ -58,7 +58,7 @@ export const PostContent = memo(function PostContent({
               <Box
                 position="absolute"
                 inset={0}
-                background="linear-gradient(to bottom, transparent 100px, var(--chakra-colors-onda-950))"
+                background="linear-gradient(to bottom, transparent 100px, var(--chakra-colors-onda-1000))"
               />
             ) : null}
           </Box>

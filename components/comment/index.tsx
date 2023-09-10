@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
+import { VoteType } from "@prisma/client";
 import { web3 } from "@project-serum/anchor";
-import { Box, Button } from "@chakra-ui/react";
+import { Box, Button, Text } from "@chakra-ui/react";
 import {
   InfiniteData,
   QueryClient,
@@ -9,7 +10,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useState } from "react";
-import { IoChatbox } from "react-icons/io5";
+import { IoArrowDown, IoArrowUp, IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
 
 import type { EntryForm } from "../editor";
@@ -27,10 +28,10 @@ import {
   PostButton,
   AwardButton,
   DeleteButton,
-  VoteButton,
+  UpVoteButton,
+  DownVoteButton,
 } from "components/post/buttons";
 import { useAuth } from "components/providers/auth";
-import { VoteType } from "@prisma/client";
 
 const Editor = dynamic(
   () => import("components/editor").then((mod) => mod.Editor),
@@ -391,6 +392,60 @@ const CommentVoteButton = ({ comment, queryKey }: CommentVoteButtonProps) => {
   );
 };
 
+interface VoteButtonProps {
+  points: number;
+  vote: VoteType | null;
+  onUpvote: () => void;
+  onDownvote: () => void;
+}
+
+const VoteButton = ({
+  points,
+  vote,
+  onUpvote,
+  onDownvote,
+}: VoteButtonProps) => {
+  return (
+    <Box
+      display="flex"
+      alignItems="center"
+      borderRadius="md"
+      bgColor="whiteAlpha.100"
+      width="fit-content"
+      userSelect="none"
+    >
+      <UpVoteButton
+        active={vote === VoteType.UP}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (vote !== VoteType.UP) {
+            onUpvote();
+          }
+          return false;
+        }}
+      />
+      <Text
+        as="span"
+        color="whiteAlpha.700"
+        fontSize="sm"
+        fontWeight="semibold"
+      >
+        {points}
+      </Text>
+      <DownVoteButton
+        active={vote === VoteType.DOWN}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (vote !== VoteType.DOWN) {
+            onDownvote();
+          }
+          return false;
+        }}
+      />
+    </Box>
+  );
+};
+
 interface CommentDeleteButtonProps {
   disabled?: boolean;
   forumId: string;
@@ -562,7 +617,7 @@ const MoreRepliesButton: React.FC<MoreRepliesButton> = ({
   loading,
   onClick,
 }) => (
-  <Box position="relative" ml="8" pt="2" pb="2" bgColor="onda.950" zIndex={1}>
+  <Box position="relative" ml="8" pt="2" pb="2" bgColor="onda.1000" zIndex={1}>
     <Box ml={nested ? "4" : "12"}>
       <Button size="sm" variant="ghost" fontWeight="semibold" onClick={onClick}>
         {loading

@@ -4,9 +4,17 @@ import {
   createMultiStyleConfigHelpers,
   defineStyle,
 } from "@chakra-ui/react";
-import { Inter } from "next/font/google";
+import { IBM_Plex_Sans, Noto_Sans } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"], variable: "--inter-font" });
+const heading = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
+const body = Noto_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
 
 const { definePartsStyle, defineMultiStyleConfig } =
   createMultiStyleConfigHelpers(menuAnatomy.keys);
@@ -27,14 +35,14 @@ const menuTheme = defineMultiStyleConfig({
   },
   baseStyle: definePartsStyle({
     list: {
-      bg: "#1A1A1B",
+      bg: "onda.1000",
       borderRadius: "base",
     },
     item: {
       bgColor: "transparent",
       borderRadius: "sm",
       _hover: {
-        bgColor: "whiteAlpha.300",
+        bgColor: "deftBlue",
       },
     },
   }),
@@ -187,27 +195,35 @@ const theme = extendTheme({
   },
   colors: {
     onda: {
-      50: "#CCCDF0",
-      100: "#999CE1",
-      200: "#4D51CB",
-      300: "#383CC0",
-      400: "#3034A7",
-      500: "#292C8D",
-      600: "#222474",
-      700: "#1A1C5A",
-      800: "#131441",
-      900: "#0C0D29",
-      950: "#090A20",
+      50: "#4055B5",
+      100: "#3A4EA6",
+      200: "#354797",
+      300: "#304088",
+      400: "#2A3979",
+      500: "#25326A",
+      600: "#202B5A",
+      700: "#1B244B",
+      800: "#151D3C",
+      900: "#10162D",
+      1000: "#080B16",
     },
+    oxfordBlue: "#11182F",
+    deftBlue: "#34396A",
+    steelBlue: "#3182CE",
+    xanthous: "#EAB308",
+    folly: "#FF004D",
+    pumpkin: "#FF7A00",
+    bodyText: "#E2E8F0",
   },
   fonts: {
-    heading: inter.style.fontFamily,
-    body: inter.style.fontFamily,
+    heading: heading.style.fontFamily,
+    body: body.style.fontFamily,
   },
   styles: {
     global: () => ({
       "html, body": {
         fontSize: "14px",
+        lineHeight: "tall",
         WebkitFontSmoothing: "antialiased",
         MozOsxFontSmoothing: "grayscale",
       },
@@ -216,7 +232,7 @@ const theme = extendTheme({
         display: "flex",
       },
       body: {
-        bg: "onda.950",
+        bg: "onda.1000",
         flex: 1,
       },
     }),

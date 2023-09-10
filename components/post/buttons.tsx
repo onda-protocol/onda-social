@@ -52,7 +52,6 @@ export const PostButtons = ({
 
   return (
     <Box display="flex" flexDirection="row" gap="2" mt="6">
-      <PostVoteButton post={post} />
       <Link href={`/comments/${post.id}`}>
         <PostButton icon={<IoChatbox />} label={`${post?._count?.Comments}`} />
       </Link>
@@ -76,12 +75,6 @@ export const PostButtons = ({
 
 export const DummyPostButtons = () => (
   <Box display="flex" flexDirection="row" gap="2" mt="6">
-    <VoteButton
-      points={0}
-      vote={null}
-      onUpvote={() => {}}
-      onDownvote={() => {}}
-    />
     <PostButton icon={<IoChatbox />} label={`0 comments`} />
     <DummyRewardButton />
   </Box>
@@ -234,11 +227,11 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
   }
 );
 
-interface PostVoteButtonProps {
+interface PostVoteButtonsProps {
   post: PostWithCommentsCountAndForum;
 }
 
-export const PostVoteButton = ({ post }: PostVoteButtonProps) => {
+export const PostVoteButtons = ({ post }: PostVoteButtonsProps) => {
   const auth = useAuth();
   const queryClient = useQueryClient();
 
@@ -258,7 +251,7 @@ export const PostVoteButton = ({ post }: PostVoteButtonProps) => {
   );
 
   return (
-    <VoteButton
+    <VoteButtons
       points={Number(post.points)}
       vote={post._vote}
       onUpvote={() => mutation.mutate(VoteType.UP)}
@@ -267,38 +260,30 @@ export const PostVoteButton = ({ post }: PostVoteButtonProps) => {
   );
 };
 
-interface PointsButtonProps {
+interface VoteButtonsProps {
   points: number;
   vote: VoteType | null;
   onUpvote: () => void;
   onDownvote: () => void;
 }
 
-export const VoteButton = ({
+export const VoteButtons = ({
   points,
   vote,
   onUpvote,
   onDownvote,
-}: PointsButtonProps) => {
+}: VoteButtonsProps) => {
   return (
     <Box
       display="flex"
+      flexDirection="column"
       alignItems="center"
       borderRadius="md"
-      bgColor="whiteAlpha.100"
       width="fit-content"
       userSelect="none"
     >
-      <Box
-        as="button"
-        aria-label="Upvote Button"
-        p="2"
-        borderRadius="md"
-        color={vote === VoteType.UP ? "green.300" : "whiteAlpha.700"}
-        _hover={{
-          color: "green.500",
-          backgroundColor: "whiteAlpha.300",
-        }}
+      <UpVoteButton
+        active={vote === VoteType.UP}
         onClick={(e) => {
           e.stopPropagation();
           if (vote !== VoteType.UP) {
@@ -306,9 +291,7 @@ export const VoteButton = ({
           }
           return false;
         }}
-      >
-        <IoArrowUp />
-      </Box>
+      />
       <Text
         as="span"
         color="whiteAlpha.700"
@@ -317,16 +300,8 @@ export const VoteButton = ({
       >
         {points}
       </Text>
-      <Box
-        as="button"
-        aria-label="Downvote Button"
-        p="2"
-        borderRadius="md"
-        color={vote === VoteType.DOWN ? "red.300" : "whiteAlpha.700"}
-        _hover={{
-          color: "red.500",
-          backgroundColor: "whiteAlpha.300",
-        }}
+      <DownVoteButton
+        active={vote === VoteType.DOWN}
         onClick={(e) => {
           e.stopPropagation();
           if (vote !== VoteType.DOWN) {
@@ -334,12 +309,54 @@ export const VoteButton = ({
           }
           return false;
         }}
-      >
-        <IoArrowDown />
-      </Box>
+      />
     </Box>
   );
 };
+
+interface VoteButtonProps {
+  active: boolean;
+  onClick: MouseEventHandler<HTMLButtonElement>;
+}
+
+export const UpVoteButton = ({ active, onClick }: VoteButtonProps) => (
+  <Box
+    as="button"
+    aria-label="Upvote Button"
+    p="2"
+    borderRadius="md"
+    color={active ? "steelBlue" : "whiteAlpha.700"}
+    _hover={{
+      color: "steelBlue",
+      backgroundColor: "whiteAlpha.300",
+    }}
+    onClick={onClick}
+  >
+    <IoArrowUp />
+  </Box>
+);
+
+interface DownVoteButtonProps {
+  active: boolean;
+  onClick: MouseEventHandler<HTMLButtonElement>;
+}
+
+export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
+  <Box
+    as="button"
+    aria-label="Upvote Button"
+    p="2"
+    borderRadius="md"
+    color={active ? "steelBlue" : "whiteAlpha.700"}
+    _hover={{
+      color: "steelBlue",
+      backgroundColor: "whiteAlpha.300",
+    }}
+    onClick={onClick}
+  >
+    <IoArrowDown />
+  </Box>
+);
 
 interface AwardButtonProps {
   label?: string;

@@ -22,7 +22,7 @@ export const Modal = ({
   return (
     <ChakraModal size="xl" isOpen={isOpen} onClose={onRequestClose}>
       <ModalOverlay bg="blackAlpha.600" />
-      <ModalContent backgroundColor="onda.950" alignSelf="center">
+      <ModalContent backgroundColor="onda.1000" alignSelf="center">
         {title && <ModalHeader>{title}</ModalHeader>}
         <ModalBody padding="0">{children}</ModalBody>
       </ModalContent>
