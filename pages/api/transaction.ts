@@ -52,6 +52,7 @@ export default async function handler(
       }
 
       const [dataV1Args, uri] = await parseData(req.body.data);
+
       const instruction = await addEntryIx(connection, {
         data: dataV1Args,
         author: new web3.PublicKey(data.author),
@@ -64,6 +65,7 @@ export default async function handler(
       });
 
       const latestBlockhash = await connection.getLatestBlockhash();
+
       const transaction = new web3.Transaction({
         feePayer: signer.publicKey,
         ...latestBlockhash,
@@ -76,6 +78,7 @@ export default async function handler(
           requireAllSignatures: false,
         })
       );
+
       return res.status(200).json({
         uri,
         transaction: serializedTransaction,
