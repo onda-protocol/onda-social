@@ -97,99 +97,113 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           _count: { Children: 0 },
           Children: [],
         };
+        //   queryKey,
+        //   (data) => {
+        //     if (!data) {
+        //       return;
+        //     }
 
-        queryClient.setQueryData<InfiniteData<SerializedCommentNested[]>>(
-          queryKey,
-          (data) => {
-            if (!data) {
-              return;
-            }
+        //     const pages = data?.pages ?? [];
 
-            const pages = data?.pages ?? [];
+        //     for (const pageIndex in pages) {
+        //       const page = pages[pageIndex];
 
-            for (const pageIndex in pages) {
-              const page = pages[pageIndex];
+        //       for (const index in page) {
+        //         const c = page[index];
 
-              for (const index in page) {
-                const c = page[index];
+        //         if (comment.id === c.id) {
+        //           const updatedComment = {
+        //             ...c,
+        //             _count: {
+        //               ...c._count,
+        //               Children: c._count.Children + 1,
+        //             },
+        //           };
 
-                if (comment.id === c.id) {
-                  const updatedComment = {
-                    ...c,
-                    _count: {
-                      ...c._count,
-                      Children: c._count.Children + 1,
-                    },
-                  };
+        //           if (c.Children !== undefined) {
+        //             updatedComment.Children = [
+        //               newComment,
+        //               ...(c.Children ?? []),
+        //             ];
+        //           }
+        //           return {
+        //             ...data,
+        //             pages: [
+        //               ...pages.slice(0, Number(pageIndex)),
+        //               [
+        //                 ...page.slice(0, Number(index)),
+        //                 updatedComment,
+        //                 ...page.slice(Number(index) + 1),
+        //               ],
+        //               ...pages.slice(Number(pageIndex) + 1),
+        //             ],
+        //           };
+        //         } else if (c.Children !== undefined) {
+        //           for (const childIndex in c.Children) {
+        //             const child = c.Children[childIndex];
 
-                  if (c.Children !== undefined) {
-                    updatedComment.Children = [
-                      newComment,
-                      ...(c.Children ?? []),
-                    ];
-                  }
-                  return {
-                    ...data,
-                    pages: [
-                      ...pages.slice(0, Number(pageIndex)),
-                      [
-                        ...page.slice(0, Number(index)),
-                        updatedComment,
-                        ...page.slice(Number(index) + 1),
-                      ],
-                      ...pages.slice(Number(pageIndex) + 1),
-                    ],
-                  };
-                } else if (c.Children !== undefined) {
-                  for (const childIndex in c.Children) {
-                    const child = c.Children[childIndex];
+        //             if (child.id === comment.id) {
+        //               const updatedComment = {
+        //                 ...c,
+        //               };
+        //               const updatedChild = {
+        //                 ...child,
+        //                 _count: {
+        //                   ...child._count,
+        //                   Children: child._count.Children + 1,
+        //                 },
+        //               };
 
-                    if (child.id === comment.id) {
-                      const updatedComment = {
-                        ...c,
-                      };
-                      const updatedChild = {
-                        ...child,
-                        _count: {
-                          ...child._count,
-                          Children: child._count.Children + 1,
-                        },
-                      };
+        //               if ("Children" in updatedChild) {
+        //                 updatedChild.Children = [
+        //                   newComment,
+        //                   ...(updatedChild.Children ?? []),
+        //                 ];
+        //               }
 
-                      if ("Children" in updatedChild) {
-                        updatedChild.Children = [
-                          newComment,
-                          ...(updatedChild.Children ?? []),
-                        ];
-                      }
+        //               updatedComment.Children = [
+        //                 ...c.Children.slice(0, Number(childIndex)),
+        //                 updatedChild,
+        //                 ...c.Children.slice(Number(childIndex) + 1),
+        //               ];
 
-                      updatedComment.Children = [
-                        ...c.Children.slice(0, Number(childIndex)),
-                        updatedChild,
-                        ...c.Children.slice(Number(childIndex) + 1),
-                      ];
+        //               return {
+        //                 ...data,
+        //                 pages: [
+        //                   ...pages.slice(0, Number(pageIndex)),
+        //                   [
+        //                     ...page.slice(0, Number(index)),
+        //                     updatedComment,
+        //                     ...page.slice(Number(index) + 1),
+        //                   ],
+        //                   ...pages.slice(Number(pageIndex) + 1),
+        //                 ],
+        //               };
+        //             }
+        //           }
+        //         }
+        //       }
+        //     }
 
-                      return {
-                        ...data,
-                        pages: [
-                          ...pages.slice(0, Number(pageIndex)),
-                          [
-                            ...page.slice(0, Number(index)),
-                            updatedComment,
-                            ...page.slice(Number(index) + 1),
-                          ],
-                          ...pages.slice(Number(pageIndex) + 1),
-                        ],
-                      };
-                    }
-                  }
-                }
-              }
-            }
+        //     return data;
+        //   }
+        // );
 
-            return data;
+        updateCommentsCache(queryClient, queryKey, comment.id, (comment) => {
+          const updatedComment = {
+            ...comment,
+            _count: {
+              ...comment._count,
+              Children: comment._count.Children + 1,
+            },
+          };
+
+          if (comment.Children !== undefined) {
+            updatedComment.Children = [newComment, ...(comment.Children ?? [])];
           }
-        );
+
+          return updatedComment;
+        });
 
         if (!hasNestedChildren) {
           queryClient.setQueryData<SerializedCommentNested[]>(
