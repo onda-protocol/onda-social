@@ -36,11 +36,11 @@ export const SidebarSection: React.FC<SectionProps> = ({ title, children }) => {
     <Panel as="aside" p="0" pb="1" mb="6">
       {title && (
         <Heading
+          color="gray.400"
           fontSize="lg"
-          letterSpacing="1%"
+          letterSpacing="wide"
           fontWeight="semibold"
           p="4"
-          color="gray.300"
         >
           {title}
         </Heading>
@@ -109,7 +109,7 @@ export const SidebarButtons: React.FC<SidebarButtonsProps> = ({ forum }) => {
         href={`/submit${forum ? `?o=${forum}` : ""}`}
         width="100%"
         borderRadius="lg"
-        variant="solid"
+        variant="primary"
         mb="2"
       >
         Create Post

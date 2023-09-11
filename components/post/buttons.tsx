@@ -320,9 +320,9 @@ export const UpVoteButton = ({ active, onClick }: VoteButtonProps) => (
     aria-label="Upvote Button"
     p="2"
     borderRadius="md"
-    color={active ? "cardinal" : "whiteAlpha.700"}
+    color={active ? "steelBlue" : "whiteAlpha.700"}
     _hover={{
-      color: "cardinal",
+      color: "steelBlue",
       backgroundColor: "whiteAlpha.300",
     }}
     onClick={onClick}
@@ -342,9 +342,9 @@ export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
     aria-label="Upvote Button"
     p="2"
     borderRadius="md"
-    color={active ? "cardinal" : "whiteAlpha.700"}
+    color={active ? "pumpkin" : "whiteAlpha.700"}
     _hover={{
-      color: "cardinal",
+      color: "pumpkin",
       backgroundColor: "whiteAlpha.300",
     }}
     onClick={onClick}
