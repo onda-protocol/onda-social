@@ -13,7 +13,7 @@ const heading = IBM_Plex_Sans({
 
 const body = Noto_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const { definePartsStyle, defineMultiStyleConfig } =
@@ -206,12 +206,15 @@ const theme = extendTheme({
       800: "#151D3C",
       900: "#10162D",
       1000: "#080B16",
+      1050: "#0F121C",
     },
     oxfordBlue: "#11182F",
     deftBlue: "#34396A",
+    prussianBlue: "#1E293B",
     steelBlue: "#3182CE",
     xanthous: "#EAB308",
     folly: "#FF004D",
+    cardinal: "#CC003D",
     pumpkin: "#FF7A00",
     bodyText: "#E2E8F0",
   },

@@ -292,12 +292,7 @@ export const VoteButtons = ({
           return false;
         }}
       />
-      <Text
-        as="span"
-        color="whiteAlpha.700"
-        fontSize="sm"
-        fontWeight="semibold"
-      >
+      <Text as="span" color="whiteAlpha.700" fontSize="sm" fontWeight="bold">
         {points}
       </Text>
       <DownVoteButton
@@ -325,9 +320,9 @@ export const UpVoteButton = ({ active, onClick }: VoteButtonProps) => (
     aria-label="Upvote Button"
     p="2"
     borderRadius="md"
-    color={active ? "steelBlue" : "whiteAlpha.700"}
+    color={active ? "cardinal" : "whiteAlpha.700"}
     _hover={{
-      color: "steelBlue",
+      color: "cardinal",
       backgroundColor: "whiteAlpha.300",
     }}
     onClick={onClick}
@@ -347,9 +342,9 @@ export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
     aria-label="Upvote Button"
     p="2"
     borderRadius="md"
-    color={active ? "steelBlue" : "whiteAlpha.700"}
+    color={active ? "cardinal" : "whiteAlpha.700"}
     _hover={{
-      color: "steelBlue",
+      color: "cardinal",
       backgroundColor: "whiteAlpha.300",
     }}
     onClick={onClick}

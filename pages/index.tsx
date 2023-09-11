@@ -1,5 +1,4 @@
 import type { NextPage } from "next";
-import { Fragment } from "react";
 import {
   DehydratedState,
   QueryClient,
@@ -8,10 +7,9 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Box, Spinner, Text } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 
 import { fetchFora, fetchPosts, fetchAwards } from "lib/api";
-import { PostListItem } from "components/post/listItem";
 import {
   Sidebar,
   SidebarSection,
@@ -19,7 +17,7 @@ import {
   SidebarItem,
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
-import { FetchMore } from "components/fetchMore";
+import { PostList } from "components/post/list";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -45,64 +43,43 @@ const Home: NextPage<PageProps> = () => {
   });
 
   return (
-    <Box mt="4">
-      <GridLayout
-        leftColumn={
-          <Box mt="2">
-            {postsQuery.isLoading ? (
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                my="12"
-              >
-                <Spinner />
+    <GridLayout
+      leftColumn={
+        <PostList
+          data={postsQuery.data}
+          isLoading={postsQuery.isLoading}
+          shouldFetchMore={postsQuery.hasNextPage}
+          isFetchingMore={postsQuery.isFetchingNextPage}
+          onFetchMore={() => postsQuery.fetchNextPage()}
+        />
+      }
+      rightColumn={
+        <Sidebar>
+          <Box>
+            <SidebarSection title="Home">
+              <Box px="4">
+                <Text>
+                  Welcome to Onda. The place to discover and engage with web3
+                  Communities, powered by the Solana blockchain.
+                </Text>
               </Box>
-            ) : (
-              postsQuery.data?.pages?.map((page, index) => (
-                <Fragment key={index}>
-                  {page.map((post) => (
-                    <PostListItem key={post.id} post={post} />
-                  ))}
-                </Fragment>
-              )) ?? null
-            )}
-            {!postsQuery.isLoading && postsQuery.hasNextPage && (
-              <FetchMore
-                isFetching={postsQuery.isFetchingNextPage}
-                onFetchMore={postsQuery.fetchNextPage}
-              />
-            )}
+              <SidebarButtons />
+            </SidebarSection>
+            <SidebarSection title="Communities">
+              {foraQuery.data?.map((forum) => (
+                <SidebarItem
+                  key={forum.id}
+                  active={false}
+                  href={`/o/${forum.namespace}`}
+                  label={forum.displayName!}
+                  image={forum.icon}
+                />
+              ))}
+            </SidebarSection>
           </Box>
-        }
-        rightColumn={
-          <Sidebar>
-            <Box>
-              <SidebarSection title="Home">
-                <Box px="4">
-                  <Text>
-                    Welcome to Onda. The place to discover and engage with web3
-                    Communities, powered by the Solana blockchain.
-                  </Text>
-                </Box>
-                <SidebarButtons />
-              </SidebarSection>
-              <SidebarSection title="Communities">
-                {foraQuery.data?.map((forum) => (
-                  <SidebarItem
-                    key={forum.id}
-                    active={false}
-                    href={`/o/${forum.namespace}`}
-                    label={forum.displayName!}
-                    image={forum.icon}
-                  />
-                ))}
-              </SidebarSection>
-            </Box>
-          </Sidebar>
-        }
-      />
-    </Box>
+        </Sidebar>
+      }
+    />
   );
 };
 

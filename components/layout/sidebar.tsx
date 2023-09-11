@@ -20,7 +20,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
   return (
-    <Box my="2" pl="4" position="relative">
+    <Box my="4" pl="4" position="relative">
       {children}
     </Box>
   );
