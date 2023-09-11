@@ -73,6 +73,10 @@ export const PostList = ({
         let marginBottom = parsePixels(styles.marginBottom);
         let border = parsePixels(styles.borderWidth);
         setRowHeight(index, el.clientHeight + marginBottom + border);
+
+        if (index === items.length - 1) {
+          listRef.current?.forceUpdate();
+        }
       }
     }, [index, rowRef]);
 
