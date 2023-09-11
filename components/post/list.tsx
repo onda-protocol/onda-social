@@ -56,10 +56,10 @@ export const PostList = ({
   }
 
   function setRowHeight(index: number, height: number) {
+    rowHeights.current = { ...rowHeights.current, [index]: height };
     if (listRef.current) {
       listRef.current.resetAfterIndex(index);
     }
-    rowHeights.current = { ...rowHeights.current, [index]: height };
   }
 
   const Row = ({ index, style }: RowProps) => {
@@ -73,10 +73,6 @@ export const PostList = ({
         let marginBottom = parsePixels(styles.marginBottom);
         let border = parsePixels(styles.borderWidth);
         setRowHeight(index, el.clientHeight + marginBottom + border);
-
-        if (index === items.length - 1) {
-          listRef.current?.forceUpdate();
-        }
       }
     }, [index, rowRef]);
 
