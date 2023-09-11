@@ -17,7 +17,7 @@ export function getCurrentUser(req: NextRequest) {
   const cookies = new RequestCookies(req.headers);
   const token = cookies.get("token")?.value;
   const currentUser = cookies.get("currentUser")?.value;
-  console.log(cookies.getAll());
+
   if (token && currentUser) {
     const verified = verifySignature(token, currentUser);
     return verified === true ? currentUser : null;
