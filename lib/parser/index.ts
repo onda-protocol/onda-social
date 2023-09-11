@@ -38,10 +38,12 @@ export default async function enhancedTransactionParser(
           break;
         }
 
-        case PROFILE_PROGRAM_ID.toBase58(): {
-          await profileParser(ix);
-          break;
-        }
+        // Profile program is not yet implemented
+        // For now we are using a centralized db
+        // case PROFILE_PROGRAM_ID.toBase58(): {
+        //   await profileParser(ix);
+        //   break;
+        // }
 
         default: {
           // Do nothing

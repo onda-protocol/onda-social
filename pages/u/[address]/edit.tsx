@@ -8,14 +8,12 @@ import {
   Spinner,
 } from "@chakra-ui/react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAnchorWallet } from "@solana/wallet-adapter-react";
-import { useConnection } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
-import { fetchUser } from "lib/api";
-import { updateProfile } from "lib/anchor";
+import { fetchUser, updateProfile } from "lib/api";
+import { useAuth } from "components/providers/auth";
 
 const EditProfile: NextPage = () => {
   const router = useRouter();
@@ -50,24 +48,23 @@ interface EditProfileFields {
 
 const EditProfileForm: React.FC<EditProfileFields> = ({ name, mint }) => {
   const router = useRouter();
-  const { connection } = useConnection();
-  const anchorWallet = useAnchorWallet();
+  const auth = useAuth();
 
   const mutation = useMutation<void, Error, EditProfileFields>(
-    (data) => {
-      if (!anchorWallet) {
-        throw new Error("Wallet not connected");
+    async (data) => {
+      if (!auth.address) {
+        throw new Error("Not logged in");
       }
 
-      return updateProfile(connection, anchorWallet, {
-        name: data.name.trim(),
-        mint: data.mint.trim(),
-      });
+      const name = data.name.trim();
+      const mint = data.mint.length ? data.mint : null;
+
+      await updateProfile(auth.address, name, mint);
     },
     {
       onSuccess() {
         toast.success("Profile updated");
-        router.push(`/u/${anchorWallet?.publicKey.toBase58()}`);
+        router.push(`/u/${auth.address}`);
       },
       onError(error) {
         toast.error(error.message ?? "Error updating profile");

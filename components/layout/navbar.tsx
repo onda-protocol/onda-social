@@ -1,13 +1,7 @@
 import NextLink from "next/link";
 import Image from "next/image";
 import { useMemo } from "react";
-import {
-  IoChevronDown,
-  IoLogOut,
-  IoPerson,
-  IoPersonOutline,
-  IoWallet,
-} from "react-icons/io5";
+import { IoChevronDown, IoPerson, IoWallet } from "react-icons/io5";
 import {
   Box,
   Button,
@@ -18,15 +12,16 @@ import {
   MenuItem,
   forwardRef,
   Text,
-  MenuItemProps,
   MenuGroup,
   MenuDivider,
 } from "@chakra-ui/react";
+import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
+import { fetchUser } from "lib/api";
 import { shortenAddress } from "utils/format";
 import { AuthStatus, useAuth } from "components/providers/auth";
 import { Avatar } from "components/avatar";
-import toast from "react-hot-toast";
 
 export function Navbar() {
   return (
@@ -82,6 +77,13 @@ export function Navbar() {
 
 const UserMenu = () => {
   const auth = useAuth();
+  const userQuery = useQuery(
+    ["user", auth.address],
+    () => fetchUser(auth.address!),
+    {
+      enabled: Boolean(auth.address),
+    }
+  );
 
   const displayAddress = useMemo(() => {
     if (auth.address) {
@@ -105,7 +107,12 @@ const UserMenu = () => {
       return (
         <>
           <Menu size="xl">
-            <MenuButton as={UserMenuButton} address={displayAddress} />
+            <MenuButton
+              as={UserMenuButton}
+              name={userQuery.data?.name ?? undefined}
+              image={userQuery.data?.avatar ?? undefined}
+              address={displayAddress}
+            />
             <MenuList>
               <MenuGroup title="User Menu">
                 <MenuItem
@@ -141,16 +148,6 @@ const UserMenu = () => {
     }
   }
 };
-
-const UserMenuItem = (props: MenuItemProps) => (
-  <MenuItem
-    bgColor="gray.900"
-    _hover={{
-      bgColor: "gray.700",
-    }}
-    {...props}
-  />
-);
 
 interface UserMenuButtonProps {
   address: string;

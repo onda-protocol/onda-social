@@ -130,7 +130,7 @@ model Comment {
 
 model User {
   id       String    @id @unique
-  name     String?
+  name     String?   @unique
   mint     String?
   avatar   String?
   Posts    Post[]    @relation("UserToPost")

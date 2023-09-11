@@ -10,7 +10,13 @@ const nextConfig = {
     outputFileTracingExcludes: ["**canvas**"],
   },
   images: {
-    domains: ["amazonaws.com", "arweave.net", "dweb.link", "nftstorage.link"],
+    domains: [
+      "amazonaws.com",
+      "arweave.net",
+      "dweb.link",
+      "nftstorage.link",
+      "helius-rpc.com",
+    ],
     remotePatterns: [
       {
         protocol: "https",
@@ -27,6 +33,10 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "**.nftstorage.link",
+      },
+      {
+        protocol: "https",
+        hostname: "**.helius-rpc.com",
       },
     ],
   },

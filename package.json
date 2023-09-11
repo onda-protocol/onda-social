@@ -64,6 +64,7 @@
     "snake-case": "^3.0.4",
     "tweetnacl": "^1.0.3",
     "typescript": "5.0.4",
+    "uuid": "^9.0.0",
     "vercel": "^31.1.1"
   },
   "devDependencies": {
@@ -71,6 +72,7 @@
     "@next/bundle-analyzer": "^13.4.19",
     "@tanstack/react-query-devtools": "^4.29.1",
     "@types/react-window": "^1.8.5",
+    "@types/uuid": "^9.0.3",
     "axios": "^1.4.0",
     "dotenv": "^16.0.3",
     "install": "^0.13.0",

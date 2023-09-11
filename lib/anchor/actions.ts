@@ -1,4 +1,3 @@
-import type { SessionWalletInterface } from "@gumhq/react-sdk";
 import { web3, BN } from "@project-serum/anchor";
 import { Comment, Post, PostType } from "@prisma/client";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
@@ -14,7 +13,6 @@ import pkg from "js-sha3";
 import {
   findForumConfigPda,
   findMetadataPda,
-  findProfilePda,
   findNamespacePda,
   findTreeMarkerPda,
   findTreeAuthorityPda,
@@ -22,18 +20,12 @@ import {
   findEditionPda,
   findBubblegumSignerPda,
 } from "utils/pda";
-import {
-  PostWithCommentsCountAndForum,
-  SerializedCommentNested,
-  SerializedAward,
-  fetchProof,
-} from "lib/api";
+import { SerializedAward, fetchProof } from "lib/api";
 import { parseDataV1Fields } from "utils/parse";
 import { DataV1, LeafSchemaV1, Gate } from "./types";
 import { BUBBLEGUM_PROGRAM_ID, METADATA_PROGRAM_ID } from "./constants";
 import {
   getCompressionProgram,
-  getProfileProgram,
   getNamespaceProgram,
   getAwardsProgram,
 } from "./provider";
@@ -340,38 +332,6 @@ export async function deleteEntry(
     .rpc({
       commitment: "confirmed",
     });
-}
-
-export async function updateProfile(
-  connection: web3.Connection,
-  wallet: AnchorWallet,
-  options: {
-    name: string;
-    mint: string;
-  }
-) {
-  const program = getProfileProgram(connection, wallet);
-  const mint = new web3.PublicKey(options.mint);
-  const metadataPda = findMetadataPda(mint);
-  const profilePda = findProfilePda(wallet.publicKey);
-
-  const tokenAccount = await connection
-    .getTokenLargestAccounts(mint)
-    .then(
-      (result) =>
-        result.value.find((account) => Number(account.amount) > 0)?.address
-    );
-
-  await program.methods
-    .updateProfile(options.name)
-    .accounts({
-      mint,
-      tokenAccount,
-      author: wallet.publicKey,
-      profile: profilePda,
-      metadata: metadataPda,
-    })
-    .rpc();
 }
 
 export async function createNamepace(

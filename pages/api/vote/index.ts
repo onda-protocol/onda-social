@@ -1,10 +1,9 @@
 import type { NextFetchEvent, NextRequest } from "next/server";
-import { RequestCookies } from "@edge-runtime/cookies";
 import { VoteType } from "@prisma/client/edge";
 import { NextResponse } from "next/server";
 
 import prisma from "lib/prisma";
-import { getCurrentUser, verifySignature } from "utils/verify";
+import { getCurrentUser } from "utils/verify";
 
 export const config = {
   runtime: "edge",

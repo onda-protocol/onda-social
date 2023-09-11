@@ -197,6 +197,28 @@ export function fetchAssetsByOwner(address: string, page: number = 1) {
   ).then((res) => res.json());
 }
 
+export function updateProfile(
+  address: string,
+  name: string,
+  mint: string | null
+): Promise<User> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/user/${address}/update`, {
+    method: "PUT",
+    body: JSON.stringify({
+      name,
+      mint,
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  }).then((res) => {
+    if (res.status !== 200) {
+      throw new Error(res.statusText);
+    }
+    return res.json();
+  });
+}
+
 export function uploadContent(body: string) {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/upload`, {
     method: "POST",
