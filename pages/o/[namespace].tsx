@@ -38,6 +38,7 @@ import {
 import { GridLayout } from "components/layout";
 import { Fragment } from "react";
 import { FetchMore } from "components/fetchMore";
+import { PostList } from "components/post/list";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -72,7 +73,7 @@ const Community: NextPage<PageProps> = () => {
         <Box
           position="relative"
           height={forumQuery.data?.banner ? "180px" : "90px"}
-          backgroundColor="onda.600"
+          backgroundColor="steelBlue"
           zIndex="0"
         >
           {forumQuery.data?.banner ? (
@@ -128,36 +129,13 @@ const Community: NextPage<PageProps> = () => {
           <TabPanel>
             <GridLayout
               leftColumn={
-                <Box mt="2">
-                  {postsQuery.isLoading ? (
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Spinner />
-                    </Box>
-                  ) : (
-                    postsQuery.data?.pages?.map((post, index) => (
-                      <Fragment key={index}>
-                        {post.map((post) => (
-                          <PostListItem
-                            key={post.id}
-                            displayIcon={false}
-                            post={post}
-                          />
-                        ))}
-                      </Fragment>
-                    )) ?? null
-                  )}
-
-                  {!postsQuery.isLoading && postsQuery.hasNextPage && (
-                    <FetchMore
-                      isFetching={postsQuery.isFetchingNextPage}
-                      onFetchMore={postsQuery.fetchNextPage}
-                    />
-                  )}
-                </Box>
+                <PostList
+                  data={postsQuery.data}
+                  isLoading={postsQuery.isLoading}
+                  shouldFetchMore={postsQuery.hasNextPage}
+                  isFetchingMore={postsQuery.isFetchingNextPage}
+                  onFetchMore={() => postsQuery.fetchNextPage()}
+                />
               }
               rightColumn={
                 <Sidebar>
