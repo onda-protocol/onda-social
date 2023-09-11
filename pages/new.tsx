@@ -234,7 +234,9 @@ const Step1 = ({ data, onNext }: Step1Props) => {
       <Divider my="8" />
 
       <Box display="flex" justifyContent="flex-end" gap="2" my="8">
-        <Button type="submit">Next</Button>
+        <Button type="submit" variant="primary">
+          Next
+        </Button>
       </Box>
     </Box>
   );
@@ -492,7 +494,11 @@ const Step2 = ({ data, onNext, onPrev }: Step2Props) => {
         <Button variant="outline" onClick={onPrev}>
           Back
         </Button>
-        <Button type="submit" isLoading={methods.formState.isValidating}>
+        <Button
+          type="submit"
+          variant="primary"
+          isLoading={methods.formState.isValidating}
+        >
           Next
         </Button>
       </Box>
@@ -722,7 +728,7 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
             Back
           </Button>
           <Button
-            variant="solid"
+            variant="primary"
             onClick={() => metadataUploadMutation.mutate()}
           >
             Confirm

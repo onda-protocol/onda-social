@@ -15,15 +15,14 @@ import {
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Fragment, useMemo } from "react";
+import { useMemo } from "react";
 import toast from "react-hot-toast";
 
 import { shortenAddress } from "utils/format";
 import { fetchUser, fetchUserComments, fetchUserPosts } from "lib/api";
 import { CommentListItem } from "components/comment";
-import { PostListItem } from "components/post/listItem";
 import { useAuth } from "components/providers/auth";
-import { FetchMore } from "components/fetchMore";
+import { PostList } from "components/post/list";
 
 const User: NextPage = () => {
   const router = useRouter();
@@ -150,27 +149,13 @@ const PostsTab: React.FC<PostsTabProps> = ({ id }) => {
   });
 
   return (
-    <Box pb="12">
-      {postsQuery.isLoading ? (
-        <Box display="flex" alignItems="center" justifyContent="center" my="12">
-          <Spinner />
-        </Box>
-      ) : (
-        postsQuery.data?.pages?.map((page, index) => (
-          <Fragment key={index}>
-            {page.map((post) => (
-              <PostListItem key={post.id} post={post} />
-            ))}
-          </Fragment>
-        )) ?? null
-      )}
-      {!postsQuery.isLoading && postsQuery.hasNextPage && (
-        <FetchMore
-          isFetching={postsQuery.isFetchingNextPage}
-          onFetchMore={postsQuery.fetchNextPage}
-        />
-      )}
-    </Box>
+    <PostList
+      data={postsQuery.data}
+      isLoading={postsQuery.isLoading}
+      shouldFetchMore={postsQuery.hasNextPage}
+      isFetchingMore={postsQuery.isFetchingNextPage}
+      onFetchMore={() => postsQuery.fetchNextPage()}
+    />
   );
 };
 
