@@ -1,5 +1,4 @@
-import { NodeBundlr, WebBundlr } from "@bundlr-network/client";
-import Bundlr from "@bundlr-network/client/build/cjs/common/bundlr";
+import type Bundlr from "@bundlr-network/client/build/cjs/common/bundlr";
 import { web3 } from "@project-serum/anchor";
 import { WalletContextState } from "@solana/wallet-adapter-react";
 
@@ -20,6 +19,8 @@ export async function nodeUpload(
   data: string | Buffer,
   contentType: ContentType
 ) {
+  const { NodeBundlr } = await import("@bundlr-network/client");
+
   if (nodeBundlr === null) {
     nodeBundlr = new NodeBundlr(BUNDLR_URL, "solana", keypair.secretKey, {
       providerUrl: process.env.HELIUS_RPC_URL!,
@@ -51,6 +52,7 @@ export async function webUpload(
   data: string | Buffer,
   contentType: ContentType
 ) {
+  const { WebBundlr } = await import("@bundlr-network/client");
   const bundlr = new WebBundlr(BUNDLR_URL, "solana", wallet, {
     providerUrl: process.env.NEXT_PUBLIC_RPC_ENDPOINT!,
   });
