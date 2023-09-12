@@ -66,7 +66,7 @@ export const PostList = ({
     const item = items[index];
     const rowRef = useRef<HTMLDivElement>(null);
 
-    useLayoutEffect(() => {
+    useEffect(() => {
       const el = rowRef.current;
       if (el) {
         let styles = window.getComputedStyle(el);
