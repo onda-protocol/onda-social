@@ -41,7 +41,7 @@ export const PostListItem = forwardRef<PostListItemProps, "div">(
           <Box flex={0} borderLeftRadius="md" bgColor="whiteAlpha.50" p="1">
             <PostVoteButtons post={post} />
           </Box>
-          <Box flex={1} pt="6" pl="4" pr="6" pb="4">
+          <Box flex={1} pt="4" pl="4" pr="6" pb="4">
             <PostMeta
               displayIcon={displayIcon}
               author={post.Author}

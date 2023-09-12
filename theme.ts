@@ -54,6 +54,11 @@ const theme = extendTheme({
     useSystemColorMode: false,
   },
   components: {
+    Heading: {
+      baseStyle: {
+        color: "whiteAlpha.900",
+      },
+    },
     Menu: menuTheme,
     Tabs: {
       defaultProps: {
@@ -97,11 +102,11 @@ const theme = extendTheme({
         },
         primary: {
           color: "gray.900",
-          bg: "gray.300",
+          bg: "whiteAlpha.800",
           _hover: {
-            bg: "gray.200",
+            bg: "whiteAlpha.900",
             _disabled: {
-              bg: "gray.500",
+              bg: "whiteAlpha.600",
             },
           },
           _active: {
@@ -110,24 +115,19 @@ const theme = extendTheme({
         },
       },
     },
-    Heading: {
-      baseStyle: {
-        color: "gray.100",
-      },
-    },
     Modal: {
       baseStyle: {
         dialog: {
           bg: "onda.1050",
         },
         header: {
-          color: "gray.100",
+          color: "whiteAlpha.800",
         },
       },
     },
     Text: {
       baseStyle: {
-        color: "gray.100",
+        color: "whiteAlpha.800",
       },
     },
     Table: {

@@ -46,6 +46,7 @@ const Home: NextPage<PageProps> = () => {
     <GridLayout
       leftColumn={
         <PostList
+          displayIcon
           data={postsQuery.data}
           isLoading={postsQuery.isLoading}
           shouldFetchMore={postsQuery.hasNextPage}

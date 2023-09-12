@@ -36,7 +36,7 @@ export const SidebarSection: React.FC<SectionProps> = ({ title, children }) => {
     <Panel as="aside" p="0" pb="1" mb="6">
       {title && (
         <Heading
-          color="gray.400"
+          color="whiteAlpha.700"
           fontSize="lg"
           letterSpacing="wide"
           fontWeight="semibold"

@@ -1,6 +1,6 @@
 import NextLink from "next/link";
 import Image from "next/image";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { IoChevronDown, IoPerson, IoWallet } from "react-icons/io5";
 import {
   Box,
@@ -24,6 +24,25 @@ import { AuthStatus, useAuth } from "components/providers/auth";
 import { Avatar } from "components/avatar";
 
 export function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    function onScroll() {
+      const scrollY = window.scrollY;
+      if (scrollY > 16) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    }
+
+    window.addEventListener("scroll", onScroll);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
   return (
     <>
       <Box height="56px" />
@@ -34,9 +53,10 @@ export function Navbar() {
         width="100%"
         height="56px"
         display="flex"
-        backgroundColor="oxfordBlue"
+        backgroundColor="onda.1000"
         borderBottomWidth="1px"
-        borderColor="gray.800"
+        borderColor={scrolled ? "gray.800" : "onda.1000"}
+        boxShadow={scrolled ? "md" : "none"}
         zIndex="docked"
       >
         <Box

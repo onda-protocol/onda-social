@@ -130,6 +130,7 @@ const Community: NextPage<PageProps> = () => {
             <GridLayout
               leftColumn={
                 <PostList
+                  displayIcon={false}
                   data={postsQuery.data}
                   isLoading={postsQuery.isLoading}
                   shouldFetchMore={postsQuery.hasNextPage}

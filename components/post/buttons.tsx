@@ -305,6 +305,14 @@ export const VoteButtons = ({
   onUpvote,
   onDownvote,
 }: VoteButtonsProps) => {
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      e.stopPropagation();
+      return false;
+    },
+    []
+  );
+
   return (
     <Box
       display="flex"
@@ -313,6 +321,7 @@ export const VoteButtons = ({
       borderRadius="md"
       width="fit-content"
       userSelect="none"
+      onClick={handleClick}
     >
       <UpVoteButton active={vote === VoteType.UP} onClick={onUpvote} />
       <Text as="span" color="whiteAlpha.700" fontSize="sm" fontWeight="bold">

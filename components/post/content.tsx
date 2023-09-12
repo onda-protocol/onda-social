@@ -31,13 +31,13 @@ interface PostContentProps {
 export const PostContent = memo(function PostContent({
   type,
   title,
-  titleSize = "3xl",
+  titleSize = "2xl",
   body,
   uri,
   clip,
 }: PostContentProps) {
   const heading = (
-    <Heading mt="6" mb="4" as="h2" fontSize={titleSize}>
+    <Heading mt="6" mb="4" as="h2" fontSize={titleSize} fontWeight="semibold">
       {title}
     </Heading>
   );

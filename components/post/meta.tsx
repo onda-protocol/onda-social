@@ -88,9 +88,9 @@ export const PostMeta: React.FC<PostMetaProps> = ({
           as="span"
           fontSize="sm"
           fontWeight="medium"
-          color="gray.100"
+          color="whiteAlpha.800"
           _hover={{
-            color: "gray.300",
+            color: "whiteAlpha.600",
           }}
         >
           <Link href={`/o/${forumNamespace}`} onClick={handleClick}>
@@ -110,7 +110,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
                 </Box>
               )}
               <Text as="span" color="inherit">
-                <Text as="span" color="inherit">
+                <Text as="span" color="inherit" fontWeight="600">
                   o/{forumNamespace ?? shortenAddress(forum)}
                 </Text>
                 <Dot />
@@ -132,9 +132,9 @@ export const PostMeta: React.FC<PostMetaProps> = ({
               as="span"
               display="flex"
               alignItems="center"
-              color="gray.300"
+              color="whiteAlpha.600"
               _hover={{
-                color: "gray.400",
+                textDecoration: "underline",
               }}
             >
               {displayAvatar && author?.avatar && author?.name && (
@@ -155,14 +155,14 @@ export const PostMeta: React.FC<PostMetaProps> = ({
               </Text>
             </Box>
           </Link>
-          <>&nbsp;&nbsp;</>
-          <Text as="span" color="gray.500">
+          <>&nbsp;</>
+          <Text as="span" color="whiteAlpha.600">
             {time}
           </Text>
           {lastEdited ? (
             <>
               <Dot />
-              <Text as="span" color="gray.500">
+              <Text as="span" color="whiteAlpha.600">
                 last edited&nbsp;
                 {lastEdited}
               </Text>

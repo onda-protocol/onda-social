@@ -9,6 +9,7 @@ import { FetchMore } from "components/fetchMore";
 
 interface PostListProps {
   data?: InfiniteData<PostWithCommentsCountAndForum[]>;
+  displayIcon?: boolean;
   isLoading: boolean;
   shouldFetchMore?: boolean;
   isFetchingMore?: boolean;
@@ -21,7 +22,8 @@ type Items = Item[];
 
 type ItemData = {
   items: Items;
-  isFetchingMore: boolean;
+  displayIcon?: boolean;
+  isFetchingMore?: boolean;
   onFetchMore: () => void;
   setRowHeight: (index: number, height: number) => void;
 };
@@ -29,6 +31,7 @@ type ItemData = {
 export const PostList = ({
   data,
   isLoading,
+  displayIcon,
   shouldFetchMore,
   isFetchingMore,
   onFetchMore,
@@ -61,11 +64,12 @@ export const PostList = ({
   const itemData: ItemData = useMemo(
     () => ({
       items,
-      isFetchingMore: Boolean(isFetchingMore),
+      displayIcon,
+      isFetchingMore,
       onFetchMore,
       setRowHeight,
     }),
-    [items, isFetchingMore, onFetchMore]
+    [items, displayIcon, isFetchingMore, onFetchMore]
   );
 
   const isFetchingRef = useRef(false);
@@ -160,7 +164,11 @@ const Row = memo(function Row({ index, data, style }: RowProps) {
 
   return (
     <div style={style}>
-      <PostListItem ref={rowRef} post={item as PostWithCommentsCountAndForum} />
+      <PostListItem
+        ref={rowRef}
+        post={item as PostWithCommentsCountAndForum}
+        displayIcon={data.displayIcon}
+      />
     </div>
   );
 });
