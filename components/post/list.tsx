@@ -1,10 +1,4 @@
-import {
-  CSSProperties,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from "react";
+import { CSSProperties, memo, useEffect, useMemo, useRef } from "react";
 import { InfiniteData } from "@tanstack/react-query";
 import { VariableSizeList as List } from "react-window";
 
@@ -21,14 +15,16 @@ interface PostListProps {
   onFetchMore: () => void;
 }
 
-interface RowProps {
-  index: number;
-  style: CSSProperties;
-}
-
 type Placeholder = { id: "PLACEHOLDER" };
 type Item = PostWithCommentsCountAndForum | Placeholder;
 type Items = Item[];
+
+type ItemData = {
+  items: Items;
+  isFetchingMore: boolean;
+  onFetchMore: () => void;
+  setRowHeight: (index: number, height: number) => void;
+};
 
 export const PostList = ({
   data,
@@ -37,7 +33,7 @@ export const PostList = ({
   isFetchingMore,
   onFetchMore,
 }: PostListProps) => {
-  const listRef = useRef<List<HTMLDivElement>>(null);
+  const listRef = useRef<List<ItemData>>(null);
   const scrollYRef = useRef<number>(0);
   const outerRef = useRef<HTMLDivElement>(null);
   const rowHeights = useRef<number[]>([]);
@@ -62,40 +58,15 @@ export const PostList = ({
     }
   }
 
-  const Row = ({ index, style }: RowProps) => {
-    const item = items[index];
-    const rowRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-      const el = rowRef.current;
-      if (el) {
-        let styles = window.getComputedStyle(el);
-        let marginBottom = parsePixels(styles.marginBottom);
-        let border = parsePixels(styles.borderWidth);
-        setRowHeight(index, el.clientHeight + marginBottom + border);
-      }
-    }, [index, rowRef]);
-
-    if (item.id === "PLACEHOLDER") {
-      return (
-        <div style={style}>
-          <FetchMore
-            isFetching={Boolean(isFetchingMore)}
-            onFetchMore={onFetchMore}
-          />
-        </div>
-      );
-    }
-
-    return (
-      <div style={style}>
-        <PostListItem
-          ref={rowRef}
-          post={item as PostWithCommentsCountAndForum}
-        />
-      </div>
-    );
-  };
+  const itemData: ItemData = useMemo(
+    () => ({
+      items,
+      isFetchingMore: Boolean(isFetchingMore),
+      onFetchMore,
+      setRowHeight,
+    }),
+    [items, isFetchingMore, onFetchMore]
+  );
 
   const isFetchingRef = useRef(false);
   isFetchingRef.current = Boolean(isFetchingMore);
@@ -144,6 +115,7 @@ export const PostList = ({
       itemCount={items.length}
       itemSize={getRowHeight}
       itemKey={itemKey}
+      itemData={itemData}
       style={{
         overflow: "hidden",
         height: "100%",
@@ -154,6 +126,44 @@ export const PostList = ({
     </List>
   );
 };
+
+interface RowProps {
+  index: number;
+  data: ItemData;
+  style: CSSProperties;
+}
+
+const Row = memo(function Row({ index, data, style }: RowProps) {
+  const item = data.items[index];
+  const rowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = rowRef.current;
+    if (el) {
+      let styles = window.getComputedStyle(el);
+      let marginBottom = parsePixels(styles.marginBottom);
+      let border = parsePixels(styles.borderWidth);
+      data.setRowHeight(index, el.clientHeight + marginBottom + border);
+    }
+  }, [index, data, rowRef]);
+
+  if (item.id === "PLACEHOLDER") {
+    return (
+      <div style={style}>
+        <FetchMore
+          isFetching={Boolean(data.isFetchingMore)}
+          onFetchMore={data.onFetchMore}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div style={style}>
+      <PostListItem ref={rowRef} post={item as PostWithCommentsCountAndForum} />
+    </div>
+  );
+});
 
 const cache = new Map<string, number>();
 

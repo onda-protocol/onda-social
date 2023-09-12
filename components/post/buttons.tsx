@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Text, keyframes } from "@chakra-ui/react";
+import { VoteType } from "@prisma/client";
 import { web3 } from "@project-serum/anchor";
 import { useConnection } from "@solana/wallet-adapter-react";
 import {
@@ -15,7 +16,15 @@ import {
   IoArrowUp,
   IoArrowDown,
 } from "react-icons/io5";
-import { MouseEventHandler, forwardRef, useCallback } from "react";
+import {
+  MouseEventHandler,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import toast from "react-hot-toast";
 import base58 from "bs58";
 
@@ -28,7 +37,6 @@ import {
 } from "lib/api";
 import { useAwardModal } from "components/modal";
 import { useAuth } from "components/providers/auth";
-import { VoteType } from "@prisma/client";
 
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
@@ -250,12 +258,32 @@ export const PostVoteButtons = ({ post }: PostVoteButtonsProps) => {
     }
   );
 
+  const mutate = mutation.mutate;
+
+  const handleUpvote = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      e.stopPropagation();
+      mutate(VoteType.UP);
+      return false;
+    },
+    [mutate]
+  );
+
+  const handleDownvote = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      e.stopPropagation();
+      mutate(VoteType.DOWN);
+      return false;
+    },
+    [mutate]
+  );
+
   return (
     <VoteButtons
       points={Number(post.points)}
       vote={post._vote}
-      onUpvote={() => mutation.mutate(VoteType.UP)}
-      onDownvote={() => mutation.mutate(VoteType.DOWN)}
+      onUpvote={handleUpvote}
+      onDownvote={handleDownvote}
     />
   );
 };
@@ -263,8 +291,12 @@ export const PostVoteButtons = ({ post }: PostVoteButtonsProps) => {
 interface VoteButtonsProps {
   points: number;
   vote: VoteType | null;
-  onUpvote: () => void;
-  onDownvote: () => void;
+  onUpvote: (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => false | void;
+  onDownvote: (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => false | void;
 }
 
 export const VoteButtons = ({
@@ -282,29 +314,11 @@ export const VoteButtons = ({
       width="fit-content"
       userSelect="none"
     >
-      <UpVoteButton
-        active={vote === VoteType.UP}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (vote !== VoteType.UP) {
-            onUpvote();
-          }
-          return false;
-        }}
-      />
+      <UpVoteButton active={vote === VoteType.UP} onClick={onUpvote} />
       <Text as="span" color="whiteAlpha.700" fontSize="sm" fontWeight="bold">
         {points}
       </Text>
-      <DownVoteButton
-        active={vote === VoteType.DOWN}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (vote !== VoteType.DOWN) {
-            onDownvote();
-          }
-          return false;
-        }}
-      />
+      <DownVoteButton active={vote === VoteType.DOWN} onClick={onDownvote} />
     </Box>
   );
 };
@@ -325,9 +339,9 @@ export const UpVoteButton = ({ active, onClick }: VoteButtonProps) => (
       color: "steelBlue",
       backgroundColor: "whiteAlpha.300",
     }}
-    onClick={onClick}
+    onClick={active ? undefined : onClick}
   >
-    <IoArrowUp />
+    <Box as={IoArrowUp} color="inherit" />
   </Box>
 );
 

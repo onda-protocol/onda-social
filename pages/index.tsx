@@ -50,7 +50,7 @@ const Home: NextPage<PageProps> = () => {
           isLoading={postsQuery.isLoading}
           shouldFetchMore={postsQuery.hasNextPage}
           isFetchingMore={postsQuery.isFetchingNextPage}
-          onFetchMore={() => postsQuery.fetchNextPage()}
+          onFetchMore={postsQuery.fetchNextPage}
         />
       }
       rightColumn={
