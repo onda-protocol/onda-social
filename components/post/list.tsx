@@ -115,6 +115,7 @@ export const PostList = ({
       scrollYRef.current = next;
     };
 
+    listRef.current?.scrollTo(window.scrollY);
     window.addEventListener("scroll", handleWindowScroll);
     return () => {
       window.removeEventListener("scroll", handleWindowScroll);
