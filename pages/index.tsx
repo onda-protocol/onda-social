@@ -8,6 +8,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { Box, Text } from "@chakra-ui/react";
+import Image from "next/image";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 import { fetchFora, fetchPosts, fetchAwards } from "lib/api";
 import {
@@ -18,7 +20,6 @@ import {
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
 import { PostList } from "components/post/list";
-import Image from "next/image";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -26,6 +27,8 @@ interface PageProps {
 
 const Home: NextPage<PageProps> = () => {
   const queryClient = useQueryClient();
+  const scroll = useScroll();
+  const opacity = useTransform(scroll.scrollYProgress, [0, 1], [0, 12]);
 
   const foraQuery = useQuery(["fora"], async () => {
     const fora = await fetchFora();
@@ -45,14 +48,34 @@ const Home: NextPage<PageProps> = () => {
 
   return (
     <>
-      <Box position="relative" height="200px" width="100%">
-        <Image
-          fill
-          src="/banner.svg"
-          alt="Homepage banner"
-          style={{
-            objectFit: "cover",
-          }}
+      <Box position="relative" height="200px" width="100%" zIndex={-1}>
+        <Box position="fixed" height="200px" width="100%">
+          <Image
+            fill
+            src="/banner.svg"
+            alt="Homepage banner"
+            style={{
+              objectFit: "cover",
+              objectPosition: "left 75%",
+            }}
+          />
+        </Box>
+        <Box
+          as={motion.div}
+          position="fixed"
+          inset={0}
+          backgroundColor="onda.1000"
+          style={{ opacity }}
+        />
+        <Box
+          position="absolute"
+          bottom={0}
+          left={0}
+          height="20px"
+          width="100%"
+          backgroundColor="onda.1000"
+          borderTopRadius="20px"
+          zIndex={1}
         />
       </Box>
       <GridLayout
