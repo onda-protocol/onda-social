@@ -126,6 +126,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
           flexDirection="row"
           alignItems="center"
           justifyContent="center"
+          whiteSpace="nowrap"
         >
           <Link href={`/u/${author?.id}`} onClick={handleClick}>
             <Box

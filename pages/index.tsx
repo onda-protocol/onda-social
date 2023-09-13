@@ -8,6 +8,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { Box, Text } from "@chakra-ui/react";
+import { useLayoutEffect } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 
@@ -29,6 +30,10 @@ const Home: NextPage<PageProps> = () => {
   const queryClient = useQueryClient();
   const scroll = useScroll();
   const opacity = useTransform(scroll.scrollYProgress, [0, 1], [0, 12]);
+
+  useLayoutEffect(() => {
+    opacity.set(0);
+  }, [opacity]);
 
   const foraQuery = useQuery(["fora"], async () => {
     const fora = await fetchFora();
