@@ -183,16 +183,18 @@ export const Editor = ({
       if (!payerSig || !payerSig.signature) {
         throw new Error("Payer signature not found");
       }
-
+      console.time("signTransaction");
       const signedTransaction = await auth.signTransaction(transaction);
       signedTransaction.addSignature(payerSig.publicKey, payerSig.signature);
-
+      console.timeEnd("signTransaction");
+      console.time("sendRawTransaction");
       const txId = await connection.sendRawTransaction(
         signedTransaction.serialize(),
         {
           preflightCommitment: "confirmed",
         }
       );
+      console.timeEnd("sendRawTransaction");
       console.log("txId: ", txId);
       console.time("confirmTransaction");
       const blockhash = await connection.getLatestBlockhash();

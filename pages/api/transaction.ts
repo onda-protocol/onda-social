@@ -52,7 +52,6 @@ export default async function handler(
       }
 
       const [dataV1Args, uri] = await parseData(req.body.data);
-      console.log("=======> ", dataV1Args, uri);
       const instruction = await addEntryIx(connection, {
         data: dataV1Args,
         author: new web3.PublicKey(data.author),
