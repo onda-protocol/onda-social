@@ -3,6 +3,7 @@ import { web3 } from "@project-serum/anchor";
 import { WalletContextState } from "@solana/wallet-adapter-react";
 
 const BUNDLR_URL = process.env.NEXT_PUBLIC_BUNDLR_URL!;
+const RPC_URL = process.env.HELIUS_RPC_URL!;
 const MAX_BYTE_LENGTH = 10000000;
 
 export type ContentType =
@@ -23,7 +24,7 @@ export async function nodeUpload(
 
   if (nodeBundlr === null) {
     nodeBundlr = new NodeBundlr(BUNDLR_URL, "solana", keypair.secretKey, {
-      providerUrl: process.env.HELIUS_RPC_URL!,
+      providerUrl: RPC_URL!,
     });
     await nodeBundlr.ready();
   }
