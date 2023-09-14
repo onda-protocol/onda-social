@@ -166,13 +166,11 @@ export const Editor = ({
           }
         }
       }
-      console.time("AddEntry");
-      console.time("getTransaction");
+
       const response = await getTransaction({
         method: "addEntry",
         data: dataArgs,
       });
-      console.timeEnd("getTransaction");
       const transaction = web3.Transaction.from(
         base58.decode(response.transaction)
       );
@@ -183,20 +181,15 @@ export const Editor = ({
       if (!payerSig || !payerSig.signature) {
         throw new Error("Payer signature not found");
       }
-      console.time("signTransaction");
+
       const signedTransaction = await auth.signTransaction(transaction);
       signedTransaction.addSignature(payerSig.publicKey, payerSig.signature);
-      console.timeEnd("signTransaction");
-      console.time("sendRawTransaction");
       const txId = await connection.sendRawTransaction(
         signedTransaction.serialize(),
         {
           preflightCommitment: "confirmed",
         }
       );
-      console.timeEnd("sendRawTransaction");
-      console.log("txId: ", txId);
-      console.time("confirmTransaction");
       const blockhash = await connection.getLatestBlockhash();
       const result = await connection.confirmTransaction(
         {
@@ -205,11 +198,11 @@ export const Editor = ({
         },
         "confirmed"
       );
-      console.timeEnd("confirmTransaction");
+
       if (result.value.err) {
         throw new Error(result.value.err.toString());
       }
-      console.timeEnd("AddEntry");
+
       return {
         uri: response.uri!,
         signature: txId,
