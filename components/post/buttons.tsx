@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Box, Text, keyframes } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
 import { VoteType } from "@prisma/client";
 import { web3 } from "@project-serum/anchor";
 import { useConnection } from "@solana/wallet-adapter-react";
@@ -9,22 +9,8 @@ import {
   QueryClient,
   InfiniteData,
 } from "@tanstack/react-query";
-import {
-  IoChatbox,
-  IoTrash,
-  IoGift,
-  IoArrowUp,
-  IoArrowDown,
-} from "react-icons/io5";
-import {
-  MouseEventHandler,
-  forwardRef,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { IoChatbox, IoTrash, IoGift } from "react-icons/io5";
+import { MouseEventHandler, forwardRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import base58 from "bs58";
