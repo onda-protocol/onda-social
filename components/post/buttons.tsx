@@ -26,6 +26,7 @@ import {
   useState,
 } from "react";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
 import base58 from "bs58";
 
 import {
@@ -343,14 +344,37 @@ export const UpVoteButton = ({ active, onClick }: VoteButtonProps) => (
     aria-label="Upvote Button"
     p="2"
     borderRadius="md"
-    color={active ? "steelBlue" : "whiteAlpha.700"}
+    fontSize="lg"
     _hover={{
       color: "steelBlue",
       backgroundColor: "whiteAlpha.300",
     }}
     onClick={active ? undefined : onClick}
   >
-    <Box as={IoArrowUp} color="inherit" />
+    <motion.svg
+      initial={false}
+      animate={{
+        color: active ? "#FF7A00" : "#E2E8F0",
+        scale: active ? [0.8, 1.2, 1] : 1,
+      }}
+      transition={{
+        ease: "easeInOut",
+        duration: 0.3,
+      }}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 512 512"
+      height="1em"
+      width="1em"
+    >
+      <motion.path
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="48"
+        d="M112 244l144-144 144 144M256 120v292"
+      />
+    </motion.svg>
   </Box>
 );
 
@@ -365,6 +389,7 @@ export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
     aria-label="Upvote Button"
     p="2"
     borderRadius="md"
+    fontSize="lg"
     color={active ? "pumpkin" : "whiteAlpha.700"}
     _hover={{
       color: "pumpkin",
@@ -372,7 +397,31 @@ export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
     }}
     onClick={onClick}
   >
-    <IoArrowDown />
+    <motion.svg
+      initial={false}
+      animate={{
+        color: active ? "#FF7A00" : "#E2E8F0",
+        scale: active ? [0.8, 1.2, 1] : 1,
+      }}
+      transition={{
+        ease: "easeInOut",
+        duration: 0.3,
+      }}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 512 512"
+      height="1em"
+      width="1em"
+      strike-width="0"
+    >
+      <motion.path
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="48"
+        d="M112 268l144 144 144-144M256 392V100"
+      />
+    </motion.svg>
   </Box>
 );
 
