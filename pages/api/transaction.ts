@@ -28,9 +28,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<TransactionResponse>
 ) {
-  console.log("=======> ", req.body);
   const { data, method } = req.body as TransactionArgs;
-  console.log("=======> ", data, method);
 
   switch (method) {
     case "addEntry": {

@@ -166,11 +166,13 @@ export const Editor = ({
           }
         }
       }
-
+      console.time("AddEntry");
+      console.time("getTransaction");
       const response = await getTransaction({
         method: "addEntry",
         data: dataArgs,
       });
+      console.timeEnd("getTransaction");
       const transaction = web3.Transaction.from(
         base58.decode(response.transaction)
       );
@@ -192,6 +194,7 @@ export const Editor = ({
         }
       );
       console.log("txId: ", txId);
+      console.time("confirmTransaction");
       const blockhash = await connection.getLatestBlockhash();
       const result = await connection.confirmTransaction(
         {
@@ -200,11 +203,11 @@ export const Editor = ({
         },
         "confirmed"
       );
-
+      console.timeEnd("confirmTransaction");
       if (result.value.err) {
         throw new Error(result.value.err.toString());
       }
-
+      console.timeEnd("AddEntry");
       return {
         uri: response.uri!,
         signature: txId,
