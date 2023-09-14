@@ -42,12 +42,14 @@ import { useAuth } from "components/providers/auth";
 interface PostButtonsProps {
   post: PostWithCommentsCountAndForum;
   displayDelete?: boolean;
+  displayVote?: boolean;
   onDeleted?: () => void;
 }
 
 export const PostButtons = ({
   post,
   displayDelete,
+  displayVote,
   onDeleted,
 }: PostButtonsProps) => {
   const queryClient = useQueryClient();
@@ -61,6 +63,7 @@ export const PostButtons = ({
 
   return (
     <Box display="flex" flexDirection="row" gap="2" mt="6">
+      {displayVote && <PostVoteButtons post={post} direction="row" />}
       <Link href={`/comments/${post.id}`}>
         <PostButton icon={<IoChatbox />} label={`${post?._count?.Comments}`} />
       </Link>
@@ -237,10 +240,11 @@ export const PostButton = forwardRef<HTMLDivElement, PostButtonProps>(
 );
 
 interface PostVoteButtonsProps {
+  direction?: "row" | "column";
   post: PostWithCommentsCountAndForum;
 }
 
-export const PostVoteButtons = ({ post }: PostVoteButtonsProps) => {
+export const PostVoteButtons = ({ direction, post }: PostVoteButtonsProps) => {
   const auth = useAuth();
   const queryClient = useQueryClient();
 
@@ -281,6 +285,7 @@ export const PostVoteButtons = ({ post }: PostVoteButtonsProps) => {
 
   return (
     <VoteButtons
+      direction={direction}
       points={Number(post.points)}
       vote={post._vote}
       onUpvote={handleUpvote}
@@ -290,6 +295,7 @@ export const PostVoteButtons = ({ post }: PostVoteButtonsProps) => {
 };
 
 interface VoteButtonsProps {
+  direction?: "row" | "column";
   points: number;
   vote: VoteType | null;
   onUpvote: (
@@ -301,6 +307,7 @@ interface VoteButtonsProps {
 }
 
 export const VoteButtons = ({
+  direction = "column",
   points,
   vote,
   onUpvote,
@@ -317,11 +324,12 @@ export const VoteButtons = ({
   return (
     <Box
       display="flex"
-      flexDirection="column"
+      flexDirection={direction}
       alignItems="center"
       borderRadius="md"
       width="fit-content"
       userSelect="none"
+      bgColor={direction === "row" ? "whiteAlpha.100" : undefined}
       onClick={handleClick}
     >
       <UpVoteButton active={vote === VoteType.UP} onClick={onUpvote} />

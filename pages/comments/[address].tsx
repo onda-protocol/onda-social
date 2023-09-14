@@ -161,6 +161,7 @@ const Comments: NextPage<PageProps> = () => {
 
       <Box mb="6">
         <PostButtons
+          displayVote
           post={postQuery.data}
           displayDelete={isAuthor && !isDeleted}
           onDeleted={onPostDeleted}

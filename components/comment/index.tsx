@@ -30,6 +30,7 @@ import {
   DeleteButton,
   UpVoteButton,
   DownVoteButton,
+  VoteButtons,
 } from "components/post/buttons";
 import { useAuth } from "components/providers/auth";
 
@@ -383,66 +384,13 @@ const CommentVoteButton = ({ comment, queryKey }: CommentVoteButtonProps) => {
     }
   );
   return (
-    <VoteButton
+    <VoteButtons
+      direction="row"
       points={Number(comment.points)}
       vote={comment._vote}
       onUpvote={() => mutation.mutate(VoteType.UP)}
       onDownvote={() => mutation.mutate(VoteType.DOWN)}
     />
-  );
-};
-
-interface VoteButtonProps {
-  points: number;
-  vote: VoteType | null;
-  onUpvote: () => void;
-  onDownvote: () => void;
-}
-
-const VoteButton = ({
-  points,
-  vote,
-  onUpvote,
-  onDownvote,
-}: VoteButtonProps) => {
-  return (
-    <Box
-      display="flex"
-      alignItems="center"
-      borderRadius="md"
-      bgColor="whiteAlpha.100"
-      width="fit-content"
-      userSelect="none"
-    >
-      <UpVoteButton
-        active={vote === VoteType.UP}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (vote !== VoteType.UP) {
-            onUpvote();
-          }
-          return false;
-        }}
-      />
-      <Text
-        as="span"
-        color="whiteAlpha.700"
-        fontSize="sm"
-        fontWeight="semibold"
-      >
-        {points}
-      </Text>
-      <DownVoteButton
-        active={vote === VoteType.DOWN}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (vote !== VoteType.DOWN) {
-            onDownvote();
-          }
-          return false;
-        }}
-      />
-    </Box>
   );
 };
 
