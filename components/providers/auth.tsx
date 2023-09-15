@@ -15,6 +15,7 @@ import { useRouter } from "next/router";
 
 import { LoginModal } from "components/modal/login";
 import { useMagic } from "./magic";
+import { stat } from "fs";
 
 type Provider = null | "magic" | "wallet";
 
@@ -69,15 +70,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   });
 
   useEffect(() => {
-    if (isAuthenticated) {
-      setLoginModal((open) => {
-        if (open) {
-          toast.success("Signed in");
-        }
-        return false;
-      });
+    if (isAuthenticated && loginModal) {
+      setLoginModal(false);
+      toast.success("Logged in");
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loginModal]);
 
   useEffect(() => {
     if (
@@ -151,6 +148,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .then(({ message }) => {
             setAuthStatus(AuthStatus.AUTHENTICATED);
             if (message === "SHOULD_INVALIDATE") {
+              queryClient.invalidateQueries(["post"]);
               queryClient.invalidateQueries(["posts"]);
             }
           })
@@ -178,11 +176,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (wallet.connected) {
-      debugger;
-      setAuthStatus(AuthStatus.CONNECTED);
+      setAuthStatus((status) => {
+        if (
+          status === AuthStatus.AUTHENTICATED ||
+          status === AuthStatus.AUTHENTICATING
+        ) {
+          return status;
+        }
+        return AuthStatus.CONNECTED;
+      });
       setProvider("wallet");
     }
-  }, [wallet, signIn]);
+  }, [wallet]);
 
   const value = useMemo(
     () => ({
