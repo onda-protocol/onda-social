@@ -515,7 +515,7 @@ function updatePostsCache(
                       newPost,
                       ...posts.slice(Number(index) + 1),
                     ],
-                    ...data.pages.slice(0, Number(page) + 1),
+                    ...data.pages.slice(Number(page) + 1),
                   ],
                 };
               }
@@ -536,7 +536,6 @@ function updatePostAwardsCache(
     return {
       ...post,
       awards,
-      points: Number(Number(post.points) + 1).toString(),
     };
   });
 }
