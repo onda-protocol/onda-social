@@ -381,6 +381,7 @@ export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
   <Box
     as="button"
     aria-label="Upvote Button"
+    disabled={active}
     p="2"
     borderRadius="md"
     fontSize="lg"
