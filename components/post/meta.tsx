@@ -141,8 +141,8 @@ export const PostMeta: React.FC<PostMetaProps> = ({
               {displayAvatar && author?.avatar && author?.name && (
                 <Box as="span" mr="2">
                   <Image
-                    height={28}
-                    width={28}
+                    height={24}
+                    width={24}
                     alt={author.name}
                     src={author.avatar}
                     style={{
