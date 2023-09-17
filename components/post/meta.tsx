@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Text, Tooltip, Wrap, WrapItem } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { User } from "@prisma/client";
 
@@ -18,7 +18,7 @@ interface PostMetaProps {
   forumNamespace?: string | null;
   forumIcon?: string | null;
   displayIcon?: boolean;
-  showRewards?: boolean;
+  displayAward?: "large" | "small";
   displayAvatar?: boolean;
 }
 
@@ -27,6 +27,48 @@ const Dot = () => (
     &nbsp;•&nbsp;
   </Box>
 );
+
+const awardsArray = [
+  // {
+  //   id: "1",
+  //   image: "/glass.png",
+  //   name: "Glass",
+  //   description:
+  //     "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+  // },
+  {
+    id: "1",
+    amount: 10_000_000,
+    image: "/bottle.png",
+    name: "Message in a Bottle",
+    description:
+      "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+  },
+  {
+    id: "2",
+    amount: 10_000_000,
+    image: "/plankton.png",
+    name: "Plankton",
+    description:
+      "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+  },
+  {
+    id: "3",
+    amount: 20_000_000,
+    image: "/crab.png",
+    name: "Crab",
+    description:
+      "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+  },
+  {
+    id: "4",
+    amount: 30_000_000,
+    image: "/glasseater.png",
+    name: "Glass Eater",
+    description:
+      "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+  },
+];
 
 export const PostMeta: React.FC<PostMetaProps> = ({
   author,
@@ -38,7 +80,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
   forumNamespace,
   forumIcon,
   displayIcon = true,
-  // showRewards = false,
+  displayAward = "",
   displayAvatar = false,
 }) => {
   const authorAddress = useMemo(
@@ -60,21 +102,26 @@ export const PostMeta: React.FC<PostMetaProps> = ({
   }
 
   const awardsEl = useMemo(() => {
-    if (awards) {
-      const awardsArray = Object.entries(awards);
+    if (awards || true) {
+      // const awardsArray = Object.entries(awards);
+      const awardSize = displayAward === "large" ? 24 : 18;
 
-      return awardsArray.map(([awardId, award]) => (
-        <Box ml="2" key={awardId}>
-          <Image
-            alt="Award"
-            src={award.image}
-            height={16}
-            width={16}
-            style={{
-              borderRadius: "2px",
-            }}
-          />
-        </Box>
+      return awardsArray.map((award) => (
+        <WrapItem key={award.id}>
+          <Tooltip label={award.name}>
+            <Box display="flex" alignItems="center">
+              <Image
+                alt="Award"
+                src={award.image}
+                height={awardSize}
+                width={awardSize}
+              />
+              <Text color="whiteAlpha.600" fontSize="sm" pl="0.5">
+                1
+              </Text>
+            </Box>
+          </Tooltip>
+        </WrapItem>
       ));
     }
 
@@ -82,96 +129,134 @@ export const PostMeta: React.FC<PostMetaProps> = ({
   }, [awards]);
 
   return (
-    <Box display="flex" alignItems="center">
-      {forum && (
-        <Text
-          as="span"
-          fontSize="sm"
-          fontWeight="medium"
-          color="whiteAlpha.800"
-          _hover={{
-            color: "whiteAlpha.600",
-          }}
-        >
-          <Link href={`/o/${forumNamespace}`} onClick={handleClick}>
-            <Box as="span" display="flex" alignItems="center" color="inherit">
-              {displayIcon && forumIcon && (
-                <Box mr="2">
-                  <Image
-                    height={24}
-                    width={24}
-                    alt="forum icon"
-                    src={forumIcon + "?discriminator=1"}
-                    style={{
-                      borderRadius: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
+    <Box>
+      <Box
+        display="flex"
+        flexWrap="wrap"
+        alignItems="center"
+        justifyContent="space-between"
+        gap="2"
+        width="100%"
+      >
+        <Box display="flex">
+          {forum && (
+            <Text
+              as="span"
+              fontSize="sm"
+              fontWeight="medium"
+              color="whiteAlpha.800"
+              _hover={{
+                color: "whiteAlpha.600",
+              }}
+            >
+              <Link href={`/o/${forumNamespace}`} onClick={handleClick}>
+                <Box
+                  as="span"
+                  display="flex"
+                  alignItems="center"
+                  color="inherit"
+                >
+                  {displayIcon && forumIcon && (
+                    <Box mr="2">
+                      <Image
+                        height={24}
+                        width={24}
+                        alt="forum icon"
+                        src={forumIcon + "?discriminator=1"}
+                        style={{
+                          borderRadius: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Box>
+                  )}
+                  <Text as="span" color="inherit">
+                    <Text as="span" color="inherit" fontWeight="600">
+                      o/{forumNamespace ?? shortenAddress(forum)}
+                    </Text>
+                    <Dot />
+                  </Text>
                 </Box>
-              )}
-              <Text as="span" color="inherit">
-                <Text as="span" color="inherit" fontWeight="600">
-                  o/{forumNamespace ?? shortenAddress(forum)}
-                </Text>
-                <Dot />
-              </Text>
-            </Box>
-          </Link>
-        </Text>
-      )}
-      <Text as="span" fontSize="sm">
-        <Box
-          as="span"
-          display="flex"
-          flexDirection="row"
-          alignItems="center"
-          justifyContent="center"
-          whiteSpace="nowrap"
-        >
-          <Link href={`/u/${author?.id}`} onClick={handleClick}>
+              </Link>
+            </Text>
+          )}
+          <Text as="span" fontSize="sm">
             <Box
               as="span"
               display="flex"
+              flexDirection="row"
               alignItems="center"
-              color="whiteAlpha.600"
-              _hover={{
-                textDecoration: "underline",
-              }}
+              justifyContent="center"
+              whiteSpace="nowrap"
             >
-              {displayAvatar && author?.avatar && author?.name && (
-                <Box as="span" mr="2">
-                  <Image
-                    height={24}
-                    width={24}
-                    alt={author.name}
-                    src={author.avatar}
-                    style={{
-                      borderRadius: "100%",
-                    }}
-                  />
+              <Link href={`/u/${author?.id}`} onClick={handleClick}>
+                <Box
+                  as="span"
+                  display="flex"
+                  alignItems="center"
+                  color="whiteAlpha.600"
+                  _hover={{
+                    textDecoration: "underline",
+                  }}
+                >
+                  {displayAvatar && author?.avatar && author?.name && (
+                    <Box as="span" mr="2">
+                      <Image
+                        height={24}
+                        width={24}
+                        alt={author.name}
+                        src={author.avatar}
+                        style={{
+                          borderRadius: "100%",
+                        }}
+                      />
+                    </Box>
+                  )}
+                  <Text as="span" color="inherit">
+                    {forum ? "Posted by " : ""} {author?.name ?? authorAddress}
+                  </Text>
                 </Box>
-              )}
-              <Text as="span" color="inherit">
-                {forum ? "Posted by " : ""} {author?.name ?? authorAddress}
-              </Text>
-            </Box>
-          </Link>
-          <>&nbsp;</>
-          <Text as="span" color="whiteAlpha.600">
-            {time}
-          </Text>
-          {lastEdited ? (
-            <>
-              <Dot />
+              </Link>
+              <>&nbsp;</>
               <Text as="span" color="whiteAlpha.600">
-                last edited&nbsp;
-                {lastEdited}
+                {time}
               </Text>
-            </>
-          ) : null}
+              {lastEdited ? (
+                <>
+                  <Dot />
+                  <Text as="span" color="whiteAlpha.600">
+                    last edited&nbsp;
+                    {lastEdited}
+                  </Text>
+                </>
+              ) : null}
+            </Box>
+          </Text>
         </Box>
-      </Text>
-      {awardsEl}
+        {displayAward === "small" && (
+          <Box
+            width="fit-content"
+            backgroundColor="prussianBlue"
+            borderRadius="md"
+            py="1"
+            px="2"
+            ml={{ sx: "-0.5", md: 0 }}
+          >
+            <Wrap gap="0.5">{awardsEl}</Wrap>
+          </Box>
+        )}
+      </Box>
+      {displayAward === "large" && (
+        <Box
+          width="fit-content"
+          backgroundColor="prussianBlue"
+          borderRadius="md"
+          padding="2"
+          my="2"
+        >
+          <Wrap>{awardsEl}</Wrap>
+        </Box>
+      )}
     </Box>
   );
 };

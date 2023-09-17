@@ -237,7 +237,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
         <Box p="4" pb="2">
           <PostMeta
             displayAvatar
-            showRewards
+            displayAward="small"
             author={comment.Author}
             points={Number(comment.points)}
             awards={comment.awards as AwardsJson}

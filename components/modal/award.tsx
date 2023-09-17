@@ -1,4 +1,15 @@
-import { Box, Button, Heading, Spinner, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Heading,
+  Spinner,
+  Text,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  ModalBody,
+} from "@chakra-ui/react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { web3 } from "@project-serum/anchor";
 import Image from "next/image";
@@ -11,11 +22,12 @@ import {
   useState,
 } from "react";
 import toast from "react-hot-toast";
-import { Modal } from "./base";
 import { SerializedAward, fetchAwards, getTransaction } from "lib/api";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useAuth } from "components/providers/auth";
 import base58 from "bs58";
+
+import { formatAmount } from "utils/format";
 
 const AwardModalContext = createContext({
   isOpen: false,
@@ -48,15 +60,57 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
   const [selected, setSelected] = useState<SerializedAward>();
   const isOpen = entry !== null;
 
-  const rewardsQuery = useQuery(["awards"], fetchAwards, {
-    enabled: isOpen,
-  });
+  // const rewardsQuery = useQuery(["awards"], fetchAwards, {
+  //   enabled: isOpen,
+  // });
 
-  useEffect(() => {
-    if (rewardsQuery.data) {
-      setSelected(rewardsQuery.data[0]);
-    }
-  }, [rewardsQuery.data]);
+  const awards = [
+    // {
+    //   id: "1",
+    //   image: "/glass.png",
+    //   name: "Glass",
+    //   description:
+    //     "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+    // },
+    {
+      id: "1",
+      amount: 10_000_000,
+      image: "/bottle.png",
+      name: "Message in a Bottle",
+      description:
+        "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+    },
+    {
+      id: "2",
+      amount: 10_000_000,
+      image: "/plankton.png",
+      name: "Plankton",
+      description:
+        "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+    },
+    {
+      id: "3",
+      amount: 20_000_000,
+      image: "/crab.png",
+      name: "Crab",
+      description:
+        "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+    },
+    {
+      id: "4",
+      amount: 30_000_000,
+      image: "/glasseater.png",
+      name: "Glass Eater",
+      description:
+        "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+    },
+  ];
+
+  // useEffect(() => {
+  //   if (rewardsQuery.data) {
+  //     setSelected(rewardsQuery.data[0]);
+  //   }
+  // }, [rewardsQuery.data]);
 
   const closeModal = useCallback(() => setEntry(null), []);
   const openModal = useCallback(
@@ -160,105 +214,136 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
       <AwardModalContext.Provider value={context}>
         {children}
       </AwardModalContext.Provider>
-      <Modal isOpen={isOpen} onRequestClose={closeModal}>
-        <Box display="flex">
-          <Box flex={1} p="6" minHeight={300}>
-            <Heading fontSize="xl" pb="5">
-              Awards
-            </Heading>
-            <Box display="flex" gap="2">
-              {rewardsQuery.data === undefined ? (
-                <Spinner />
-              ) : (
-                rewardsQuery.data.map((reward) => (
-                  <Box
-                    as="button"
-                    key={reward.id}
-                    sx={{
-                      borderWidth: "1px",
-                      borderColor:
-                        selected?.id === reward.id
-                          ? "whiteAlpha.700"
-                          : "transparent",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      height: "42px",
-                      width: "42px",
-                      "&:hover": {
-                        borderColor: "whiteAlpha.700",
-                        boxShadow:
-                          "0 0 6px 3px var(--chakra-colors-whiteAlpha-600)",
-                      },
-                    }}
-                    onClick={() => setSelected(reward)}
-                  >
-                    {reward.image && (
-                      <Image
-                        src={reward.image}
-                        alt={reward.name}
-                        height={42}
-                        width={42}
-                        style={{
-                          borderRadius: "3px",
+      <Modal size="3xl" isOpen={isOpen} onClose={closeModal}>
+        <ModalOverlay bg="blackAlpha.800" />
+        <ModalContent backgroundColor="onda.1050" alignSelf="center">
+          <ModalBody padding="0">
+            <Box display="flex">
+              <Box flex={3} p="6" minHeight={380}>
+                <Heading fontSize="xl" pb="6">
+                  Give an award to this post
+                </Heading>
+                <Box display="flex" gap="2">
+                  {awards === undefined ? (
+                    <Spinner />
+                  ) : (
+                    awards.map((award) => (
+                      <Box
+                        as="button"
+                        key={award.id}
+                        display="flex"
+                        flex={1}
+                        padding={2}
+                        flexDirection="column"
+                        alignItems="center"
+                        boxShadow={
+                          selected?.id === award.id
+                            ? "0 0 4px 2px var(--chakra-colors-whiteAlpha-300)"
+                            : undefined
+                        }
+                        borderRadius="md"
+                        cursor="pointer"
+                        transition="all 0.2s ease-in-out"
+                        sx={{
+                          "&:hover": {
+                            boxShadow:
+                              "0 0 6px 3px var(--chakra-colors-whiteAlpha-400)",
+                          },
                         }}
-                      />
-                    )}
-                  </Box>
-                ))
-              )}
-            </Box>
-          </Box>
-          <Box
-            width={206}
-            borderLeftWidth="1px"
-            borderLeftColor="whiteAlpha.100"
-          >
-            <Box
-              display="flex"
-              flexDirection="column"
-              justifyContent="space-between"
-              padding="6"
-              height="100%"
-            >
-              <Box display="flex" flexDirection="column" alignItems="center">
-                {selected ? (
-                  <>
-                    <Image
-                      src={selected.image}
-                      alt={selected.name}
-                      height={69}
-                      width={69}
-                      style={{
-                        borderRadius: "3px",
-                      }}
-                    />
-                    <Heading size="md" textAlign="center" pt="4" pb="2">
-                      {selected.name} Award
-                    </Heading>
-                    <Text fontSize="sm" textAlign="center" mb="2">
-                      Boosts visibility of a comment or post.
-                    </Text>
-                    <Text
-                      color="whiteAlpha.600"
-                      fontSize="xs"
-                      textAlign="center"
-                    >
-                      NOTE: This award is for demo purposes only.
-                    </Text>
-                  </>
-                ) : null}
+                        // @ts-expect-error
+                        onClick={() => setSelected(award)}
+                      >
+                        {award.image && (
+                          <Image
+                            src={award.image}
+                            alt={award.name}
+                            height={42}
+                            width={42}
+                            style={{
+                              borderRadius: "3px",
+                            }}
+                          />
+                        )}
+                        <Text
+                          fontSize="sm"
+                          fontWeight="600"
+                          lineHeight="1.2"
+                          marginTop="1"
+                        >
+                          {award.name}
+                        </Text>
+                        <Text
+                          color="whiteAlpha.700"
+                          fontSize="xs"
+                          fontWeight="500"
+                          textAlign="center"
+                          marginTop="1"
+                        >
+                          ◎{formatAmount(award.amount)}
+                        </Text>
+                      </Box>
+                    ))
+                  )}
+                </Box>
               </Box>
-
-              <Button
-                width="100%"
-                isLoading={giveRewardMutation.isLoading}
-                onClick={handleGiveReward}
+              <Box
+                flex={2}
+                borderLeftWidth="1px"
+                borderLeftColor="whiteAlpha.100"
               >
-                Give &nbsp;🎉
-              </Button>
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  justifyContent="space-between"
+                  padding="6"
+                  height="100%"
+                >
+                  <Box
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                  >
+                    {selected ? (
+                      <>
+                        <Image
+                          src={selected.image}
+                          alt={selected.name}
+                          height={90}
+                          width={90}
+                          style={{
+                            borderRadius: "3px",
+                          }}
+                        />
+                        <Heading size="md" textAlign="center" pt="4" pb="2">
+                          {selected.name} Award
+                        </Heading>
+                        <Text fontSize="sm" textAlign="center" mb="2">
+                          Boosts visibility of a comment or post.
+                        </Text>
+                        <Text
+                          color="whiteAlpha.600"
+                          fontSize="xs"
+                          textAlign="center"
+                        >
+                          NOTE: This award is for demo purposes only.
+                        </Text>
+                      </>
+                    ) : null}
+                  </Box>
+
+                  <Button
+                    width="100%"
+                    variant="primary"
+                    isLoading={giveRewardMutation.isLoading}
+                    onClick={handleGiveReward}
+                  >
+                    Give &nbsp;🎉
+                  </Button>
+                </Box>
+              </Box>
             </Box>
-          </Box>
-        </Box>
+          </ModalBody>
+        </ModalContent>
       </Modal>
     </>
   );

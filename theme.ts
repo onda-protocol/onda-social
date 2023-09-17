@@ -102,11 +102,11 @@ const theme = extendTheme({
         },
         primary: {
           color: "gray.900",
-          bg: "whiteAlpha.800",
+          bg: "gray.200",
           _hover: {
-            bg: "whiteAlpha.900",
+            bg: "gray.100",
             _disabled: {
-              bg: "whiteAlpha.600",
+              bg: "gray.600",
             },
           },
           _active: {

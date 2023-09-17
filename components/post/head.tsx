@@ -40,7 +40,7 @@ export const PostHead = ({
     <>
       <Box mt="12">
         <PostMeta
-          showRewards
+          displayAward="large"
           points={Number(points)}
           awards={awards}
           author={author}

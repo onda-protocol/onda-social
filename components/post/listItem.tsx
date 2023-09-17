@@ -43,6 +43,7 @@ export const PostListItem = forwardRef<PostListItemProps, "div">(
           </Box>
           <Box flex={1} pt="4" pl="4" pr="6" pb="4">
             <PostMeta
+              displayAward="small"
               displayIcon={displayIcon}
               author={post.Author}
               points={Number(post.points)}
