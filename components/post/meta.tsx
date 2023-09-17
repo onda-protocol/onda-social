@@ -1,6 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Box, Text, Tooltip, Wrap, WrapItem } from "@chakra-ui/react";
+import {
+  Box,
+  Text,
+  Tooltip,
+  Wrap,
+  WrapItem,
+  keyframes,
+} from "@chakra-ui/react";
 import { useMemo } from "react";
 import { User } from "@prisma/client";
 
@@ -109,13 +116,23 @@ export const PostMeta: React.FC<PostMetaProps> = ({
       return awardsArray.map((award) => (
         <WrapItem key={award.id}>
           <Tooltip label={award.name}>
-            <Box display="flex" alignItems="center">
-              <Image
-                alt="Award"
-                src={award.image}
-                height={awardSize}
-                width={awardSize}
-              />
+            <Box
+              display="flex"
+              alignItems="center"
+              _hover={{
+                "& .img-container": {
+                  transform: "scale(1.1)",
+                },
+              }}
+            >
+              <Box className="img-container" transition="all 0.5 ease-out">
+                <Image
+                  alt="Award"
+                  src={award.image}
+                  height={awardSize}
+                  width={awardSize}
+                />
+              </Box>
               <Text color="whiteAlpha.600" fontSize="sm" pl="0.5">
                 1
               </Text>

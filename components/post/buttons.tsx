@@ -348,7 +348,7 @@ export const UpVoteButton = ({ active, onClick }: VoteButtonProps) => (
     <motion.svg
       initial={false}
       animate={{
-        color: active ? "#FF7A00" : "#E2E8F0",
+        color: active ? "#3182CE" : "#E2E8F0",
         scale: active ? [0.8, 1.2, 1] : 1,
       }}
       transition={{
@@ -395,7 +395,7 @@ export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
     <motion.svg
       initial={false}
       animate={{
-        color: active ? "#FF7A00" : "#E2E8F0",
+        color: active ? "#3182CE" : "#E2E8F0",
         scale: active ? [0.8, 1.2, 1] : 1,
       }}
       transition={{

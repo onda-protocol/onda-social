@@ -219,10 +219,17 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
         <ModalContent backgroundColor="onda.1050" alignSelf="center">
           <ModalBody padding="0">
             <Box display="flex">
-              <Box flex={3} p="6" minHeight={380}>
-                <Heading fontSize="xl" pb="6">
-                  Give an award to this post
-                </Heading>
+              <Box flex={3} p="6" minHeight={420}>
+                <Box pb="6">
+                  <Heading fontSize="xl" pb="2">
+                    Give an award to this post
+                  </Heading>
+                  <Text color="whiteAlpha.700" fontSize="sm">
+                    Awards are a way to recognize and reward other users for
+                    their contributions to the community. Fees are divided
+                    between the user and the community.
+                  </Text>
+                </Box>
                 <Box display="flex" gap="2">
                   {awards === undefined ? (
                     <Spinner />
@@ -244,11 +251,9 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
                         borderRadius="md"
                         cursor="pointer"
                         transition="all 0.2s ease-in-out"
-                        sx={{
-                          "&:hover": {
-                            boxShadow:
-                              "0 0 6px 3px var(--chakra-colors-whiteAlpha-400)",
-                          },
+                        _hover={{
+                          boxShadow:
+                            "0 0 6px 3px var(--chakra-colors-whiteAlpha-400)",
                         }}
                         // @ts-expect-error
                         onClick={() => setSelected(award)}
@@ -259,9 +264,6 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
                             alt={award.name}
                             height={42}
                             width={42}
-                            style={{
-                              borderRadius: "3px",
-                            }}
                           />
                         )}
                         <Text
@@ -333,7 +335,6 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
 
                   <Button
                     width="100%"
-                    variant="primary"
                     isLoading={giveRewardMutation.isLoading}
                     onClick={handleGiveReward}
                   >
