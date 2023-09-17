@@ -25,7 +25,7 @@ interface PostMetaProps {
   forumNamespace?: string | null;
   forumIcon?: string | null;
   displayIcon?: boolean;
-  displayAward?: "large" | "small";
+  displayAward?: "large" | "small" | "xsmall";
   displayAvatar?: boolean;
 }
 
@@ -36,13 +36,13 @@ const Dot = () => (
 );
 
 const awardsArray = [
-  // {
-  //   id: "1",
-  //   image: "/glass.png",
-  //   name: "Glass",
-  //   description:
-  //     "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
-  // },
+  {
+    id: "0",
+    image: "/glass.png",
+    name: "Glass",
+    description:
+      "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+  },
   {
     id: "1",
     amount: 10_000_000,
@@ -79,7 +79,6 @@ const awardsArray = [
 
 export const PostMeta: React.FC<PostMetaProps> = ({
   author,
-  // points,
   awards,
   createdAt,
   editedAt,
@@ -151,7 +150,9 @@ export const PostMeta: React.FC<PostMetaProps> = ({
         display="flex"
         flexWrap="wrap"
         alignItems="center"
-        justifyContent="space-between"
+        justifyContent={
+          displayAward === "xsmall" ? "flex-start" : "space-between"
+        }
         gap="2"
         width="100%"
       >
@@ -211,7 +212,6 @@ export const PostMeta: React.FC<PostMetaProps> = ({
                   as="span"
                   display="flex"
                   alignItems="center"
-                  color="whiteAlpha.600"
                   _hover={{
                     textDecoration: "underline",
                   }}
@@ -229,7 +229,11 @@ export const PostMeta: React.FC<PostMetaProps> = ({
                       />
                     </Box>
                   )}
-                  <Text as="span" color="inherit">
+                  <Text
+                    as="span"
+                    color={forum ? "whiteAlpha.600" : "whiteAlpha.800"}
+                    fontWeight={forum ? "normal" : "medium"}
+                  >
                     {forum ? "Posted by " : ""} {author?.name ?? authorAddress}
                   </Text>
                 </Box>
@@ -250,7 +254,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
             </Box>
           </Text>
         </Box>
-        {displayAward === "small" && (
+        {awardsEl && displayAward !== "large" && (
           <Box
             width="fit-content"
             backgroundColor="prussianBlue"
@@ -259,11 +263,11 @@ export const PostMeta: React.FC<PostMetaProps> = ({
             px="2"
             ml={{ sx: "-0.5", md: 0 }}
           >
-            <Wrap gap="0.5">{awardsEl}</Wrap>
+            <Wrap spacing="0.5">{awardsEl}</Wrap>
           </Box>
         )}
       </Box>
-      {displayAward === "large" && (
+      {awardsEl && displayAward === "large" && (
         <Box
           width="fit-content"
           backgroundColor="prussianBlue"

@@ -20,14 +20,16 @@ export function trimNullChars(data: string) {
 
 const amountCache = new Map<string, string>();
 
-export function formatAmount(amount?: number): string {
+export function formatAmount(amount?: string): string {
   if (!amount) return "";
 
   if (amountCache.has(amount.toString())) {
     return amountCache.get(amount.toString()) as string;
   }
 
-  if (amount === 0) {
+  const bigint = BigInt(amount);
+
+  if (bigint === BigInt(0)) {
     return "0.00";
   }
 
