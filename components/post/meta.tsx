@@ -1,13 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Box,
-  Text,
-  Tooltip,
-  Wrap,
-  WrapItem,
-  keyframes,
-} from "@chakra-ui/react";
+import { Box, Text, Tooltip, Wrap, WrapItem } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { User } from "@prisma/client";
 
@@ -39,7 +32,7 @@ const awardsArray = [
   {
     id: "0",
     image: "/glass.png",
-    name: "Glass",
+    name: "Chewed Glass",
     description:
       "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
   },
@@ -70,8 +63,8 @@ const awardsArray = [
   {
     id: "4",
     amount: 30_000_000,
-    image: "/glasseater.png",
-    name: "Glass Eater",
+    image: "/glasseater-dark.png",
+    name: "The Gigabrained Glass Eater",
     description:
       "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
   },
@@ -110,7 +103,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
   const awardsEl = useMemo(() => {
     if (awards || true) {
       // const awardsArray = Object.entries(awards);
-      const awardSize = displayAward === "large" ? 24 : 18;
+      const awardSize = displayAward === "large" ? 28 : 18;
 
       return awardsArray.map((award) => (
         <WrapItem key={award.id}>
@@ -118,23 +111,38 @@ export const PostMeta: React.FC<PostMetaProps> = ({
             <Box
               display="flex"
               alignItems="center"
+              width="fit-content"
+              backgroundColor="prussianBlue"
+              borderRadius="md"
+              borderWidth="1px"
+              borderColor="whiteAlpha.300"
+              p="1"
               _hover={{
+                borderColor: "whiteAlpha.400",
                 "& .img-container": {
-                  transform: "scale(1.1)",
+                  transform: "scale(1.2)",
                 },
               }}
             >
               <Box className="img-container" transition="all 0.5 ease-out">
                 <Image
+                  unoptimized
                   alt="Award"
                   src={award.image}
                   height={awardSize}
                   width={awardSize}
                 />
               </Box>
-              <Text color="whiteAlpha.600" fontSize="sm" pl="0.5">
-                1
-              </Text>
+              {displayAward === "large" && (
+                <Text
+                  color="whiteAlpha.800"
+                  fontSize="sm"
+                  fontWeight="600"
+                  pl="0.5"
+                >
+                  1
+                </Text>
+              )}
             </Box>
           </Tooltip>
         </WrapItem>
@@ -150,9 +158,9 @@ export const PostMeta: React.FC<PostMetaProps> = ({
         display="flex"
         flexWrap="wrap"
         alignItems="center"
-        justifyContent={
-          displayAward === "xsmall" ? "flex-start" : "space-between"
-        }
+        // justifyContent={
+        //   displayAward === "xsmall" ? "flex-start" : "space-between"
+        // }
         gap="2"
         width="100%"
       >
@@ -238,7 +246,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
                   </Text>
                 </Box>
               </Link>
-              <>&nbsp;</>
+              <Dot />
               <Text as="span" color="whiteAlpha.600">
                 {time}
               </Text>
@@ -255,27 +263,14 @@ export const PostMeta: React.FC<PostMetaProps> = ({
           </Text>
         </Box>
         {awardsEl && displayAward !== "large" && (
-          <Box
-            width="fit-content"
-            backgroundColor="prussianBlue"
-            borderRadius="md"
-            py="1"
-            px="2"
-            ml={{ sx: "-0.5", md: 0 }}
-          >
-            <Wrap spacing="0.5">{awardsEl}</Wrap>
+          <Box ml={{ sx: "-0.5", md: 0 }}>
+            <Wrap spacing="1">{awardsEl}</Wrap>
           </Box>
         )}
       </Box>
       {awardsEl && displayAward === "large" && (
-        <Box
-          width="fit-content"
-          backgroundColor="prussianBlue"
-          borderRadius="md"
-          padding="2"
-          my="2"
-        >
-          <Wrap>{awardsEl}</Wrap>
+        <Box my="2">
+          <Wrap spacing="2">{awardsEl}</Wrap>
         </Box>
       )}
     </Box>

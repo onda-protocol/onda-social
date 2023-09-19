@@ -12,6 +12,12 @@ import {
   Wrap,
   WrapItem,
   ModalFooter,
+  ListItem,
+  UnorderedList,
+  List,
+  ListIcon,
+  Flex,
+  ModalCloseButton,
 } from "@chakra-ui/react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { web3 } from "@project-serum/anchor";
@@ -31,6 +37,7 @@ import { useAuth } from "components/providers/auth";
 import base58 from "bs58";
 
 import { formatAmount } from "utils/format";
+import { IoAdd } from "react-icons/io5";
 
 const AwardModalContext = createContext({
   isOpen: false,
@@ -69,44 +76,60 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
 
   const awards = [
     {
+      id: "-1",
+      amount: BigInt(5000000).toString(),
+      basisPoints: 5000,
+      image: "/vapour.png",
+      name: "Mystic Vapour",
+      description:
+        "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+    },
+    {
       id: "0",
       amount: BigInt(5000000).toString(),
+      basisPoints: 5000,
       image: "/glass.png",
-      name: "Glass",
+      name: "Chewed Glass",
       description:
         "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
     },
     {
       id: "1",
       amount: BigInt(10000000).toString(),
+      basisPoints: 5000,
       image: "/bottle.png",
-      name: "Message in a Bottle",
+      name: "Lost at Sea",
       description:
         "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
     },
     {
       id: "2",
       amount: BigInt(10000000).toString(),
+      basisPoints: 5000,
       image: "/plankton.png",
-      name: "Plankton",
+      name: "The Next Billion Users",
       description:
         "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+      matching: "2",
     },
     {
       id: "3",
       amount: BigInt(20000000).toString(),
+      basisPoints: 5000,
       image: "/crab.png",
-      name: "Crab",
+      name: "The Immortal Crab",
       description:
         "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
     },
     {
       id: "4",
       amount: BigInt(30000000).toString(),
-      image: "/glasseater.png",
-      name: "Glass Eater",
+      basisPoints: 5000,
+      image: "/glasseater-dark.png",
+      name: "The Gigabrain Glass Eater",
       description:
         "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
+      matching: "0",
     },
   ];
 
@@ -218,33 +241,47 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
       <AwardModalContext.Provider value={context}>
         {children}
       </AwardModalContext.Provider>
-      <Modal size="3xl" isOpen={isOpen} onClose={closeModal}>
-        <ModalOverlay bg="blackAlpha.800" />
+      <Modal size="4xl" isOpen={isOpen} onClose={closeModal}>
+        <ModalOverlay
+          bg={{
+            base: "blackAlpha.900",
+            md: "blackAlpha.800",
+          }}
+        />
         <ModalContent
           backgroundColor="onda.1050"
           alignSelf="center"
-          minHeight={{
+          marginTop={{
+            xs: 0,
+            md: "16",
+          }}
+          marginBottom={{
+            xs: 0,
+            md: "16",
+          }}
+          height={{
             base: "100vh",
             md: 420,
           }}
         >
-          <ModalBody padding="0">
+          <ModalCloseButton />
+          <ModalBody padding="0" height="100%">
             <Box
               display="flex"
+              height="100%"
               flexDirection={{
                 base: "column",
                 md: "row",
               }}
             >
               <Box flex={3} p="6">
-                <Box pb="6">
-                  <Heading fontSize="xl" pb="2">
+                <Box pb="8">
+                  <Heading fontSize="xl" mb="2">
                     Give an award to this post
                   </Heading>
-                  <Text color="whiteAlpha.700" fontSize="sm">
+                  <Text color="whiteAlpha.700" fontSize="md">
                     Awards are a way to recognize and reward other users for
-                    their contributions to the community. Fees are divided
-                    between the user and the community.
+                    their contributions to the community.
                   </Text>
                 </Box>
                 <Wrap display="flex" flexWrap="wrap" spacing="0">
@@ -263,65 +300,42 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
               </Box>
               <Box
                 flex={2}
-                borderLeftWidth="1px"
-                borderLeftColor="whiteAlpha.100"
+                borderColor="whiteAlpha.100"
+                borderTopWidth={{
+                  base: "1px",
+                  md: 0,
+                }}
+                borderLeftWidth={{
+                  md: "1px",
+                }}
               >
-                <Box
-                  display="flex"
-                  flexDirection="column"
-                  justifyContent="space-between"
-                  padding="6"
-                  height="100%"
-                >
-                  <Box
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="center"
-                  >
-                    {selected ? (
-                      <>
-                        <Image
-                          src={selected.image}
-                          alt={selected.name}
-                          height={90}
-                          width={90}
-                          style={{
-                            borderRadius: "3px",
-                          }}
-                        />
-                        <Heading size="md" textAlign="center" pt="4" pb="2">
-                          {selected.name} Award
-                        </Heading>
-                        <Text fontSize="sm" textAlign="center" mb="2">
-                          Boosts visibility of a comment or post.
-                        </Text>
-                        <Text
-                          color="whiteAlpha.600"
-                          fontSize="xs"
-                          textAlign="center"
-                        >
-                          NOTE: This award is for demo purposes only.
-                        </Text>
-                      </>
-                    ) : null}
-                  </Box>
+                <Flex flexDirection="column" height="100%">
+                  {/* @ts-expect-error */}
+                  <AwardDetails award={selected} />
 
-                  <Button
-                    display={{
-                      base: "none",
-                      md: "block",
-                    }}
-                    width="100%"
-                    isLoading={giveRewardMutation.isLoading}
-                    onClick={handleGiveReward}
-                  >
-                    Give &nbsp;🎉
-                  </Button>
-                </Box>
+                  <Flex flex={0} p="6" pt="0">
+                    <Button
+                      display={{
+                        base: "none",
+                        md: "block",
+                      }}
+                      width="100%"
+                      isLoading={giveRewardMutation.isLoading}
+                      onClick={handleGiveReward}
+                    >
+                      Give &nbsp;🎉
+                    </Button>
+                  </Flex>
+                </Flex>
               </Box>
             </Box>
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter
+            display={{
+              base: "flex",
+              md: "none",
+            }}
+          >
             <Button
               display={{
                 base: "block",
@@ -338,6 +352,177 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
       </Modal>
     </>
   );
+};
+
+interface AwardDetails {
+  award: SerializedAward | null;
+}
+
+const AwardDetails = ({ award }: AwardDetails) => {
+  return award ? (
+    <Flex flex={1} direction="column">
+      <Flex
+        flex={1}
+        pt={{
+          base: "0",
+          md: "4",
+        }}
+        px={{
+          base: "4",
+          md: "6",
+        }}
+        align="center"
+        direction={{
+          base: "row",
+          md: "column",
+        }}
+      >
+        <Image
+          unoptimized
+          src={award.image}
+          alt={award.name}
+          height={90}
+          width={90}
+          style={{
+            borderRadius: "3px",
+          }}
+        />
+        <Box
+          pl={{
+            base: "2",
+            md: "0",
+          }}
+        >
+          <Heading
+            size="md"
+            textAlign={{
+              base: "left",
+              md: "center",
+            }}
+            pt={{
+              base: "0",
+              md: "4",
+            }}
+            mb="2"
+          >
+            {award.name}
+          </Heading>
+          <Text
+            fontSize="sm"
+            textAlign={{
+              base: "left",
+              md: "center",
+            }}
+            mb="2"
+          >
+            {award.description}
+          </Text>
+        </Box>
+      </Flex>
+      <Box
+        flex={0}
+        width="100%"
+        borderColor="whiteAlpha.100"
+        borderTopWidth="1px"
+        p="6"
+      >
+        <Flex mb="1">
+          <Flex flex={1}>
+            <Text color="whiteAlpha.900" fontSize="sm" fontWeight="600">
+              Total
+            </Text>
+          </Flex>
+          <Flex flex={1} justifyContent="flex-end">
+            <Image
+              unoptimized
+              alt="SOL"
+              height={12}
+              width={12}
+              src="/solana.svg"
+              style={{
+                display: "inline",
+              }}
+            />
+            <Text
+              color="whiteAlpha.900"
+              fontSize="sm"
+              fontWeight="600"
+              whiteSpace="nowrap"
+              pl="1"
+            >
+              {formatAmount(award.amount)}
+            </Text>
+          </Flex>
+        </Flex>
+        <Flex mb="1">
+          <Flex flex={1}>
+            <Text
+              color="whiteAlpha.700"
+              fontSize="sm"
+              fontWeight="400"
+              whiteSpace="nowrap"
+            >
+              User tip [50%]
+            </Text>
+          </Flex>
+          <Flex flex={1} justifyContent="flex-end">
+            <Text
+              color="whiteAlpha.700"
+              fontSize="sm"
+              fontWeight="400"
+              whiteSpace="nowrap"
+            >
+              ◎0.01
+            </Text>
+          </Flex>
+        </Flex>
+        <Flex mb="1">
+          <Flex flex={1}>
+            <Text
+              color="whiteAlpha.700"
+              fontSize="sm"
+              fontWeight="400"
+              whiteSpace="nowrap"
+            >
+              ↳ Item [x1]
+            </Text>
+          </Flex>
+          <Flex flex={1} justifyContent="flex-end">
+            <Text
+              color="whiteAlpha.700"
+              fontSize="sm"
+              fontWeight="400"
+              whiteSpace="nowrap"
+            >
+              Chewed Glass
+            </Text>
+          </Flex>
+        </Flex>
+        <Flex mb="1">
+          <Flex flex={1}>
+            <Text
+              color="whiteAlpha.700"
+              fontSize="sm"
+              fontWeight="400"
+              whiteSpace="nowrap"
+            >
+              Community tip [50%]
+            </Text>
+          </Flex>
+          <Flex flex={1} justifyContent="flex-end">
+            <Text
+              color="whiteAlpha.700"
+              fontSize="sm"
+              fontWeight="400"
+              whiteSpace="nowrap"
+            >
+              ◎0.01
+            </Text>
+          </Flex>
+        </Flex>
+      </Box>
+    </Flex>
+  ) : null;
 };
 
 interface AwardItemProps {
@@ -385,6 +570,7 @@ const AwardItem = ({ award, selected, onSelect }: AwardItemProps) => (
     </Text>
     <Box display="flex" alignItems="center" mt="1">
       <Image
+        unoptimized
         alt="SOL"
         height={10}
         width={10}

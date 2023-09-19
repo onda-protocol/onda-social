@@ -78,7 +78,6 @@ export const PostList = ({
   useEffect(() => {
     const handleWindowScroll = () => {
       if (!listRef.current) return;
-      if (!outerRef.current) return;
 
       let next = window.scrollY;
 
@@ -90,9 +89,17 @@ export const PostList = ({
       scrollYRef.current = next;
     };
 
+    const handleResize = () => {
+      if (!listRef.current) return;
+      listRef.current.resetAfterIndex(0);
+    };
+
     listRef.current?.scrollTo(window.scrollY);
+
+    window.addEventListener("resize", handleResize);
     window.addEventListener("scroll", handleWindowScroll);
     return () => {
+      window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleWindowScroll);
     };
   }, []);
