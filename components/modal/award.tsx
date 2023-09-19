@@ -309,7 +309,11 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
                   md: "1px",
                 }}
               >
-                <Flex flexDirection="column" height="100%">
+                <Flex
+                  flexDirection="column"
+                  justifyContent="flex-end"
+                  height="100%"
+                >
                   {/* @ts-expect-error */}
                   <AwardDetails award={selected} />
 
@@ -320,6 +324,7 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
                         md: "block",
                       }}
                       width="100%"
+                      isDisabled={!selected}
                       isLoading={giveRewardMutation.isLoading}
                       onClick={handleGiveReward}
                     >
