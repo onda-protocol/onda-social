@@ -43,6 +43,7 @@ type CommentsQueryKey = (string | { offset: number })[];
 
 interface CommentListItemProps {
   forum: string;
+  postAuthor: string;
   comment: SerializedCommentNested;
   depth?: number;
   queryKey: CommentsQueryKey;
@@ -53,6 +54,7 @@ interface CommentListItemProps {
 export const CommentListItem: React.FC<CommentListItemProps> = memo(
   function CommentListItem({
     forum,
+    postAuthor,
     comment,
     queryKey,
     isRoot = false,
@@ -236,6 +238,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
       <Box position="relative" ml={isRoot ? "0" : "8"} mt="0">
         <Box p="4" pb="2">
           <PostMeta
+            isOp={postAuthor === comment.author}
             displayAvatar
             displayAward="xsmall"
             author={comment.Author}
@@ -296,7 +299,12 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
         </Box>
 
         {comment._count?.Children > 0 && !collapsed ? (
-          <CommentReplies forum={forum} comment={comment} queryKey={queryKey} />
+          <CommentReplies
+            forum={forum}
+            postAuthor={postAuthor}
+            comment={comment}
+            queryKey={queryKey}
+          />
         ) : null}
 
         {collapsed ? (
@@ -431,12 +439,14 @@ const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
 
 interface CommentRepliesProps {
   forum: string;
+  postAuthor: string;
   comment: SerializedCommentNested;
   queryKey: CommentsQueryKey;
 }
 
 const CommentReplies: React.FC<CommentRepliesProps> = ({
   forum,
+  postAuthor,
   comment,
   queryKey,
 }) => {
@@ -448,6 +458,7 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
             <CommentListItem
               key={comment.id}
               forum={forum}
+              postAuthor={postAuthor}
               comment={comment}
               queryKey={queryKey}
             />
@@ -455,13 +466,18 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
           {comment._count.Children > comment.Children.length && (
             <CommentSiblingsLazy
               comment={comment}
+              postAuthor={postAuthor}
               forum={forum}
               offset={comment.Children.length}
             />
           )}
         </>
       ) : (
-        <CommentChildrenLazy forum={forum} comment={comment} />
+        <CommentChildrenLazy
+          forum={forum}
+          postAuthor={postAuthor}
+          comment={comment}
+        />
       )}
     </>
   );
@@ -469,10 +485,15 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
 
 interface CommentChildrenLazyProps {
   forum: string;
+  postAuthor: string;
   comment: SerializedCommentNested;
 }
 
-const CommentChildrenLazy = ({ forum, comment }: CommentChildrenLazyProps) => {
+const CommentChildrenLazy = ({
+  forum,
+  postAuthor,
+  comment,
+}: CommentChildrenLazyProps) => {
   const [loadMore, setLoadMore] = useState(false);
   const queryKey = useMemo(() => ["replies", comment.id], [comment.id]);
   const query = useQuery(
@@ -498,6 +519,7 @@ const CommentChildrenLazy = ({ forum, comment }: CommentChildrenLazyProps) => {
         <CommentListItem
           key={comment.id}
           forum={forum}
+          postAuthor={postAuthor}
           comment={comment}
           queryKey={queryKey}
         />
@@ -509,11 +531,13 @@ const CommentChildrenLazy = ({ forum, comment }: CommentChildrenLazyProps) => {
 interface CommentSiblingsLazyProps {
   comment: SerializedCommentNested;
   forum: string;
+  postAuthor: string;
   offset: number;
 }
 
 const CommentSiblingsLazy = ({
   comment,
+  postAuthor,
   forum,
   offset,
 }: CommentSiblingsLazyProps) => {
@@ -544,6 +568,7 @@ const CommentSiblingsLazy = ({
         <CommentListItem
           key={comment.id}
           forum={forum}
+          postAuthor={postAuthor}
           comment={comment}
           queryKey={queryKey}
         />

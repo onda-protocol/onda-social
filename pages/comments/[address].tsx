@@ -201,6 +201,7 @@ const Comments: NextPage<PageProps> = () => {
                   isRoot
                   key={comment.id}
                   comment={comment}
+                  postAuthor={postQuery.data?.author}
                   forum={postQuery.data?.forum}
                   queryKey={commentsQueryKey}
                 />

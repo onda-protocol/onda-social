@@ -9,6 +9,7 @@ import { AwardsJson } from "lib/api";
 import dayjs from "lib/dayjs";
 
 interface PostMetaProps {
+  isOp?: boolean;
   author: User;
   points: number;
   awards: null | AwardsJson;
@@ -23,7 +24,7 @@ interface PostMetaProps {
 }
 
 const Dot = () => (
-  <Box as="span" fontSize="xxs" color="gray.500">
+  <Box as="span" fontSize="xx-small" color="gray.500">
     &nbsp;•&nbsp;
   </Box>
 );
@@ -71,6 +72,7 @@ const awardsArray = [
 ];
 
 export const PostMeta: React.FC<PostMetaProps> = ({
+  isOp,
   author,
   awards,
   createdAt,
@@ -158,9 +160,6 @@ export const PostMeta: React.FC<PostMetaProps> = ({
         display="flex"
         flexWrap="wrap"
         alignItems="center"
-        // justifyContent={
-        //   displayAward === "xsmall" ? "flex-start" : "space-between"
-        // }
         gap="2"
         width="100%"
       >
@@ -246,6 +245,16 @@ export const PostMeta: React.FC<PostMetaProps> = ({
                   </Text>
                 </Box>
               </Link>
+              {isOp && (
+                <Text
+                  as="span"
+                  fontWeight="bold"
+                  fontSize="xs"
+                  color="steelBlue"
+                >
+                  &nbsp;OP
+                </Text>
+              )}
               <Dot />
               <Text as="span" color="whiteAlpha.600">
                 {time}
