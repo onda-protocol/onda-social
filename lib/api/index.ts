@@ -1,3 +1,4 @@
+import type { DAS } from "helius-sdk";
 import { IncomingHttpHeaders } from "http";
 import {
   Comment,
@@ -191,7 +192,10 @@ export function fetchOGTags(
   );
 }
 
-export function fetchAssetsByOwner(address: string, page: number = 1) {
+export function fetchAssetsByOwner(
+  address: string,
+  page: number = 1
+): Promise<DAS.GetAssetResponseList["items"]> {
   return fetch(
     `${process.env.NEXT_PUBLIC_HOST}/api/user/${address}/assets?page=${page}`
   ).then((res) => res.json());
