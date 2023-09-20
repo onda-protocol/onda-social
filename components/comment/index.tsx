@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 import { VoteType } from "@prisma/client";
 import { web3 } from "@project-serum/anchor";
-import { Box, Button, Text } from "@chakra-ui/react";
+import { Box, Button } from "@chakra-ui/react";
 import {
   InfiniteData,
   QueryClient,
@@ -10,7 +10,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useState } from "react";
-import { IoArrowDown, IoArrowUp, IoChatbox } from "react-icons/io5";
+import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
 
 import type { EntryForm } from "../editor";
