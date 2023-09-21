@@ -17,6 +17,9 @@ import {
   WrapItem,
   IconButton,
   Container,
+  FormControl,
+  FormLabel,
+  FormHelperText,
 } from "@chakra-ui/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
@@ -24,7 +27,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
-import { fetchAssetsByOwner, fetchUser, updateProfile } from "lib/api";
+import {
+  fetchAssetsByOwner,
+  fetchUser,
+  fetchUserByName,
+  updateProfile,
+} from "lib/api";
 import { useAuth } from "components/providers/auth";
 import { Avatar } from "components/avatar";
 import { useEffect, useState } from "react";
@@ -83,16 +91,23 @@ export const ProfileModal = ({ open, onRequestClose }: ProfileModalProps) => {
         throw new Error("Not logged in");
       }
 
+      if (
+        data.name === query.data?.name &&
+        data.item?.mint === query.data?.mint
+      ) {
+        return;
+      }
+
       const name = data.name.trim();
       const mint = data.item?.mint ?? null;
 
       await updateProfile(auth.address, name, mint);
+      await queryClient.invalidateQueries(["user", auth.address]);
+      toast.success("Profile updated");
     },
     {
       async onSuccess() {
         onRequestClose();
-        toast.success("Profile updated");
-        await queryClient.invalidateQueries(["user", auth.address]);
       },
       onError(error) {
         toast.error(error.message ?? "Error updating profile");
@@ -145,12 +160,53 @@ export const ProfileModal = ({ open, onRequestClose }: ProfileModalProps) => {
             </Box>
           </Box>
         </Flex>
-        <Text>Username</Text>
-        <Input
-          mb="2"
-          placeholder="Name"
-          {...methods.register("name", { required: true })}
-        />
+        <FormControl mb="6">
+          <FormLabel>Username</FormLabel>
+          <Input
+            mb="2"
+            placeholder="Name"
+            isInvalid={Boolean(methods.formState.errors.name)}
+            {...methods.register("name", {
+              required: {
+                value: true,
+                message: "Username is required",
+              },
+              minLength: {
+                value: 5,
+                message: "Username must be at least 5 characters long",
+              },
+              maxLength: {
+                value: 21,
+                message: "Username must be at most 21 characters long",
+              },
+              pattern: {
+                value: /^[a-zA-Z0-9]+$/,
+                message: "Username must be alphanumeric",
+              },
+              async validate(value) {
+                if (value === query.data.name) {
+                  return true;
+                }
+
+                try {
+                  const user = await fetchUserByName(value);
+                  if (user) {
+                    return "Username already taken";
+                  }
+                } catch (error) {
+                  console.log(error);
+                  return "Unknown error";
+                }
+                return true;
+              },
+            })}
+          />
+          {typeof methods.formState.errors.name?.message === "string" && (
+            <FormHelperText>
+              {methods.formState.errors.name.message}
+            </FormHelperText>
+          )}
+        </FormControl>
         <AnimatePresence>
           {imageModal && (
             <Box

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import {
   Text,
@@ -16,8 +16,8 @@ import {
 import Image from "next/image";
 import { WalletConnectionError } from "@solana/wallet-adapter-base";
 import { useMutation } from "@tanstack/react-query";
-import toast from "react-hot-toast";
 import { FcGoogle } from "react-icons/fc";
+import toast from "react-hot-toast";
 
 import { AuthStatus, useAuth } from "components/providers/auth";
 import { useMagic } from "components/providers/magic";
@@ -55,26 +55,26 @@ export const LoginModal = ({ open, onRequestClose }: LoginModalProps) => {
     }
   }, [auth, open]);
 
-  useEffect(() => {
-    async function handleConnect() {
-      try {
-        await wallet.connect();
-      } catch (err) {
-        console.log(err);
-        toast.error(
-          err instanceof WalletConnectionError ? err.message : "Unknown error"
-        );
-      }
+  const handleConnect = useCallback(async () => {
+    try {
+      await wallet.connect();
+    } catch (err) {
+      console.log(err);
+      toast.error(
+        err instanceof WalletConnectionError ? err.message : "Unknown error"
+      );
     }
+  }, [wallet]);
 
+  useEffect(() => {
     if (
-      !wallet.connected &&
       !wallet.connecting &&
+      !wallet.connected &&
       wallet.wallet?.readyState === "Installed"
     ) {
       handleConnect();
     }
-  }, [wallet]);
+  }, [wallet, handleConnect]);
 
   function renderBody() {
     switch (auth.status) {
@@ -178,7 +178,13 @@ export const LoginModal = ({ open, onRequestClose }: LoginModalProps) => {
                   </Box>
                 }
                 isLoading={loginWithGoogle.isLoading}
-                onClick={() => wallet.select(adapter.adapter.name)}
+                onClick={() => {
+                  if (wallet.wallet?.adapter.name !== adapter.adapter.name) {
+                    wallet.select(adapter.adapter.name);
+                  } else {
+                    handleConnect();
+                  }
+                }}
               >
                 Connect with {adapter.adapter.name}
               </Button>

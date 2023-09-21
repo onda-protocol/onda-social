@@ -28,8 +28,6 @@ import {
   PostButton,
   AwardButton,
   DeleteButton,
-  UpVoteButton,
-  DownVoteButton,
   VoteButtons,
 } from "components/post/buttons";
 import { useAuth } from "components/providers/auth";

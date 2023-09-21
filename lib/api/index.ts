@@ -153,8 +153,14 @@ export function fetchReplies(
   ).then((res) => res.json());
 }
 
-export function fetchUser(address: string): Promise<User> {
-  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/user/${address}`).then(
+export function fetchUser(id: string): Promise<User> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/user?id=${id}`).then(
+    (res) => res.json()
+  );
+}
+
+export function fetchUserByName(name: string): Promise<User> {
+  return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/user?name=${name}`).then(
     (res) => res.json()
   );
 }
