@@ -1,9 +1,17 @@
 import { useRouter } from "next/router";
-import React, { useEffect } from "react";
+import React, { useEffect, forwardRef, useState } from "react";
 import { web3 } from "@project-serum/anchor";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Input,
+  Textarea,
+  Select,
+  Heading,
+  Flex,
+} from "@chakra-ui/react";
 import toast from "react-hot-toast";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { IoDocumentText, IoLink } from "react-icons/io5";
@@ -18,6 +26,7 @@ import {
 } from "lib/api/types";
 import { RadioCardMenu } from "components/input";
 import { AuthStatus, useAuth } from "components/providers/auth";
+import { Markdown } from "components/markdown";
 // import { ImagePicker } from "components/input/imagePicker";
 
 export interface EntryForm {
@@ -283,12 +292,18 @@ export const Editor = ({
     switch (postType) {
       case "textPost": {
         return (
-          <Textarea
-            mt="4"
-            placeholder={placeholder || "Text"}
-            minHeight={config.type === "post" ? "200px" : "100px"}
-            backgroundColor="onda.900"
-            {...methods.register("body", { required: true })}
+          <Controller
+            control={methods.control}
+            name="body"
+            rules={{ required: true }}
+            render={({ field }) => (
+              <MarkdownEditor
+                placeholder={placeholder}
+                size="lg"
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
           />
         );
       }
@@ -427,3 +442,79 @@ const SelectForum = React.forwardRef<
     </Select>
   );
 });
+
+interface MarkdownEditorProps {
+  placeholder?: string;
+  value: string;
+  size: "md" | "lg";
+  onChange: (value: string) => void;
+}
+
+const MarkdownEditor = forwardRef<HTMLTextAreaElement, MarkdownEditorProps>(
+  function MarkdownEditor({ placeholder, size, value, onChange }, ref) {
+    const [previewMode, setPreviewMode] = useState(false);
+
+    return (
+      <Box
+        display="flex"
+        flexDirection="column"
+        mt="2"
+        borderRadius="md"
+        border="1px solid"
+        borderColor="inherit"
+        outline="2px solid transparent"
+        _hover={{
+          borderColor: "var(--chakra-colors-whiteAlpha-400)",
+        }}
+        _focusWithin={{
+          borderColor: "#63b3ed",
+          boxShadow: "0 0 0 1px #63b3ed",
+          outline: "2px solid var(--chakra-ring-color)",
+          zIndex: 1,
+        }}
+      >
+        {previewMode && (
+          <Box px="4" py="2" minHeight={size === "lg" ? "200px" : "100px"}>
+            <Markdown>{value ?? ""}</Markdown>
+          </Box>
+        )}
+        <Textarea
+          ref={ref}
+          display={previewMode ? "none" : "block"}
+          placeholder={placeholder}
+          minHeight={size === "lg" ? "200px" : "100px"}
+          borderRadius={0}
+          border="none"
+          outline="none"
+          _focus={{
+            outline: 0,
+            boxShadow: "none",
+          }}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <Box
+          flex={0}
+          backgroundColor="blackAlpha.400"
+          borderTop="1px solid"
+          borderColor="whiteAlpha.100"
+          borderBottomRadius="md"
+          padding="3"
+        >
+          <Flex align="center" justify="space-between">
+            <Heading fontSize="sm">Markdown</Heading>
+            <Button
+              size="sm"
+              variant={previewMode ? "primary" : "solid"}
+              onClick={() => {
+                setPreviewMode((v) => !v);
+              }}
+            >
+              {previewMode ? "Write" : "Preview"}
+            </Button>
+          </Flex>
+        </Box>
+      </Box>
+    );
+  }
+);

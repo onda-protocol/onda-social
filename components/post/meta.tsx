@@ -109,20 +109,24 @@ export const PostMeta: React.FC<PostMetaProps> = ({
 
       return awardsArray.map((award) => (
         <WrapItem key={award.id}>
-          <Tooltip label={award.name}>
+          <Tooltip label={`${award.name} x1`}>
             <Box
               display="flex"
               alignItems="center"
-              width="fit-content"
-              backgroundColor="prussianBlue"
               borderRadius="md"
-              borderWidth="1px"
-              borderColor="whiteAlpha.300"
+              borderWidth={displayAward === "large" ? "1px" : undefined}
+              backgroundColor={
+                displayAward === "large" ? "prussianBlue" : undefined
+              }
+              borderColor={
+                displayAward === "large" ? "whiteAlpha.300" : undefined
+              }
+              width="fit-content"
               p="1"
               _hover={{
                 borderColor: "whiteAlpha.400",
                 "& .img-container": {
-                  transform: "scale(1.2)",
+                  transform: "scale(1.1)",
                 },
               }}
             >
@@ -273,12 +277,12 @@ export const PostMeta: React.FC<PostMetaProps> = ({
         </Box>
         {awardsEl && displayAward !== "large" && (
           <Box ml={{ sx: "-0.5", md: 0 }}>
-            <Wrap spacing="1">{awardsEl}</Wrap>
+            <Wrap spacing="0">{awardsEl}</Wrap>
           </Box>
         )}
       </Box>
       {awardsEl && displayAward === "large" && (
-        <Box my="2">
+        <Box width="fit-content" my="2">
           <Wrap spacing="2">{awardsEl}</Wrap>
         </Box>
       )}

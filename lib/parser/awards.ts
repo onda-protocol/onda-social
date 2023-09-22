@@ -89,7 +89,7 @@ export async function awardsParser(ix: Instruction) {
       });
 
       await prisma.$transaction(async (transaction) => {
-        const [rewardResult, postResult, commentResult] =
+        const [awardResult, postResult, commentResult] =
           await Promise.allSettled([
             transaction.award.findUnique({
               where: {
@@ -108,7 +108,7 @@ export async function awardsParser(ix: Instruction) {
             }),
           ]);
 
-        if (rewardResult.status === "rejected" || rewardResult.value === null) {
+        if (awardResult.status === "rejected" || awardResult.value === null) {
           return;
         }
 
