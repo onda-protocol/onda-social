@@ -76,10 +76,10 @@ export async function awardsParser(ix: Instruction) {
 
     case "giveAward": {
       const awardIndex = ixAccounts.findIndex((a) => a.name === "award");
-      const leafOwnerIndex = ixAccounts.findIndex(
-        (a) => a.name === "leafOwner"
-      );
+      const claimIndex = ixAccounts.findIndex((a) => a.name === "claim");
+      const leafOwnerIndex = ixAccounts.findIndex((a) => a.name === "entryId");
       const awardId = ix.accounts[awardIndex];
+      const claimId = ix.accounts[claimIndex]; // TODO check if this is the correct account
       const entryId = ix.accounts[leafOwnerIndex];
 
       const award = await prisma.award.findUnique({
@@ -130,9 +130,6 @@ export async function awardsParser(ix: Instruction) {
               id: entryId,
             },
             data: {
-              points: {
-                increment: 1,
-              },
               awards,
             },
           });
@@ -155,46 +152,11 @@ export async function awardsParser(ix: Instruction) {
               id: entryId,
             },
             data: {
-              points: {
-                increment: 1,
-              },
               awards,
             },
           });
         }
       });
-
-      if (award) {
-        // expect one of these to fail
-        try {
-          await prisma.post.update({
-            where: {
-              id: entryId,
-            },
-            data: {
-              points: {
-                increment: 1,
-              },
-            },
-          });
-        } catch (err) {
-          try {
-            await prisma.comment.update({
-              where: {
-                id: entryId,
-              },
-              data: {
-                points: {
-                  increment: 1,
-                },
-              },
-            });
-          } catch {
-            // Fail silently - entry not found
-            console.log("Entry not found");
-          }
-        }
-      }
 
       break;
     }

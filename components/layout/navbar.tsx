@@ -22,6 +22,7 @@ import { fetchUser } from "lib/api";
 import { shortenAddress } from "utils/format";
 import { AuthStatus, useAuth } from "components/providers/auth";
 import { Avatar } from "components/avatar";
+import { Notifications } from "./notifications";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -126,6 +127,9 @@ const UserMenu = () => {
     case AuthStatus.AUTHENTICATED: {
       return (
         <>
+          <Box pr="2">
+            <Notifications />
+          </Box>
           <Menu size="xl">
             <MenuButton
               as={UserMenuButton}

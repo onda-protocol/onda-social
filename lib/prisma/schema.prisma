@@ -72,8 +72,26 @@ model Award {
   name           String
   description    String?
   image          String
+  enabled        Boolean @default(false)
 
   @@index(fields: [name])
+}
+
+enum NotificationType {
+  Award
+  Claim
+}
+
+model Notification {
+  id        String @id @unique
+  user      String
+  type      NotificationType
+  title     String
+  body      String
+  meta      String?
+  createdAt BigInt
+
+  @@index(fields: [user])
 }
 
 enum PostType {

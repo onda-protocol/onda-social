@@ -382,8 +382,8 @@ const CommentVoteButton = ({ comment, queryKey }: CommentVoteButtonProps) => {
           ...comment,
           points:
             voteType === VoteType.UP
-              ? increment(comment.points)
-              : decrement(comment.points),
+              ? increment(comment.points, comment._vote ? 2 : 1)
+              : decrement(comment.points, comment._vote ? 2 : 1),
           _vote: voteType,
         }));
       },
@@ -661,12 +661,12 @@ function updateCommentsCache(
   }
 }
 
-function increment(num: string) {
-  return Number(Number(num) + 1).toString();
+function increment(num: string, count: number = 1) {
+  return Number(Number(num) + count).toString();
 }
 
-function decrement(num: string) {
-  return Number(Number(num) - 1).toString();
+function decrement(num: string, count: number = 1) {
+  return Number(Number(num) - count).toString();
 }
 
 function incrementAward(awardJson: AwardsJson, award: SerializedAward) {

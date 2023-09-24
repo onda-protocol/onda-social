@@ -244,7 +244,8 @@ export const PostVoteButtons = ({ direction, post }: PostVoteButtonsProps) => {
     },
     {
       onMutate(voteType) {
-        updatePostVoteCache(queryClient, post.id, voteType);
+        let count = post._vote ? 2 : 1;
+        updatePostVoteCache(queryClient, post.id, voteType, count);
       },
     }
   );
@@ -544,15 +545,16 @@ function updatePostAwardsCache(
 function updatePostVoteCache(
   queryClient: QueryClient,
   entryId: string,
-  vote: VoteType | null
+  voteType: VoteType,
+  count: number
 ) {
   updatePostsCache(queryClient, entryId, (post) => {
     return {
       ...post,
       points: Number(
-        Number(post.points) + (vote === VoteType.UP ? 1 : -1)
+        Number(post.points) + (voteType === VoteType.UP ? count : -count)
       ).toString(),
-      _vote: vote,
+      _vote: voteType,
     };
   });
 }

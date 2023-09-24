@@ -64,7 +64,7 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
                 update: data,
               },
             },
-            points: getOperation(json.vote),
+            points: getOperation(json.vote, vote !== null),
           },
         });
       });
@@ -105,7 +105,7 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
                 update: data,
               },
             },
-            points: getOperation(json.vote),
+            points: getOperation(json.vote, vote !== null),
           },
         });
       });
@@ -144,16 +144,16 @@ function isValidBody(body: any) {
   return true;
 }
 
-function getOperation(vote: VoteType) {
+function getOperation(vote: VoteType, undo: boolean) {
   switch (vote) {
     case VoteType.UP:
       return {
-        increment: 1,
+        increment: undo ? 2 : 1,
       };
 
     case VoteType.DOWN:
       return {
-        decrement: 1,
+        decrement: undo ? 2 : 1,
       };
 
     default:
