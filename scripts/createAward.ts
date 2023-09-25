@@ -2,7 +2,12 @@ import fs from "fs";
 import os from "os";
 import * as dotenv from "dotenv";
 import * as anchor from "@project-serum/anchor";
-import { keypairIdentity, Metaplex } from "@metaplex-foundation/js";
+import {
+  bundlrStorage,
+  keypairIdentity,
+  Metaplex,
+  toMetaplexFile,
+} from "@metaplex-foundation/js";
 import {
   getConcurrentMerkleTreeAccountSize,
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
@@ -16,6 +21,9 @@ import { getAwardsProgram } from "../lib/anchor/provider";
 import { findAwardPda, findTreeAuthorityPda } from "../utils/pda";
 
 dotenv.config();
+
+const SYMBOL = "GLASS";
+const NAME = "Chewed Glasss";
 
 const connection = new anchor.web3.Connection(
   process.env.HELIUS_RPC_URL as string
@@ -39,6 +47,7 @@ async function createReward(
   const maxDepth = 14;
   const bufferSize = 64;
   const canopyDepth = maxDepth - 3;
+  const amount = anchor.web3.LAMPORTS_PER_SOL / 100;
   const space = getConcurrentMerkleTreeAccountSize(
     maxDepth,
     bufferSize,
@@ -56,12 +65,13 @@ async function createReward(
 
   const createRewardIx = await program.methods
     .createAward(maxDepth, bufferSize, {
-      symbol: "PLANK",
-      name: "Plankton",
-      uri: "https://arweave.net/r1Y2R-KIE71TdOGCah4qQ8pTLjBn1WEETxqD8b7X8Lc",
+      amount: new anchor.BN(amount),
+      feeBasisPoints: 5000,
     })
     .accounts({
       award: accounts.awardPda,
+      matchingAward: null,
+      treasury: authority.publicKey,
       collectionMint: accounts.collectionMint,
       collectionMetadata: accounts.collectionMetadata,
       collectionAuthorityRecord: accounts.collectionAuthorityRecordPda,
@@ -105,14 +115,15 @@ async function createReward(
 
 async function createCollectionMint(
   authority: anchor.web3.Keypair,
-  merkleTree: anchor.web3.Keypair
+  merkleTree: anchor.web3.Keypair,
+  metadataUri: string
 ) {
   const metaplex = new Metaplex(connection).use(keypairIdentity(authority));
 
   const transactionBuilder = await metaplex.nfts().builders().create({
-    symbol: "PLANK",
-    name: "Planktonites",
-    uri: "https://arweave.net/r1Y2R-KIE71TdOGCah4qQ8pTLjBn1WEETxqD8b7X8Lc",
+    symbol: SYMBOL,
+    name: NAME,
+    uri: metadataUri,
     sellerFeeBasisPoints: 0,
     isCollection: true,
   });
@@ -147,11 +158,45 @@ async function createCollectionMint(
   };
 }
 
+async function uploadMetadata(authority: anchor.web3.Keypair) {
+  const metaplex = new Metaplex(connection).use(keypairIdentity(authority)).use(
+    bundlrStorage({
+      address: process.env.NEXT_PUBLIC_BUNDLR_URL!,
+    })
+  );
+
+  const file = fs.readFileSync(__dirname + "/../public/glass.png");
+  const metaplexFile = toMetaplexFile(file, "image/png");
+  const imageUri = await metaplex.storage().upload(metaplexFile);
+  const metadataUri = await metaplex.storage().uploadJson({
+    symbol: SYMBOL,
+    name: NAME,
+    uri: imageUri,
+    external_url: "https://onda.community",
+    attributes: {
+      trait_type: "glass",
+      value: "chewed",
+    },
+    properties: {
+      files: [
+        {
+          uri: imageUri,
+          type: "image/png",
+        },
+      ],
+    },
+  });
+  console.log("metadataUri: ", metadataUri);
+
+  return metadataUri;
+}
+
 async function main() {
   const signer = getSigner();
   const merkleTree = anchor.web3.Keypair.generate();
 
-  const accounts = await createCollectionMint(signer, merkleTree);
+  const metadataUri = await uploadMetadata(signer);
+  const accounts = await createCollectionMint(signer, merkleTree, metadataUri);
   await createReward(signer, merkleTree, accounts);
 }
 
