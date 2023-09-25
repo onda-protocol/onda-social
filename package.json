@@ -39,7 +39,6 @@
     "@vercel/postgres": "^0.4.0",
     "bs58": "^5.0.0",
     "camelcase": "^7.0.1",
-    "canvas": "^2.11.2",
     "chakra-ui-markdown-renderer": "^4.1.0",
     "cheerio": "^1.0.0-rc.12",
     "dayjs": "^1.11.7",

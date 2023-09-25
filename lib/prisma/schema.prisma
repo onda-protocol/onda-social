@@ -64,18 +64,18 @@ model Forum {
 }
 
 model Award {
-  id               String  @id @unique
-  amount           BigInt
-  authority        String
-  collectionMint   String
-  merkleTree       String
-  name             String
-  description      String?
-  image            String
-  enabled          Boolean @default(false)
-  matchingId       String?
-  Matching         Award?  @relation("MatchingAward", fields: [matchingId], references: [id])
-  MatchingRelation Award[] @relation("MatchingAward")
+  id             String  @id @unique
+  amount         BigInt
+  authority      String
+  collectionMint String
+  merkleTree     String
+  name           String
+  description    String?
+  image          String
+  enabled        Boolean @default(false)
+  matching       String?
+  Matching       Award?  @relation("Matching", fields: [matching], references: [id])
+  Matched        Award[] @relation("Matching")
 
   @@index(fields: [name])
 }

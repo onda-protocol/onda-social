@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import os from "os";
 import * as dotenv from "dotenv";
 import * as anchor from "@project-serum/anchor";
@@ -23,7 +24,11 @@ import { findAwardPda, findTreeAuthorityPda } from "../utils/pda";
 dotenv.config();
 
 const SYMBOL = "GLASS";
-const NAME = "Chewed Glasss";
+const NAME = "The Gigabrain Glass Eater";
+const IMAGE = path.join(__dirname, "../public/glasseater-dark.png");
+const MATCHING_AWARD = new anchor.web3.PublicKey(
+  "GJ5eFxBGsf2wmKcQRGRNhbj93sdynSwy1DQwaqYxcxu3"
+);
 
 const connection = new anchor.web3.Connection(
   process.env.HELIUS_RPC_URL as string
@@ -39,7 +44,7 @@ function getSigner() {
   return anchor.web3.Keypair.fromSecretKey(secretKey);
 }
 
-async function createReward(
+async function createAward(
   authority: anchor.web3.Keypair,
   merkleTree: anchor.web3.Keypair,
   accounts: Awaited<ReturnType<typeof createCollectionMint>>
@@ -70,7 +75,7 @@ async function createReward(
     })
     .accounts({
       award: accounts.awardPda,
-      matchingAward: null,
+      matchingAward: MATCHING_AWARD,
       treasury: authority.publicKey,
       collectionMint: accounts.collectionMint,
       collectionMetadata: accounts.collectionMetadata,
@@ -90,7 +95,13 @@ async function createReward(
   const messageV0 = new anchor.web3.TransactionMessage({
     payerKey: authority.publicKey,
     recentBlockhash: latestBlockhash.blockhash,
-    instructions: [allocTreeIx, createRewardIx],
+    instructions: [
+      anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
+        units: 1000000,
+      }),
+      allocTreeIx,
+      createRewardIx,
+    ],
   }).compileToV0Message();
 
   const transaction = new anchor.web3.VersionedTransaction(messageV0);
@@ -98,7 +109,7 @@ async function createReward(
   try {
     await transaction.sign([authority, merkleTree]);
     const signature = await connection.sendTransaction(transaction, {
-      skipPreflight: true,
+      // skipPreflight: true,
       preflightCommitment: "confirmed",
     });
     console.log("txId: ", signature);
@@ -165,7 +176,7 @@ async function uploadMetadata(authority: anchor.web3.Keypair) {
     })
   );
 
-  const file = fs.readFileSync(__dirname + "/../public/glass.png");
+  const file = fs.readFileSync(IMAGE);
   const metaplexFile = toMetaplexFile(file, "image/png");
   const imageUri = await metaplex.storage().upload(metaplexFile);
   const metadataUri = await metaplex.storage().uploadJson({
@@ -197,7 +208,7 @@ async function main() {
 
   const metadataUri = await uploadMetadata(signer);
   const accounts = await createCollectionMint(signer, merkleTree, metadataUri);
-  await createReward(signer, merkleTree, accounts);
+  await createAward(signer, merkleTree, accounts);
 }
 
 main();

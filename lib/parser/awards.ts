@@ -1,12 +1,14 @@
 import { web3 } from "@project-serum/anchor";
-import { Prisma } from "@prisma/client/edge";
+import { Prisma } from "@prisma/client";
+import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import axios from "axios";
 import base58 from "bs58";
 import { Instruction } from "helius-sdk";
 
+import { AWARDS_PROGRAM_ID } from "../anchor/constants";
 import { IDL as AwardsIDS } from "../anchor/idl/onda_awards";
 import { getAwardsProgram } from "../anchor/provider";
-import { AwardMetadata } from "../anchor/types";
+import { CreateAwardArgs } from "../anchor/types";
 import prisma from "../prisma";
 import { genIxIdentifier } from "./helpers";
 
@@ -39,35 +41,72 @@ export async function awardsParser(ix: Instruction) {
     case "createAward": {
       const authorityIndex = ixAccounts.findIndex((a) => a.name === "payer");
       const awardIndex = ixAccounts.findIndex((a) => a.name === "award");
+      const matchingAwardIndex = ixAccounts.findIndex(
+        (a) => a.name === "matchingAward"
+      );
       const collectionMintIndex = ixAccounts.findIndex(
         (a) => a.name === "collectionMint"
+      );
+      const collectionMetadataIndex = ixAccounts.findIndex(
+        (a) => a.name === "collectionMetadata"
       );
       const merkleTreeIndex = ixAccounts.findIndex(
         (a) => a.name === "merkleTree"
       );
+      console.log(ixAccounts);
       const authority = ix.accounts[authorityIndex];
       const award = ix.accounts[awardIndex];
+      const matchingAward = ix.accounts[matchingAwardIndex];
       const collectionMint = ix.accounts[collectionMintIndex];
+      const collectionMetadata = ix.accounts[collectionMetadataIndex];
       const merkleTree = ix.accounts[merkleTreeIndex];
 
-      const metadataArgs = rewardsProgram.coder.types.decode<AwardMetadata>(
-        "AwardMetadata",
+      const metadataArgs = rewardsProgram.coder.types.decode<CreateAwardArgs>(
+        "CreateAwardArgs",
         Buffer.from(ixData.slice(16))
       );
-      const metadataJson = await axios.get(metadataArgs.uri);
-      const description = metadataJson.data.description as string;
-      const image = metadataJson.data.image as string;
+      const amount = metadataArgs.amount;
+      const feeBasisPoints = metadataArgs.feeBasisPoints;
+      const metadata = await Metadata.fromAccountAddress(
+        connection,
+        new web3.PublicKey(collectionMetadata)
+      );
+      const metadataJson = await axios.get(metadata.data.uri);
+      const name = metadataJson.data.name!;
+      const description = metadataJson.data.description!;
+      const image = metadataJson.data.image!;
+      const hasMatchingAward = matchingAward !== AWARDS_PROGRAM_ID.toBase58();
+
+      console.log({
+        name,
+        description,
+        image,
+        amount: amount.toNumber(),
+        feeBasisPoints: feeBasisPoints,
+        award,
+        matchingAward: hasMatchingAward ? matchingAward : null,
+        authority,
+        collectionMint,
+        merkleTree,
+      });
 
       await prisma.award.create({
         data: {
+          id: award,
+          amount: BigInt(amount.toNumber()),
           authority,
           collectionMint,
           description,
           merkleTree,
           image,
-          id: award,
-          amount: BigInt(0),
-          name: metadataArgs.name,
+          name,
+          Matching: hasMatchingAward
+            ? {
+                connect: {
+                  id: matchingAward,
+                },
+              }
+            : undefined,
         },
       });
 

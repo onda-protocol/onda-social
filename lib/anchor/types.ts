@@ -14,7 +14,7 @@ export type LeafSchemaV1 = SnakeToCamelCaseObj<
 export type Gate = OndaCompressionTypes["Gate"];
 export type Rule = OndaCompressionTypes["Rule"];
 export type Operator = OndaCompressionTypes["Operator"];
-export type AwardMetadata = OndaAwardsTypes["AwardMetadata"];
+export type CreateAwardArgs = OndaAwardsTypes["CreateAwardArgs"];
 
 type SnakeToCamelCase<S extends string> = S extends `${infer T}_${infer U}`
   ? `${T}${Capitalize<SnakeToCamelCase<U>>}`
