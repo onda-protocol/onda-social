@@ -73,8 +73,9 @@ model Award {
   description      String?
   image            String
   enabled          Boolean @default(false)
-  Matching         Award[] @relation("MatchingAward")
-  MatchingRelation Award[] @relation("MatchingAward")
+  Matching         Award?  @relation("MatchingAward", fields: [matchingId], references: [id])
+  matchingId       String? @unique
+  MatchingRelation Award?  @relation("MatchingAward")
 
   @@index(fields: [name])
 }
