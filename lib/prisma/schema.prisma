@@ -64,15 +64,18 @@ model Forum {
 }
 
 model Award {
-  id             String  @id @unique
-  amount         BigInt
-  authority      String
-  collectionMint String
-  merkleTree     String
-  name           String
-  description    String?
-  image          String
-  enabled        Boolean @default(false)
+  id               String  @id @unique
+  amount           BigInt
+  authority        String
+  collectionMint   String
+  merkleTree       String
+  name             String
+  description      String?
+  image            String
+  enabled          Boolean @default(false)
+  Matching         Award[] @relation("MatchingAward")
+  MatchingRelation Award[] @relation("MatchingAward")
+  awardId          String?
 
   @@index(fields: [name])
 }
@@ -83,12 +86,12 @@ enum NotificationType {
 }
 
 model Notification {
-  id        String @id @unique
+  id        String           @id @unique
   user      String
   type      NotificationType
   title     String
   body      String
-  meta      String?
+  meta      Json?
   createdAt BigInt
 
   @@index(fields: [user])
