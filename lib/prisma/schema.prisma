@@ -75,7 +75,6 @@ model Award {
   enabled          Boolean @default(false)
   Matching         Award[] @relation("MatchingAward")
   MatchingRelation Award[] @relation("MatchingAward")
-  awardId          String?
 
   @@index(fields: [name])
 }
