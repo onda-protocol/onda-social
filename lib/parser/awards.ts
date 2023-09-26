@@ -77,24 +77,12 @@ export async function awardsParser(ix: Instruction) {
       const image = metadataJson.data.image!;
       const hasMatchingAward = matchingAward !== AWARDS_PROGRAM_ID.toBase58();
 
-      console.log({
-        name,
-        description,
-        image,
-        amount: amount.toNumber(),
-        feeBasisPoints: feeBasisPoints,
-        award,
-        matchingAward: hasMatchingAward ? matchingAward : null,
-        authority,
-        collectionMint,
-        merkleTree,
-      });
-
       await prisma.award.create({
         data: {
           id: award,
           amount: BigInt(amount.toNumber()),
           authority,
+          feeBasisPoints,
           collectionMint,
           description,
           merkleTree,

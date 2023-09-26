@@ -49,7 +49,9 @@ export type SerializedForum = DeepReplaceBigInt<Forum, string> & {
   Gates: Gate[];
   links: LinkJson[] | null;
 };
-export type SerializedAward = DeepReplaceBigInt<Award, string>;
+export type SerializedAward = DeepReplaceBigInt<Award, string> & {
+  Matching: SerializedAward;
+};
 export type SerializedComment = DeepReplaceBigInt<Comment, string> & {
   awards: AwardsJson;
   Author: User;

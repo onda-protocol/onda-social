@@ -2,20 +2,14 @@ import {
   Box,
   Button,
   Heading,
-  Spinner,
   Text,
   Modal,
   ModalContent,
-  ModalHeader,
   ModalOverlay,
   ModalBody,
   Wrap,
   WrapItem,
   ModalFooter,
-  ListItem,
-  UnorderedList,
-  List,
-  ListIcon,
   Flex,
   ModalCloseButton,
 } from "@chakra-ui/react";
@@ -37,7 +31,6 @@ import { useAuth } from "components/providers/auth";
 import base58 from "bs58";
 
 import { formatAmount } from "utils/format";
-import { IoAdd } from "react-icons/io5";
 
 const AwardModalContext = createContext({
   isOpen: false,
@@ -70,74 +63,15 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
   const [selected, setSelected] = useState<SerializedAward>();
   const isOpen = entry !== null;
 
-  // const rewardsQuery = useQuery(["awards"], fetchAwards, {
-  //   enabled: isOpen,
-  // });
+  const rewardsQuery = useQuery(["awards"], fetchAwards, {
+    enabled: isOpen,
+  });
 
-  const awards = [
-    {
-      id: "-1",
-      amount: BigInt(5000000).toString(),
-      basisPoints: 5000,
-      image: "/vapour.png",
-      name: "Mystic Vapour",
-      description:
-        "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
-    },
-    {
-      id: "0",
-      amount: BigInt(5000000).toString(),
-      basisPoints: 5000,
-      image: "/glass.png",
-      name: "Chewed Glass",
-      description:
-        "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
-    },
-    {
-      id: "1",
-      amount: BigInt(10000000).toString(),
-      basisPoints: 5000,
-      image: "/bottle.png",
-      name: "Lost at Sea",
-      description:
-        "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
-    },
-    {
-      id: "2",
-      amount: BigInt(10000000).toString(),
-      basisPoints: 5000,
-      image: "/plankton.png",
-      name: "The Next Billion Users",
-      description:
-        "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
-      matching: "2",
-    },
-    {
-      id: "3",
-      amount: BigInt(20000000).toString(),
-      basisPoints: 5000,
-      image: "/crab.png",
-      name: "The Immortal Crab",
-      description:
-        "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
-    },
-    {
-      id: "4",
-      amount: BigInt(30000000).toString(),
-      basisPoints: 5000,
-      image: "/glasseater-dark.png",
-      name: "The Gigabrain Glass Eater",
-      description:
-        "Activated charcoal affogato truffaut pour-over tumblr pop-up taiyaki.",
-      matching: "0",
-    },
-  ];
-
-  // useEffect(() => {
-  //   if (rewardsQuery.data) {
-  //     setSelected(rewardsQuery.data[0]);
-  //   }
-  // }, [rewardsQuery.data]);
+  useEffect(() => {
+    if (rewardsQuery.data) {
+      setSelected(rewardsQuery.data[0]);
+    }
+  }, [rewardsQuery.data]);
 
   const closeModal = useCallback(() => setEntry(null), []);
   const openModal = useCallback(
@@ -284,19 +218,18 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
                     their contributions to the community.
                   </Text>
                 </Box>
-                <Wrap display="flex" flexWrap="wrap" spacing="0">
-                  {awards &&
-                    awards.map((award) => (
-                      <WrapItem key={award.id} width="25%">
+                <Flex flex={1} display="flex" flexWrap="wrap">
+                  {rewardsQuery.data &&
+                    rewardsQuery.data.map((award) => (
+                      <Flex key={award.id} width="25%" p="2">
                         <AwardItem
-                          // @ts-expect-error
                           award={award}
                           selected={award.id === selected?.id}
                           onSelect={setSelected}
                         />
-                      </WrapItem>
+                      </Flex>
                     ))}
-                </Wrap>
+                </Flex>
               </Box>
               <Box
                 flex={2}
@@ -364,6 +297,19 @@ interface AwardDetails {
 }
 
 const AwardDetails = ({ award }: AwardDetails) => {
+  const [userSplit, creatorSplit] = useMemo(() => {
+    if (award) {
+      if (award.feeBasisPoints === 0) {
+        return [100, 0];
+      }
+      return [
+        Math.round(award.feeBasisPoints / 100),
+        Math.round(award.feeBasisPoints / 100),
+      ];
+    }
+    return [null, null];
+  }, [award]);
+
   return award ? (
     <Flex flex={1} direction="column">
       <Flex
@@ -467,7 +413,7 @@ const AwardDetails = ({ award }: AwardDetails) => {
               fontWeight="400"
               whiteSpace="nowrap"
             >
-              User tip [50%]
+              User tip [{userSplit}%]
             </Text>
           </Flex>
           <Flex flex={1} justifyContent="flex-end">
@@ -481,6 +427,30 @@ const AwardDetails = ({ award }: AwardDetails) => {
             </Text>
           </Flex>
         </Flex>
+        {award.Matching ? (
+          <Flex mb="1">
+            <Flex flex={1}>
+              <Text
+                color="whiteAlpha.700"
+                fontSize="sm"
+                fontWeight="400"
+                whiteSpace="nowrap"
+              >
+                ↳ Item [x1]
+              </Text>
+            </Flex>
+            <Flex flex={1} justifyContent="flex-end">
+              <Text
+                color="whiteAlpha.700"
+                fontSize="sm"
+                fontWeight="400"
+                whiteSpace="nowrap"
+              >
+                {award.Matching.name}
+              </Text>
+            </Flex>
+          </Flex>
+        ) : null}
         <Flex mb="1">
           <Flex flex={1}>
             <Text
@@ -489,7 +459,7 @@ const AwardDetails = ({ award }: AwardDetails) => {
               fontWeight="400"
               whiteSpace="nowrap"
             >
-              ↳ Item [x1]
+              Creator tip [{creatorSplit}%]
             </Text>
           </Flex>
           <Flex flex={1} justifyContent="flex-end">
@@ -499,29 +469,7 @@ const AwardDetails = ({ award }: AwardDetails) => {
               fontWeight="400"
               whiteSpace="nowrap"
             >
-              Chewed Glass
-            </Text>
-          </Flex>
-        </Flex>
-        <Flex mb="1">
-          <Flex flex={1}>
-            <Text
-              color="whiteAlpha.700"
-              fontSize="sm"
-              fontWeight="400"
-              whiteSpace="nowrap"
-            >
-              Community tip [50%]
-            </Text>
-          </Flex>
-          <Flex flex={1} justifyContent="flex-end">
-            <Text
-              color="whiteAlpha.700"
-              fontSize="sm"
-              fontWeight="400"
-              whiteSpace="nowrap"
-            >
-              ◎0.01
+              ◎{formatAmount(award.amount)}
             </Text>
           </Flex>
         </Flex>
@@ -543,7 +491,8 @@ const AwardItem = ({ award, selected, onSelect }: AwardItemProps) => (
     display="flex"
     flexDirection="column"
     alignItems="center"
-    height="98px"
+    justifyContent="space-between"
+    minHeight="98px"
     width="100%"
     boxShadow={
       selected ? "0 0 4px 2px var(--chakra-colors-whiteAlpha-300)" : undefined
@@ -556,24 +505,22 @@ const AwardItem = ({ award, selected, onSelect }: AwardItemProps) => (
     }}
     onClick={() => onSelect(award)}
   >
-    {award.image && (
+    <Flex flexDirection="column" alignItems="center">
       <Image src={award.image} alt={award.name} height={42} width={42} />
-    )}
-    <Text
-      fontSize="sm"
-      fontWeight="600"
-      lineHeight="1.2"
-      marginTop="1"
-      px="2"
-      width="100%"
-      whiteSpace="nowrap"
-      overflow="hidden"
-      textOverflow="ellipsis"
-      textAlign="center"
-    >
-      {award.name}
-    </Text>
-    <Box display="flex" alignItems="center" mt="1">
+      <Text
+        fontSize="sm"
+        fontWeight="500"
+        lineHeight="1.4"
+        marginTop="1"
+        px="1"
+        width="100%"
+        noOfLines={2}
+        textAlign="center"
+      >
+        {award.name}
+      </Text>
+    </Flex>
+    <Flex display="flex" alignItems="center" mt="1">
       <Image
         unoptimized
         alt="SOL"
@@ -593,7 +540,7 @@ const AwardItem = ({ award, selected, onSelect }: AwardItemProps) => (
       >
         {formatAmount(award.amount)}
       </Text>
-    </Box>
+    </Flex>
   </Box>
 );
 

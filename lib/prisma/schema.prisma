@@ -66,6 +66,7 @@ model Forum {
 model Award {
   id             String  @id @unique
   amount         BigInt
+  feeBasisPoints Int
   authority      String
   collectionMint String
   merkleTree     String
