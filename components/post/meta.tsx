@@ -105,7 +105,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
   const awardsEl = useMemo(() => {
     if (awards || true) {
       // const awardsArray = Object.entries(awards);
-      const awardSize = displayAward === "large" ? 28 : 18;
+      const awardSize = displayAward === "large" ? 24 : 18;
 
       return awardsArray.map((award) => (
         <WrapItem key={award.id}>
@@ -119,12 +119,13 @@ export const PostMeta: React.FC<PostMetaProps> = ({
                 displayAward === "large" ? "prussianBlue" : undefined
               }
               borderColor={
-                displayAward === "large" ? "whiteAlpha.300" : undefined
+                displayAward === "large" ? "whiteAlpha.200" : undefined
               }
               width="fit-content"
               p="1"
+              mt="1"
               _hover={{
-                borderColor: "whiteAlpha.400",
+                borderColor: "whiteAlpha.300",
                 "& .img-container": {
                   transform: "scale(1.1)",
                 },

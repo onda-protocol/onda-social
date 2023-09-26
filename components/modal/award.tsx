@@ -175,7 +175,7 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
       <AwardModalContext.Provider value={context}>
         {children}
       </AwardModalContext.Provider>
-      <Modal size="4xl" isOpen={isOpen} onClose={closeModal}>
+      <Modal size="5xl" isOpen={isOpen} onClose={closeModal}>
         <ModalOverlay
           bg={{
             base: "blackAlpha.900",
@@ -195,7 +195,7 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
           }}
           height={{
             base: "100vh",
-            md: 420,
+            md: 460,
           }}
         >
           <ModalCloseButton />

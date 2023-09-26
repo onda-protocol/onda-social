@@ -364,9 +364,9 @@ export const UpVoteButton = ({ active, onClick }: VoteButtonProps) => (
       <motion.path
         fill="none"
         stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="48"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="48"
         d="M112 244l144-144 144 144M256 120v292"
       />
     </motion.svg>
@@ -412,9 +412,9 @@ export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
       <motion.path
         fill="none"
         stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="48"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="48"
         d="M112 268l144 144 144-144M256 392V100"
       />
     </motion.svg>
