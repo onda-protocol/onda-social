@@ -92,6 +92,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           points: BigInt(0).toString(),
           awards: {},
           hash: "",
+          dataHash: "",
           author: userAddress,
           Author: author,
           Votes: [],
@@ -267,8 +268,11 @@ const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
       disabled={disabled}
       forum={forum}
       entryId={comment.id}
-      leaf={comment.hash!}
-      index={Number(comment.nonce)}
+      author={comment.Author.id}
+      createdAt={Number(comment.createdAt)}
+      editedAt={comment.editedAt ? Number(comment.editedAt) : null}
+      dataHash={comment.dataHash!}
+      nonce={Number(comment.nonce)}
       onSuccess={handleCacheUpdate}
     />
   );

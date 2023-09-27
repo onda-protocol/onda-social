@@ -212,7 +212,17 @@ export type OndaAwards = {
           };
         },
         {
-          name: "leaf";
+          name: "createdAt";
+          type: "i64";
+        },
+        {
+          name: "editedAt";
+          type: {
+            option: "i64";
+          };
+        },
+        {
+          name: "dataHash";
           type: {
             array: ["u8", 32];
           };
@@ -659,7 +669,17 @@ export const IDL: OndaAwards = {
           },
         },
         {
-          name: "leaf",
+          name: "createdAt",
+          type: "i64",
+        },
+        {
+          name: "editedAt",
+          type: {
+            option: "i64",
+          },
+        },
+        {
+          name: "dataHash",
           type: {
             array: ["u8", 32],
           },

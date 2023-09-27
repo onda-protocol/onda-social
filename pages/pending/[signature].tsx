@@ -106,6 +106,7 @@ const Pending: NextPage = () => {
             uri: result.data.uri,
             nsfw: result.data.nsfw ?? false,
             hash: "",
+            dataHash: "",
             points: BigInt(0).toString(),
             awards: {},
             createdAt: BigInt(Math.floor(Date.now() / 1000)).toString(),

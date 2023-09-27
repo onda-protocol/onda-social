@@ -43,20 +43,18 @@ interface AwardModalProviderProps {
 }
 
 interface SelectedEntry {
-  forum: string;
   entryId: string;
-  leaf: string;
-  index: number;
+  author: string;
+  forum: string;
+  createdAt: number;
+  editedAt: number | null;
+  dataHash: string;
+  nonce: number;
   callback: (award: SerializedAward) => void;
 }
 
-interface AwardMutationArgs {
-  forum: string;
-  entryId: string;
-  leaf: string;
-  index: number;
-  award: SerializedAward;
-  callback: (award: SerializedAward) => void;
+interface AwardMutationArgs extends SelectedEntry {
+  Award: SerializedAward;
 }
 
 export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
@@ -80,7 +78,7 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
   const openModal = useCallback((args: SelectedEntry) => setEntry(args), []);
 
   const giveRewardMutation = useMutation<void, Error, AwardMutationArgs>(
-    async ({ entryId, forum, leaf, index, award }) => {
+    async ({ Award, ...rest }) => {
       if (!auth.address) {
         throw new Error("Please connect your wallet");
       }
@@ -92,11 +90,8 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
       const response = await getTransaction({
         method: "giveAward",
         data: {
-          entryId,
-          forum,
-          leaf,
-          index,
-          award: award.id,
+          ...rest,
+          award: Award.id,
           payer: auth.address,
         },
       });
@@ -138,7 +133,7 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
     {
       onSuccess(_, variables) {
         closeModal();
-        variables.callback(variables.award);
+        variables.callback(variables.Award);
         toast.success("Reward given 🎉");
       },
       onError(err) {
@@ -161,7 +156,7 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
       return toast.error("Entry not selected");
     }
 
-    mutate({ ...entry, award: selected });
+    mutate({ ...entry, Award: selected });
   }, [selected, entry, giveRewardMutation.mutate]);
 
   const context = useMemo(() => {

@@ -114,6 +114,7 @@ model Post {
   uri       String
   nsfw      Boolean    @default(false)
   hash      String?
+  dataHash  String?
   postType  PostType   @default(TEXT)
   createdAt BigInt
   editedAt  BigInt?
@@ -136,6 +137,7 @@ model Comment {
   uri       String
   nsfw      Boolean       @default(false)
   hash      String?
+  dataHash  String?
   createdAt BigInt
   editedAt  BigInt?
   nonce     BigInt

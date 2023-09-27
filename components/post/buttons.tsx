@@ -57,8 +57,11 @@ export const PostButtons = ({
         label="Award"
         forum={post.forum}
         entryId={post.id}
-        leaf={post.hash!}
-        index={Number(post.nonce)}
+        author={post.Author.id}
+        createdAt={Number(post.createdAt)}
+        editedAt={post.editedAt ? Number(post.editedAt) : null}
+        dataHash={post.dataHash!}
+        nonce={Number(post.nonce)}
         onSuccess={handleCacheUpdate}
       />
       {displayDelete && (
@@ -428,20 +431,26 @@ export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
 
 interface AwardButtonProps {
   label?: string;
-  forum: string;
   entryId: string;
-  leaf: string;
-  index: number;
+  author: string;
+  forum: string;
+  createdAt: number;
+  editedAt: number | null;
+  dataHash: string;
+  nonce: number;
   disabled?: boolean;
   onSuccess: (award: SerializedAward) => void;
 }
 
 export const AwardButton = ({
   label,
-  forum,
   entryId,
-  leaf,
-  index,
+  author,
+  forum,
+  createdAt,
+  editedAt,
+  dataHash,
+  nonce,
   disabled,
   onSuccess,
 }: AwardButtonProps) => {
@@ -452,14 +461,27 @@ export const AwardButton = ({
       e.stopPropagation();
       modal.openModal({
         entryId,
+        author,
         forum,
-        leaf,
-        index,
+        createdAt,
+        editedAt,
+        dataHash,
+        nonce,
         callback: onSuccess,
       });
       return false;
     },
-    [modal, entryId, forum, leaf, index, , onSuccess]
+    [
+      entryId,
+      author,
+      forum,
+      createdAt,
+      editedAt,
+      dataHash,
+      nonce,
+      onSuccess,
+      modal,
+    ]
   );
 
   return (

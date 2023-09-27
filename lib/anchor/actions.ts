@@ -12,23 +12,13 @@ import pkg from "js-sha3";
 
 import {
   findForumConfigPda,
-  findMetadataPda,
   findNamespacePda,
   findTreeMarkerPda,
-  findTreeAuthorityPda,
-  findCollectionAuthorityRecordPda,
-  findEditionPda,
-  findBubblegumSignerPda,
 } from "utils/pda";
-import { SerializedAward, fetchProof } from "lib/api";
+import { fetchProof } from "lib/api";
 import { parseDataV1Fields } from "utils/parse";
 import { DataV1, LeafSchemaV1, Gate } from "./types";
-import { BUBBLEGUM_PROGRAM_ID, METADATA_PROGRAM_ID } from "./constants";
-import {
-  getCompressionProgram,
-  getNamespaceProgram,
-  getAwardsProgram,
-} from "./provider";
+import { getCompressionProgram, getNamespaceProgram } from "./provider";
 
 export async function initForumAndNamespace(
   connection: web3.Connection,
@@ -357,51 +347,4 @@ export async function createNamepace(
       forumConfig: forumConfigPda,
     })
     .rpc();
-}
-
-export async function giveAward(
-  connection: web3.Connection,
-  wallet: AnchorWallet,
-  options: {
-    entryId: string;
-    award: SerializedAward;
-  }
-) {
-  const program = getAwardsProgram(connection, wallet);
-  const leafOwner = new web3.PublicKey(options.entryId);
-  const award = new web3.PublicKey(options.award.id);
-  const merkleTree = new web3.PublicKey(options.award.merkleTree);
-  const collectionMint = new web3.PublicKey(options.award.collectionMint);
-  const collectionMetadataPda = findMetadataPda(collectionMint);
-  const editionPda = findEditionPda(collectionMint);
-  const treeAuthorityPda = findTreeAuthorityPda(merkleTree);
-  const collectionAuthorityRecordPda = findCollectionAuthorityRecordPda(
-    collectionMint,
-    award
-  );
-  const bubblegumSignerPda = findBubblegumSignerPda();
-
-  await program.methods
-    .giveAward()
-    .accounts({
-      award,
-      leafOwner,
-      merkleTree,
-      payer: wallet.publicKey,
-      sessionToken: null,
-      signer: wallet.publicKey,
-      treeAuthority: treeAuthorityPda,
-      collectionAuthorityRecordPda,
-      collectionMint,
-      collectionMetadata: collectionMetadataPda,
-      editionAccount: editionPda,
-      logWrapper: SPL_NOOP_PROGRAM_ID,
-      bubblegumSigner: bubblegumSignerPda,
-      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-      tokenMetadataProgram: METADATA_PROGRAM_ID,
-      bubblegumProgram: BUBBLEGUM_PROGRAM_ID,
-    })
-    .rpc({
-      preflightCommitment: "confirmed",
-    });
 }

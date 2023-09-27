@@ -44,11 +44,14 @@ export type GiveAwardArgs = {
   method: "giveAward";
   data: {
     entryId: string;
+    author: string;
     payer: string;
     award: string;
     forum: string;
-    leaf: string;
-    index: number;
+    createdAt: number;
+    editedAt: number | null;
+    dataHash: string;
+    nonce: number;
   };
 };
 

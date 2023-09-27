@@ -114,12 +114,16 @@ export async function giveAwardIx(
   options: {
     entry: web3.PublicKey;
     payer: web3.PublicKey;
+    recipient: web3.PublicKey;
     award: web3.PublicKey;
+    treasury: web3.PublicKey;
     merkleTree: web3.PublicKey;
     collectionMint: web3.PublicKey;
     root: number[];
-    leaf: number[];
-    index: number;
+    createdAt: number;
+    editedAt: number | null;
+    dataHash: number[];
+    nonce: number;
     proof: string[];
   }
 ) {
@@ -134,12 +138,20 @@ export async function giveAwardIx(
   const bubblegumSignerPda = findBubblegumSignerPda();
 
   return program.methods
-    .giveAward(options.root, options.leaf, options.index)
+    .giveAward(
+      options.root,
+      new BN(options.createdAt),
+      options.editedAt ? new BN(options.editedAt) : null,
+      options.dataHash,
+      options.nonce
+    )
     .accounts({
       entryId: options.entry,
       award: options.award,
+      treasury: options.treasury,
       merkleTree: options.merkleTree,
       payer: options.payer,
+      recipient: options.recipient,
       claim: null,
       treeAuthority: treeAuthorityPda,
       collectionAuthorityRecordPda,

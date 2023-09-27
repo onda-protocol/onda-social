@@ -112,7 +112,7 @@ export default async function handler(
         createdAt = Number(comment.createdAt);
         editedAt = comment.editedAt ? Number(comment.editedAt) : null;
         nonce = Number(comment.nonce);
-        dataHash = getDataHash(connection, comment);
+        dataHash = Array.from(base58.decode(comment.dataHash!));
       } else {
         const post = await prisma.post.findUnique({
           where: {
@@ -135,7 +135,7 @@ export default async function handler(
         createdAt = Number(post.createdAt);
         editedAt = post.editedAt ? Number(post.editedAt) : null;
         nonce = Number(post.nonce);
-        dataHash = getDataHash(connection, post);
+        dataHash = Array.from(base58.decode(post.dataHash!));
       }
 
       const proof = await getProof(data.forum, nonce);
@@ -178,15 +178,19 @@ export default async function handler(
         return res.status(401).json({ error: "Award not found" });
       }
 
-      const proof = await getProof(data.forum, data.index);
+      const proof = await getProof(data.forum, data.nonce);
       const instruction = await giveAwardIx(connection, {
         entry: new web3.PublicKey(data.entryId),
         payer: new web3.PublicKey(data.payer),
+        recipient: new web3.PublicKey(data.author),
         award: new web3.PublicKey(data.award),
+        treasury: new web3.PublicKey(award.treasury),
         merkleTree: new web3.PublicKey(award.merkleTree),
         collectionMint: new web3.PublicKey(award.collectionMint),
-        leaf: Array.from(base58.decode(data.leaf)),
-        index: data.index,
+        createdAt: data.createdAt,
+        editedAt: data.editedAt,
+        dataHash: Array.from(base58.decode(data.dataHash)),
+        nonce: data.nonce,
         root: Array.from(proof.root),
         proof: proof.proof,
       });

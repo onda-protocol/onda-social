@@ -168,6 +168,7 @@ export async function compressionParser(ix: Instruction) {
               id: schemaV1.id.toBase58(),
               uri: trimNullChars(dataV1.uri),
               hash: encodedLeafHash,
+              dataHash: base58.encode(schemaV1.dataHash),
               createdAt: schemaV1.createdAt.toNumber(),
               nonce: schemaV1.nonce.toNumber(),
               Parent: dataV1.parent
@@ -272,6 +273,7 @@ function createPostV1({
     data: {
       postType,
       hash,
+      dataHash: base58.encode(schemaV1.dataHash),
       body: body ?? null,
       id: schemaV1.id.toBase58(),
       title: dataV1.title!,
