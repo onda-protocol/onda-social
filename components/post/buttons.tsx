@@ -285,6 +285,7 @@ interface VoteButtonsProps {
   direction?: "row" | "column";
   points: number;
   vote: VoteType | null;
+  disabled?: boolean;
   onUpvote: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
   ) => false | void;
@@ -297,6 +298,7 @@ export const VoteButtons = ({
   direction = "column",
   points,
   vote,
+  disabled,
   onUpvote,
   onDownvote,
 }: VoteButtonsProps) => {

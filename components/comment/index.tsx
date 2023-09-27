@@ -394,6 +394,7 @@ const CommentVoteButton = ({ comment, queryKey }: CommentVoteButtonProps) => {
       direction="row"
       points={Number(comment.points)}
       vote={comment._vote}
+      disabled={!auth.address}
       onUpvote={() => mutation.mutate(VoteType.UP)}
       onDownvote={() => mutation.mutate(VoteType.DOWN)}
     />
