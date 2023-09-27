@@ -133,6 +133,7 @@ const CommentsTab: React.FC<CommentsTabProps> = ({ id }) => {
           disableReplies={true}
           key={comment.id}
           forum={comment.Post.forum}
+          postAuthor={comment.Post.author}
           comment={comment}
           queryKey={commentsQueryKey}
         />

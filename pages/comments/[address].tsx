@@ -97,6 +97,7 @@ const Comments: NextPage<PageProps> = () => {
               awards: {},
               nonce: BigInt(0).toString(),
               hash: "",
+              dataHash: "",
               author: userAddress,
               Author: author,
               Votes: [],
