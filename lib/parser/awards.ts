@@ -41,6 +41,7 @@ export async function awardsParser(ix: Instruction) {
     case "createAward": {
       const authorityIndex = ixAccounts.findIndex((a) => a.name === "payer");
       const awardIndex = ixAccounts.findIndex((a) => a.name === "award");
+      const treasuryIndex = ixAccounts.findIndex((a) => a.name === "treasury");
       const matchingAwardIndex = ixAccounts.findIndex(
         (a) => a.name === "matchingAward"
       );
@@ -56,6 +57,7 @@ export async function awardsParser(ix: Instruction) {
       console.log(ixAccounts);
       const authority = ix.accounts[authorityIndex];
       const award = ix.accounts[awardIndex];
+      const treasury = ix.accounts[treasuryIndex];
       const matchingAward = ix.accounts[matchingAwardIndex];
       const collectionMint = ix.accounts[collectionMintIndex];
       const collectionMetadata = ix.accounts[collectionMetadataIndex];
@@ -82,6 +84,7 @@ export async function awardsParser(ix: Instruction) {
           id: award,
           amount: BigInt(amount.toNumber()),
           authority,
+          treasury,
           feeBasisPoints,
           collectionMint,
           description,

@@ -68,6 +68,7 @@ model Award {
   amount         BigInt
   feeBasisPoints Int
   authority      String
+  treasury       String
   collectionMint String
   merkleTree     String
   name           String

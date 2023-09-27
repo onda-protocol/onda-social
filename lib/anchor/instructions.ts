@@ -117,6 +117,10 @@ export async function giveAwardIx(
     award: web3.PublicKey;
     merkleTree: web3.PublicKey;
     collectionMint: web3.PublicKey;
+    root: number[];
+    leaf: number[];
+    index: number;
+    proof: string[];
   }
 ) {
   const program = getAwardsProgram(connection);
@@ -130,14 +134,13 @@ export async function giveAwardIx(
   const bubblegumSignerPda = findBubblegumSignerPda();
 
   return program.methods
-    .giveAward()
+    .giveAward(options.root, options.leaf, options.index)
     .accounts({
-      leafOwner: options.entry,
+      entryId: options.entry,
       award: options.award,
       merkleTree: options.merkleTree,
       payer: options.payer,
-      sessionToken: null,
-      signer: options.payer,
+      claim: null,
       treeAuthority: treeAuthorityPda,
       collectionAuthorityRecordPda,
       collectionMint: options.collectionMint,
@@ -149,5 +152,12 @@ export async function giveAwardIx(
       tokenMetadataProgram: METADATA_PROGRAM_ID,
       bubblegumProgram: BUBBLEGUM_PROGRAM_ID,
     })
+    .remainingAccounts(
+      options.proof.map((hash) => ({
+        pubkey: new web3.PublicKey(hash),
+        isWritable: false,
+        isSigner: false,
+      }))
+    )
     .instruction();
 }

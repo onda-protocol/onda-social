@@ -51,7 +51,7 @@ export async function getProof(forum: string, nonce: bigint | number) {
   );
   const leafHashes = await fetchLeafHashes(entryIds);
 
-  return leafIndexPath.map((path) => {
+  const proof = leafIndexPath.map((path) => {
     if (typeof path === "number") {
       const leafHash = leafHashes.find((leaf) => leaf.nonce === path);
       return new web3.PublicKey(
@@ -61,6 +61,11 @@ export async function getProof(forum: string, nonce: bigint | number) {
       return new web3.PublicKey(recursiveHash(leafHashes, path)).toBase58();
     }
   });
+
+  return {
+    root: merkleTreeAccount.getCurrentRoot(),
+    proof,
+  };
 }
 
 function flattenPath(items: NestedPath) {

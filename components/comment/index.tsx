@@ -99,97 +99,6 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           _count: { Children: 0 },
           Children: [],
         };
-        //   queryKey,
-        //   (data) => {
-        //     if (!data) {
-        //       return;
-        //     }
-
-        //     const pages = data?.pages ?? [];
-
-        //     for (const pageIndex in pages) {
-        //       const page = pages[pageIndex];
-
-        //       for (const index in page) {
-        //         const c = page[index];
-
-        //         if (comment.id === c.id) {
-        //           const updatedComment = {
-        //             ...c,
-        //             _count: {
-        //               ...c._count,
-        //               Children: c._count.Children + 1,
-        //             },
-        //           };
-
-        //           if (c.Children !== undefined) {
-        //             updatedComment.Children = [
-        //               newComment,
-        //               ...(c.Children ?? []),
-        //             ];
-        //           }
-        //           return {
-        //             ...data,
-        //             pages: [
-        //               ...pages.slice(0, Number(pageIndex)),
-        //               [
-        //                 ...page.slice(0, Number(index)),
-        //                 updatedComment,
-        //                 ...page.slice(Number(index) + 1),
-        //               ],
-        //               ...pages.slice(Number(pageIndex) + 1),
-        //             ],
-        //           };
-        //         } else if (c.Children !== undefined) {
-        //           for (const childIndex in c.Children) {
-        //             const child = c.Children[childIndex];
-
-        //             if (child.id === comment.id) {
-        //               const updatedComment = {
-        //                 ...c,
-        //               };
-        //               const updatedChild = {
-        //                 ...child,
-        //                 _count: {
-        //                   ...child._count,
-        //                   Children: child._count.Children + 1,
-        //                 },
-        //               };
-
-        //               if ("Children" in updatedChild) {
-        //                 updatedChild.Children = [
-        //                   newComment,
-        //                   ...(updatedChild.Children ?? []),
-        //                 ];
-        //               }
-
-        //               updatedComment.Children = [
-        //                 ...c.Children.slice(0, Number(childIndex)),
-        //                 updatedChild,
-        //                 ...c.Children.slice(Number(childIndex) + 1),
-        //               ];
-
-        //               return {
-        //                 ...data,
-        //                 pages: [
-        //                   ...pages.slice(0, Number(pageIndex)),
-        //                   [
-        //                     ...page.slice(0, Number(index)),
-        //                     updatedComment,
-        //                     ...page.slice(Number(index) + 1),
-        //                   ],
-        //                   ...pages.slice(Number(pageIndex) + 1),
-        //                 ],
-        //               };
-        //             }
-        //           }
-        //         }
-        //       }
-        //     }
-
-        //     return data;
-        //   }
-        // );
 
         updateCommentsCache(queryClient, queryKey, comment.id, (comment) => {
           const updatedComment = {
@@ -255,6 +164,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                 <CommentVoteButton comment={comment} queryKey={queryKey} />
                 <CommentAwardButton
                   disabled={disabled}
+                  forum={forum}
                   comment={comment}
                   queryKey={queryKey}
                 />
@@ -328,12 +238,14 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
 
 interface CommentAwardButtonProps {
   disabled?: boolean;
+  forum: string;
   comment: SerializedCommentNested;
   queryKey: CommentsQueryKey;
 }
 
 const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
   disabled,
+  forum,
   comment,
   queryKey,
 }) => {
@@ -353,7 +265,10 @@ const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
   return (
     <AwardButton
       disabled={disabled}
+      forum={forum}
       entryId={comment.id}
+      leaf={comment.hash!}
+      index={Number(comment.nonce)}
       onSuccess={handleCacheUpdate}
     />
   );

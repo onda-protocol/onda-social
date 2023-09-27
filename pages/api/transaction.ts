@@ -146,7 +146,7 @@ export default async function handler(
         editedAt,
         nonce,
         dataHash,
-        proof,
+        proof: proof.proof,
       });
 
       const latestBlockhash = await connection.getLatestBlockhash();
@@ -178,12 +178,17 @@ export default async function handler(
         return res.status(401).json({ error: "Award not found" });
       }
 
+      const proof = await getProof(data.forum, data.index);
       const instruction = await giveAwardIx(connection, {
         entry: new web3.PublicKey(data.entryId),
         payer: new web3.PublicKey(data.payer),
         award: new web3.PublicKey(data.award),
         merkleTree: new web3.PublicKey(award.merkleTree),
         collectionMint: new web3.PublicKey(award.collectionMint),
+        leaf: Array.from(base58.decode(data.leaf)),
+        index: data.index,
+        root: Array.from(proof.root),
+        proof: proof.proof,
       });
 
       const latestBlockhash = await connection.getLatestBlockhash();

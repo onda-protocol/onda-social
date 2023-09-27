@@ -55,7 +55,10 @@ export const PostButtons = ({
       </Link>
       <AwardButton
         label="Award"
+        forum={post.forum}
         entryId={post.id}
+        leaf={post.hash!}
+        index={Number(post.nonce)}
         onSuccess={handleCacheUpdate}
       />
       {displayDelete && (
@@ -425,14 +428,20 @@ export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
 
 interface AwardButtonProps {
   label?: string;
+  forum: string;
   entryId: string;
+  leaf: string;
+  index: number;
   disabled?: boolean;
   onSuccess: (award: SerializedAward) => void;
 }
 
 export const AwardButton = ({
   label,
+  forum,
   entryId,
+  leaf,
+  index,
   disabled,
   onSuccess,
 }: AwardButtonProps) => {
@@ -441,10 +450,16 @@ export const AwardButton = ({
   const handleAward = useCallback(
     (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       e.stopPropagation();
-      modal.openModal(entryId, onSuccess);
+      modal.openModal({
+        entryId,
+        forum,
+        leaf,
+        index,
+        callback: onSuccess,
+      });
       return false;
     },
-    [modal, entryId, onSuccess]
+    [modal, entryId, forum, leaf, index, , onSuccess]
   );
 
   return (

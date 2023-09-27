@@ -34,10 +34,7 @@ import { formatAmount } from "utils/format";
 
 const AwardModalContext = createContext({
   isOpen: false,
-  openModal: (
-    _entryId: string,
-    _callback: (award: SerializedAward) => void
-  ) => {},
+  openModal: (_args: SelectedEntry) => {},
   closeModal: () => {},
 });
 
@@ -46,12 +43,18 @@ interface AwardModalProviderProps {
 }
 
 interface SelectedEntry {
+  forum: string;
   entryId: string;
+  leaf: string;
+  index: number;
   callback: (award: SerializedAward) => void;
 }
 
 interface AwardMutationArgs {
+  forum: string;
   entryId: string;
+  leaf: string;
+  index: number;
   award: SerializedAward;
   callback: (award: SerializedAward) => void;
 }
@@ -74,14 +77,10 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
   }, [rewardsQuery.data]);
 
   const closeModal = useCallback(() => setEntry(null), []);
-  const openModal = useCallback(
-    (entryId: string, callback: (award: SerializedAward) => void) =>
-      setEntry({ entryId, callback }),
-    []
-  );
+  const openModal = useCallback((args: SelectedEntry) => setEntry(args), []);
 
   const giveRewardMutation = useMutation<void, Error, AwardMutationArgs>(
-    async ({ entryId, award }) => {
+    async ({ entryId, forum, leaf, index, award }) => {
       if (!auth.address) {
         throw new Error("Please connect your wallet");
       }
@@ -94,6 +93,9 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
         method: "giveAward",
         data: {
           entryId,
+          forum,
+          leaf,
+          index,
           award: award.id,
           payer: auth.address,
         },
