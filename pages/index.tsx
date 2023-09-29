@@ -8,7 +8,6 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { Box, Text } from "@chakra-ui/react";
-import { useEffect } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform, circOut } from "framer-motion";
 
@@ -21,6 +20,7 @@ import {
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
 import { PostList } from "components/post/list";
+import { PostModal } from "components/modal/post";
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -120,6 +120,7 @@ const Home: NextPage<PageProps> = () => {
           </Sidebar>
         }
       />
+      <PostModal />
     </>
   );
 };

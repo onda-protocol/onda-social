@@ -20,7 +20,13 @@ export const PostListItem = forwardRef<PostListItemProps, "div">(
 
     const handlePostClick = () => {
       queryClient.setQueryData(["post", post.id], post);
-      router.push(`/comments/${post.id}`);
+      router.push(
+        `${router.pathname}?postId=${post.id}`,
+        `/comments/${post.id}`,
+        {
+          scroll: false,
+        }
+      );
     };
 
     return (

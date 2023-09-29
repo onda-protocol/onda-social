@@ -38,7 +38,7 @@ export const PostHead = ({
 }: PostHeadProps) => {
   return (
     <>
-      <Box mt="12">
+      <Box>
         <PostMeta
           displayAward="large"
           points={Number(points)}
