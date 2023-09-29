@@ -24,7 +24,8 @@ export const DocumentHead = ({
     <Head>
       <title key="title">{title}</title>
       <meta key="description" name="description" content={description} />
-      <meta key="author" name="author" content="Dexloan" />
+      <meta key="author" name="author" content="Onda" />
+      <link rel="manifest" href="site.webmanifest" />
       <link
         key="shortcut-icon"
         rel="shortcut icon"
