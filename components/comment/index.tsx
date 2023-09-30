@@ -596,6 +596,7 @@ function incrementAward(awardJson: AwardsJson, award: SerializedAward) {
     awards[award.id].count = awards[award.id].count + 1;
   } else {
     awards[award.id] = {
+      name: award.name,
       image: award.image,
       count: 1,
     };

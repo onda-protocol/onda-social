@@ -13,7 +13,6 @@ import {
   findEditionPda,
   findBubblegumSignerPda,
 } from "utils/pda";
-import { SerializedAward, fetchProof } from "lib/api";
 import { DataV1 } from "./types";
 import { BUBBLEGUM_PROGRAM_ID, METADATA_PROGRAM_ID } from "./constants";
 import { getCompressionProgram, getAwardsProgram } from "./provider";
@@ -116,6 +115,7 @@ export async function giveAwardIx(
     payer: web3.PublicKey;
     recipient: web3.PublicKey;
     award: web3.PublicKey;
+    claim: web3.PublicKey | null;
     treasury: web3.PublicKey;
     merkleTree: web3.PublicKey;
     collectionMint: web3.PublicKey;
@@ -154,7 +154,7 @@ export async function giveAwardIx(
       merkleTree: options.merkleTree,
       payer: options.payer,
       recipient: options.recipient,
-      claim: null,
+      claim: options.claim,
       treeAuthority: treeAuthorityPda,
       collectionAuthorityRecordPda,
       collectionMint: options.collectionMint,
@@ -173,5 +173,48 @@ export async function giveAwardIx(
         isSigner: false,
       }))
     )
+    .instruction();
+}
+
+export async function claimAward(
+  connection: web3.Connection,
+  options: {
+    award: web3.PublicKey;
+    treasury: web3.PublicKey;
+    claim: web3.PublicKey;
+    recipient: web3.PublicKey;
+    merkleTree: web3.PublicKey;
+    collectionMint: web3.PublicKey;
+  }
+) {
+  const program = getAwardsProgram(connection);
+  const collectionMetadataPda = findMetadataPda(options.collectionMint);
+  const editionPda = findEditionPda(options.collectionMint);
+  const treeAuthorityPda = findTreeAuthorityPda(options.merkleTree);
+  const collectionAuthorityRecordPda = findCollectionAuthorityRecordPda(
+    options.collectionMint,
+    options.award
+  );
+  const bubblegumSignerPda = findBubblegumSignerPda();
+
+  return program.methods
+    .claimAward()
+    .accounts({
+      treasury: options.treasury,
+      recipient: options.recipient,
+      award: options.award,
+      claim: options.claim,
+      merkleTree: options.merkleTree,
+      treeAuthority: treeAuthorityPda,
+      collectionAuthorityRecordPda: collectionAuthorityRecordPda,
+      collectionMint: options.collectionMint,
+      collectionMetadata: collectionMetadataPda,
+      editionAccount: editionPda,
+      logWrapper: SPL_NOOP_PROGRAM_ID,
+      bubblegumSigner: bubblegumSignerPda,
+      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+      tokenMetadataProgram: METADATA_PROGRAM_ID,
+      bubblegumProgram: BUBBLEGUM_PROGRAM_ID,
+    })
     .instruction();
 }

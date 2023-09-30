@@ -18,6 +18,7 @@ import {
 import { nodeUpload } from "lib/bundlr";
 import { getDataHash } from "lib/anchor";
 import { getProof } from "./proof/[address]";
+import { findClaimPda } from "utils/pda";
 
 const connection = new web3.Connection(process.env.HELIUS_RPC_URL!);
 const signer = web3.Keypair.fromSecretKey(
@@ -172,11 +173,21 @@ export default async function handler(
         where: {
           id: data.award,
         },
+        include: {
+          Matching: true,
+        },
       });
 
       if (!award) {
         return res.status(401).json({ error: "Award not found" });
       }
+
+      const claimPda = award.Matching
+        ? findClaimPda(
+            new web3.PublicKey(award.Matching.id),
+            new web3.PublicKey(data.author)
+          )
+        : null;
 
       const proof = await getProof(data.forum, data.nonce);
       const instruction = await giveAwardIx(connection, {
@@ -184,6 +195,7 @@ export default async function handler(
         payer: new web3.PublicKey(data.payer),
         recipient: new web3.PublicKey(data.author),
         award: new web3.PublicKey(data.award),
+        claim: claimPda,
         treasury: new web3.PublicKey(award.treasury),
         merkleTree: new web3.PublicKey(award.merkleTree),
         collectionMint: new web3.PublicKey(award.collectionMint),

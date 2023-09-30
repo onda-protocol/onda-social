@@ -97,6 +97,16 @@ export function findAwardPda(merkleTree: web3.PublicKey) {
   )[0];
 }
 
+export function findClaimPda(
+  matchingAward: web3.PublicKey,
+  recipient: web3.PublicKey
+) {
+  return web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("claim"), matchingAward.toBuffer(), recipient.toBuffer()],
+    AWARDS_PROGRAM_ID
+  )[0];
+}
+
 export function findTreeAuthorityPda(merkleTree: web3.PublicKey) {
   return web3.PublicKey.findProgramAddressSync(
     [merkleTree.toBuffer()],

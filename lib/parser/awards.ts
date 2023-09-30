@@ -1,5 +1,5 @@
 import { web3 } from "@project-serum/anchor";
-import { Prisma } from "@prisma/client";
+import { NotificationType, Prisma } from "@prisma/client";
 import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import axios from "axios";
 import base58 from "bs58";
@@ -54,7 +54,7 @@ export async function awardsParser(ix: Instruction) {
       const merkleTreeIndex = ixAccounts.findIndex(
         (a) => a.name === "merkleTree"
       );
-      console.log(ixAccounts);
+
       const authority = ix.accounts[authorityIndex];
       const award = ix.accounts[awardIndex];
       const treasury = ix.accounts[treasuryIndex];
@@ -105,18 +105,19 @@ export async function awardsParser(ix: Instruction) {
     }
 
     case "giveAward": {
+      const payerIndex = ixAccounts.findIndex((a) => a.name === "payer");
       const awardIndex = ixAccounts.findIndex((a) => a.name === "award");
       const claimIndex = ixAccounts.findIndex((a) => a.name === "claim");
       const leafOwnerIndex = ixAccounts.findIndex((a) => a.name === "entryId");
+      const recipientIndex = ixAccounts.findIndex(
+        (a) => a.name === "recipient"
+      );
+      const payer = ix.accounts[payerIndex];
       const awardId = ix.accounts[awardIndex];
-      const claimId = ix.accounts[claimIndex]; // TODO check if this is the correct account
+      const claimId = ix.accounts[claimIndex];
+      const hasClaim = claimId !== AWARDS_PROGRAM_ID.toBase58();
       const entryId = ix.accounts[leafOwnerIndex];
-
-      const award = await prisma.award.findUnique({
-        where: {
-          id: awardId,
-        },
-      });
+      const recipient = ix.accounts[recipientIndex];
 
       await prisma.$transaction(async (transaction) => {
         const [awardResult, postResult, commentResult] =
@@ -124,6 +125,9 @@ export async function awardsParser(ix: Instruction) {
             transaction.award.findUnique({
               where: {
                 id: awardId,
+              },
+              include: {
+                Matching: true,
               },
             }),
             transaction.post.findUnique({
@@ -142,6 +146,29 @@ export async function awardsParser(ix: Instruction) {
           return;
         }
 
+        const award = awardResult.value;
+
+        function claimNotif() {
+          if (hasClaim && award.Matching) {
+            return transaction.notification.create({
+              data: {
+                user: recipient,
+                type: NotificationType.Claim,
+                title: "You have an award to claim!",
+                body: `Click to claim the ${award.Matching.name} award.`,
+                createdAt: Date.now() / 1000,
+                meta: {
+                  claim: claimId,
+                  award: award.Matching.id,
+                  name: award.Matching.name,
+                  image: award.Matching.image,
+                  user: payer,
+                },
+              },
+            });
+          }
+        }
+
         if (postResult.status === "fulfilled" && postResult.value !== null) {
           const post = postResult.value;
           const awards = (post.awards ?? {}) as Prisma.JsonObject;
@@ -156,14 +183,32 @@ export async function awardsParser(ix: Instruction) {
           currentAwardParsed.count = Number(currentAwardParsed.count) + 1;
           awards[awardId] = currentAwardParsed;
 
-          await transaction.post.update({
-            where: {
-              id: entryId,
-            },
-            data: {
-              awards,
-            },
-          });
+          await Promise.allSettled([
+            transaction.post.update({
+              where: {
+                id: entryId,
+              },
+              data: {
+                awards,
+              },
+            }),
+            transaction.notification.create({
+              data: {
+                user: recipient,
+                type: NotificationType.Award,
+                title: "You received an award!",
+                body: `Your received the ${award.name} award for your post.`,
+                createdAt: Date.now() / 1000,
+                meta: {
+                  name: award.name,
+                  image: award.image,
+                  commentId: entryId,
+                  user: payer,
+                },
+              },
+            }),
+            claimNotif(),
+          ]);
         } else if (
           commentResult.status === "fulfilled" &&
           commentResult.value !== null
@@ -172,21 +217,39 @@ export async function awardsParser(ix: Instruction) {
           const awards = (comment.awards ?? {}) as Prisma.JsonObject;
           const currentAward = awards[awardId] as Prisma.JsonObject | undefined;
           const currentAwardParsed = currentAward ?? {
-            name: award?.name,
-            image: award?.image,
+            name: award.name,
+            image: award.image,
             count: 0,
           };
           currentAwardParsed.count = Number(currentAwardParsed.count) + 1;
           awards[awardId] = currentAwardParsed;
 
-          await transaction.comment.update({
-            where: {
-              id: entryId,
-            },
-            data: {
-              awards,
-            },
-          });
+          await Promise.allSettled([
+            transaction.comment.update({
+              where: {
+                id: entryId,
+              },
+              data: {
+                awards,
+              },
+            }),
+            transaction.notification.create({
+              data: {
+                user: recipient,
+                type: NotificationType.Award,
+                title: "You received an award!",
+                body: `Your received the ${award.name} award for your comment.`,
+                createdAt: Date.now() / 1000,
+                meta: {
+                  name: award.name,
+                  image: award.image,
+                  commentId: entryId,
+                  user: payer,
+                },
+              },
+            }),
+            claimNotif(),
+          ]);
         }
       });
 
