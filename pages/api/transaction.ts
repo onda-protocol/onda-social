@@ -5,6 +5,7 @@ import base58 from "bs58";
 import prisma from "lib/prisma";
 import {
   addEntryIx,
+  claimAwardIx,
   deleteEntryIx,
   giveAwardIx,
 } from "lib/anchor/instructions";
@@ -206,6 +207,47 @@ export default async function handler(
         nonce: data.nonce,
         root: Array.from(proof.root),
         proof: proof.proof,
+      });
+
+      const latestBlockhash = await connection.getLatestBlockhash();
+      const transaction = new web3.Transaction({
+        feePayer: signer.publicKey,
+        ...latestBlockhash,
+      }).add(instruction);
+
+      transaction.partialSign(signer);
+
+      const serializedTransaction = base58.encode(
+        transaction.serialize({
+          requireAllSignatures: false,
+        })
+      );
+      return res.status(200).json({
+        transaction: serializedTransaction,
+      });
+    }
+
+    case "claimAward": {
+      const award = await prisma.award.findUnique({
+        where: {
+          id: data.award,
+        },
+        include: {
+          Matching: true,
+        },
+      });
+
+      if (!award) {
+        return res.status(401).json({ error: "Award not found" });
+      }
+
+      const instruction = await claimAwardIx(connection, {
+        award: new web3.PublicKey(award.id),
+        treasury: new web3.PublicKey(award.treasury),
+        claim: new web3.PublicKey(data.claim),
+        recipient: new web3.PublicKey(data.recipient),
+        merkleTree: new web3.PublicKey(award.merkleTree),
+        collectionMint: new web3.PublicKey(award.collectionMint),
       });
 
       const latestBlockhash = await connection.getLatestBlockhash();

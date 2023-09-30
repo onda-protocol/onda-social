@@ -9,6 +9,7 @@ import {
   User,
   VoteType,
   CommentVote,
+  Notification,
 } from "@prisma/client";
 import { SerializedTransactionResponse, TransactionArgs } from "./types";
 
@@ -63,6 +64,27 @@ export type SerializedComment = DeepReplaceBigInt<Comment, string> & {
 export type SerializedCommentNested = SerializedComment & {
   _vote: VoteType | null;
   Children?: SerializedCommentNested[];
+};
+
+export type NotificationMeta =
+  | null
+  | {
+      claim: string;
+      award: string;
+      name: string;
+      image: string;
+      user: string;
+      claimed: boolean;
+    }
+  | {
+      name: string;
+      image: string;
+      commentId: string;
+      user: string;
+    };
+
+export type SerializedNotification = DeepReplaceBigInt<Notification, string> & {
+  meta: NotificationMeta;
 };
 
 export function fetchForum(address: string): Promise<SerializedForum> {
@@ -166,6 +188,21 @@ export function fetchUserByName(name: string): Promise<User> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/user?name=${name}`).then(
     (res) => res.json()
   );
+}
+
+export function fetchNotificationCount(user: string) {
+  return fetch(
+    `${process.env.NEXT_PUBLIC_HOST}/api/user/${user}/notifications/unread`
+  ).then((res) => res.json());
+}
+
+export function fetchUserNotifications(
+  user: string,
+  offset = 0
+): Promise<SerializedNotification[]> {
+  return fetch(
+    `${process.env.NEXT_PUBLIC_HOST}/api/user/${user}/notifications?offset=${offset}`
+  ).then((res) => res.json());
 }
 
 export function fetchProof(address: string): Promise<{

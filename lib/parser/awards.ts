@@ -156,13 +156,22 @@ export async function awardsParser(ix: Instruction) {
                 type: NotificationType.Claim,
                 title: "You have an award to claim!",
                 body: `Click to claim the ${award.Matching.name} award.`,
-                createdAt: Date.now() / 1000,
+                createdAt: Math.floor(Date.now() / 1000),
                 meta: {
-                  claim: claimId,
-                  award: award.Matching.id,
                   name: award.Matching.name,
                   image: award.Matching.image,
                   user: payer,
+                },
+                Claim: {
+                  connectOrCreate: {
+                    where: {
+                      id: claimId,
+                    },
+                    create: {
+                      id: claimId,
+                      award: award.Matching.id,
+                    },
+                  },
                 },
               },
             });
@@ -176,14 +185,14 @@ export async function awardsParser(ix: Instruction) {
             | Prisma.JsonObject
             | undefined;
           const currentAwardParsed = currentReward ?? {
-            name: award?.name,
-            image: award?.image,
+            name: award.name,
+            image: award.image,
             count: 0,
           };
           currentAwardParsed.count = Number(currentAwardParsed.count) + 1;
           awards[awardId] = currentAwardParsed;
 
-          await Promise.allSettled([
+          await Promise.all([
             transaction.post.update({
               where: {
                 id: entryId,
@@ -198,7 +207,7 @@ export async function awardsParser(ix: Instruction) {
                 type: NotificationType.Award,
                 title: "You received an award!",
                 body: `Your received the ${award.name} award for your post.`,
-                createdAt: Date.now() / 1000,
+                createdAt: Math.floor(Date.now() / 1000),
                 meta: {
                   name: award.name,
                   image: award.image,
@@ -224,7 +233,7 @@ export async function awardsParser(ix: Instruction) {
           currentAwardParsed.count = Number(currentAwardParsed.count) + 1;
           awards[awardId] = currentAwardParsed;
 
-          await Promise.allSettled([
+          await Promise.all([
             transaction.comment.update({
               where: {
                 id: entryId,
@@ -239,7 +248,7 @@ export async function awardsParser(ix: Instruction) {
                 type: NotificationType.Award,
                 title: "You received an award!",
                 body: `Your received the ${award.name} award for your comment.`,
-                createdAt: Date.now() / 1000,
+                createdAt: Math.floor(Date.now() / 1000),
                 meta: {
                   name: award.name,
                   image: award.image,
@@ -253,7 +262,12 @@ export async function awardsParser(ix: Instruction) {
         }
       });
 
+      console.log("DONE!");
+
       break;
+    }
+
+    case "claimAward": {
     }
 
     default: {

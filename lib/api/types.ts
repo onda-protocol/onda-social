@@ -55,10 +55,20 @@ export type GiveAwardArgs = {
   };
 };
 
+export type ClaimAwardArgs = {
+  method: "claimAward";
+  data: {
+    award: string;
+    claim: string;
+    recipient: string;
+  };
+};
+
 export type TransactionArgs =
   | AddEntryTransaction
   | DeleteEntryTransaction
-  | GiveAwardArgs;
+  | GiveAwardArgs
+  | ClaimAwardArgs;
 
 export type SerializedTransactionResponse = {
   transaction: string;

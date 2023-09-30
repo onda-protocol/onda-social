@@ -176,7 +176,7 @@ export async function giveAwardIx(
     .instruction();
 }
 
-export async function claimAward(
+export async function claimAwardIx(
   connection: web3.Connection,
   options: {
     award: web3.PublicKey;

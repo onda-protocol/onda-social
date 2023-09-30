@@ -82,6 +82,12 @@ model Award {
   @@index(fields: [name])
 }
 
+model Claim {
+  id String @id @unique
+  award String
+  Notification Notification[]
+}
+
 enum NotificationType {
   Award
   Claim
@@ -93,11 +99,13 @@ model Notification {
   type      NotificationType
   title     String
   body      String
-  meta      Json?
   createdAt BigInt
+  meta      Json?
   read      Boolean          @default(false)
+  claimId   String?
+  Claim     Claim?           @relation(fields: [claimId], references: [id])
 
-  @@index(fields: [user, createdAt])
+  @@index(fields: [user, createdAt, read, claimId])
 }
 
 enum PostType {
