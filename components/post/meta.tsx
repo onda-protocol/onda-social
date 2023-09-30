@@ -103,13 +103,13 @@ export const PostMeta: React.FC<PostMetaProps> = ({
   }
 
   const awardsEl = useMemo(() => {
-    if (awards || true) {
-      // const awardsArray = Object.entries(awards);
+    if (awards) {
+      const awardsArray = Object.entries(awards);
       const awardSize = displayAward === "large" ? 24 : 18;
 
-      return awardsArray.map((award) => (
-        <WrapItem key={award.id}>
-          <Tooltip label={`${award.name} x1`}>
+      return awardsArray.map(([id, meta]) => (
+        <WrapItem key={id}>
+          <Tooltip label={`${id} x${meta.count}`}>
             <Box
               display="flex"
               alignItems="center"
@@ -135,7 +135,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
                 <Image
                   unoptimized
                   alt="Award"
-                  src={award.image}
+                  src={meta.image}
                   height={awardSize}
                   width={awardSize}
                 />
@@ -147,7 +147,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
                   fontWeight="600"
                   pl="0.5"
                 >
-                  1
+                  {meta.count}
                 </Text>
               )}
             </Box>
@@ -157,7 +157,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
     }
 
     return null;
-  }, [awards]);
+  }, [displayAward, awards]);
 
   return (
     <Box>

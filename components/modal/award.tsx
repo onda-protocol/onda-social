@@ -251,7 +251,7 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
                     <Button
                       display={{
                         base: "none",
-                        md: "block",
+                        md: "inline-flex",
                       }}
                       width="100%"
                       isDisabled={!selected}
@@ -273,7 +273,7 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
           >
             <Button
               display={{
-                base: "block",
+                base: "inline-flex",
                 md: "none",
               }}
               width="100%"

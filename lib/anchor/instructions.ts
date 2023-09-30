@@ -119,6 +119,7 @@ export async function giveAwardIx(
     treasury: web3.PublicKey;
     merkleTree: web3.PublicKey;
     collectionMint: web3.PublicKey;
+    forumMerkleTree: web3.PublicKey;
     root: number[];
     createdAt: number;
     editedAt: number | null;
@@ -147,6 +148,7 @@ export async function giveAwardIx(
     )
     .accounts({
       entryId: options.entry,
+      forumMerkleTree: options.forumMerkleTree,
       award: options.award,
       treasury: options.treasury,
       merkleTree: options.merkleTree,

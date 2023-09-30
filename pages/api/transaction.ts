@@ -187,6 +187,7 @@ export default async function handler(
         treasury: new web3.PublicKey(award.treasury),
         merkleTree: new web3.PublicKey(award.merkleTree),
         collectionMint: new web3.PublicKey(award.collectionMint),
+        forumMerkleTree: new web3.PublicKey(data.forum),
         createdAt: data.createdAt,
         editedAt: data.editedAt,
         dataHash: Array.from(base58.decode(data.dataHash)),
