@@ -67,7 +67,7 @@ export const PostMeta: React.FC<PostMetaProps> = ({
 
       return awardsArray.map(([id, meta]) => (
         <WrapItem key={id}>
-          <Tooltip label={`${id} x${meta.count}`}>
+          <Tooltip label={`${meta.name} x${meta.count}`}>
             <Box
               display="flex"
               alignItems="center"

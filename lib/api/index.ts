@@ -25,6 +25,7 @@ type DeepReplaceBigInt<T, U> = {
 export type AwardsJson = null | {
   [key: string]: {
     count: number;
+    name: string;
     image: string;
   };
 };
