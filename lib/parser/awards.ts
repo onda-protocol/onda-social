@@ -149,6 +149,7 @@ export async function awardsParser(ix: Instruction) {
             | Prisma.JsonObject
             | undefined;
           const currentAwardParsed = currentReward ?? {
+            name: award?.name,
             image: award?.image,
             count: 0,
           };
@@ -171,6 +172,7 @@ export async function awardsParser(ix: Instruction) {
           const awards = (comment.awards ?? {}) as Prisma.JsonObject;
           const currentAward = awards[awardId] as Prisma.JsonObject | undefined;
           const currentAwardParsed = currentAward ?? {
+            name: award?.name,
             image: award?.image,
             count: 0,
           };
