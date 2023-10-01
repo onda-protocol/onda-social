@@ -16,6 +16,9 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
     where: {
       user: address as string,
     },
+    include: {
+      Claim: true,
+    },
     orderBy: {
       createdAt: "desc",
     },

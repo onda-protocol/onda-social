@@ -10,6 +10,7 @@ import {
   VoteType,
   CommentVote,
   Notification,
+  Claim,
 } from "@prisma/client";
 import { SerializedTransactionResponse, TransactionArgs } from "./types";
 
@@ -85,6 +86,7 @@ export type NotificationMeta =
 
 export type SerializedNotification = DeepReplaceBigInt<Notification, string> & {
   meta: NotificationMeta;
+  Claim: Claim | null;
 };
 
 export function fetchForum(address: string): Promise<SerializedForum> {

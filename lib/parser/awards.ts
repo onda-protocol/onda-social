@@ -211,7 +211,7 @@ export async function awardsParser(ix: Instruction) {
                 meta: {
                   name: award.name,
                   image: award.image,
-                  commentId: entryId,
+                  postId: entryId,
                   user: payer,
                 },
               },
@@ -252,6 +252,7 @@ export async function awardsParser(ix: Instruction) {
                 meta: {
                   name: award.name,
                   image: award.image,
+                  postId: comment.post,
                   commentId: entryId,
                   user: payer,
                 },
@@ -268,6 +269,49 @@ export async function awardsParser(ix: Instruction) {
     }
 
     case "claimAward": {
+      const awardIndex = ixAccounts.findIndex((a) => a.name === "award");
+      const claimIndex = ixAccounts.findIndex((a) => a.name === "claim");
+      const recipientIndex = ixAccounts.findIndex(
+        (a) => a.name === "recipient"
+      );
+      const awardId = ix.accounts[awardIndex];
+      const claimId = ix.accounts[claimIndex];
+      const recipient = ix.accounts[recipientIndex];
+
+      const [notifications, award] = await Promise.all([
+        prisma.notification.findMany({
+          where: {
+            user: recipient,
+            Claim: {
+              id: claimId,
+            },
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+          take: 1,
+        }),
+        prisma.award.findUnique({
+          where: {
+            id: awardId,
+          },
+        }),
+      ]);
+
+      if (notifications[0] && award) {
+        await prisma.notification.update({
+          where: {
+            id: notifications[0].id,
+          },
+          data: {
+            read: true,
+            body: `You claimed one ${award.name} award.`,
+            Claim: {
+              disconnect: true,
+            },
+          },
+        });
+      }
     }
 
     default: {
