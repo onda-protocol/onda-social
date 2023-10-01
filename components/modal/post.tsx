@@ -98,7 +98,7 @@ export const PostModal = () => {
           <Box height="calc(100% - 42px)" width="100%" overflowY="scroll">
             <Container
               maxW="container.lg"
-              height="100%"
+              minH="100%"
               backgroundColor="onda.1000"
               pt="6"
             >
