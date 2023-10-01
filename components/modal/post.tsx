@@ -60,7 +60,7 @@ export const PostModal = () => {
           height="calc(100% - 56px)"
           width="100%"
           backgroundColor="blackAlpha.800"
-          zIndex="modal"
+          zIndex={1}
           onClick={() =>
             router.push("/", "/", {
               scroll: false,

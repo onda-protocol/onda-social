@@ -278,6 +278,7 @@ export const PostVoteButtons = ({ direction, post }: PostVoteButtonsProps) => {
 
   return (
     <VoteButtons
+      disabled={!auth.address}
       direction={direction}
       points={Number(post.points)}
       vote={post._vote}
@@ -327,21 +328,34 @@ export const VoteButtons = ({
       bgColor={direction === "row" ? "whiteAlpha.100" : undefined}
       onClick={handleClick}
     >
-      <UpVoteButton active={vote === VoteType.UP} onClick={onUpvote} />
+      <UpVoteButton
+        disabled={disabled}
+        active={vote === VoteType.UP}
+        onClick={onUpvote}
+      />
       <Text as="span" color="whiteAlpha.700" fontSize="sm" fontWeight="bold">
         {points}
       </Text>
-      <DownVoteButton active={vote === VoteType.DOWN} onClick={onDownvote} />
+      <DownVoteButton
+        disabled={disabled}
+        active={vote === VoteType.DOWN}
+        onClick={onDownvote}
+      />
     </Box>
   );
 };
 
 interface VoteButtonProps {
   active: boolean;
+  disabled?: boolean;
   onClick: MouseEventHandler<HTMLButtonElement>;
 }
 
-export const UpVoteButton = ({ active, onClick }: VoteButtonProps) => (
+export const UpVoteButton = ({
+  active,
+  disabled,
+  onClick,
+}: VoteButtonProps) => (
   <Box
     as="button"
     aria-label="Upvote Button"
@@ -352,7 +366,7 @@ export const UpVoteButton = ({ active, onClick }: VoteButtonProps) => (
       color: "steelBlue",
       backgroundColor: "whiteAlpha.300",
     }}
-    onClick={active ? undefined : onClick}
+    onClick={active || disabled ? undefined : onClick}
   >
     <motion.svg
       initial={false}
@@ -383,10 +397,15 @@ export const UpVoteButton = ({ active, onClick }: VoteButtonProps) => (
 
 interface DownVoteButtonProps {
   active: boolean;
+  disabled?: boolean;
   onClick: MouseEventHandler<HTMLButtonElement>;
 }
 
-export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
+export const DownVoteButton = ({
+  active,
+  disabled,
+  onClick,
+}: DownVoteButtonProps) => (
   <Box
     as="button"
     aria-label="Upvote Button"
@@ -399,7 +418,7 @@ export const DownVoteButton = ({ active, onClick }: DownVoteButtonProps) => (
       color: "pumpkin",
       backgroundColor: "whiteAlpha.300",
     }}
-    onClick={onClick}
+    onClick={active || disabled ? undefined : onClick}
   >
     <motion.svg
       initial={false}
