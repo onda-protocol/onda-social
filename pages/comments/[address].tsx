@@ -28,6 +28,7 @@ import { PostButtons } from "components/post/buttons";
 import { PostHead } from "components/post/head";
 import { useAuth } from "components/providers/auth";
 import { FetchMore } from "components/fetchMore";
+import { DocumentHead } from "components/document";
 
 const Editor = dynamic(
   () => import("components/editor").then((mod) => mod.Editor),
@@ -143,81 +144,90 @@ const Comments: NextPage<PageProps> = () => {
   }
 
   return (
-    <Container maxW="container.md">
-      <PostHead
-        title={postQuery.data?.title}
-        titleSize="3xl"
-        body={postQuery.data?.body}
-        uri={postQuery.data?.uri}
-        points={Number(postQuery.data.points)}
-        awards={postQuery.data.awards as AwardsJson}
-        postType={postQuery.data.postType}
-        author={postQuery.data.Author}
-        forum={postQuery.data.forum}
-        forumNamespace={postQuery.data.Forum.namespace}
-        forumIcon={postQuery.data.Forum.icon}
-        createdAt={postQuery.data.createdAt}
-        editedAt={postQuery.data.editedAt}
+    <>
+      <DocumentHead
+        title={postQuery.data.title}
+        description={`Posted in o/${postQuery.data.Forum.namespace} ${
+          postQuery.data.Author.name ? `by u/${postQuery.data.Author.name}` : ""
+        }`}
+        url={`${process.env.NEXT_PUBLIC_SITE_URL}/comments/${postQuery.data.id}`}
       />
-
-      <Box mb="6">
-        <PostButtons
-          displayVote
-          post={postQuery.data}
-          displayDelete={isAuthor && !isDeleted}
-          onDeleted={onPostDeleted}
+      <Container maxW="container.md">
+        <PostHead
+          title={postQuery.data?.title}
+          titleSize="3xl"
+          body={postQuery.data?.body}
+          uri={postQuery.data?.uri}
+          points={Number(postQuery.data.points)}
+          awards={postQuery.data.awards as AwardsJson}
+          postType={postQuery.data.postType}
+          author={postQuery.data.Author}
+          forum={postQuery.data.forum}
+          forumNamespace={postQuery.data.Forum.namespace}
+          forumIcon={postQuery.data.Forum.icon}
+          createdAt={postQuery.data.createdAt}
+          editedAt={postQuery.data.editedAt}
         />
-      </Box>
 
-      <Editor
-        buttonLabel="Comment"
-        placeholder="Got some thoughts?"
-        successMessage="Reply added"
-        config={{
-          type: "comment",
-          post: id,
-          forum: postQuery.data?.forum,
-          parent: null,
-        }}
-        onSuccess={onCommentCreated}
-      />
-
-      <Divider my="6" />
-
-      <Box pb="12" mx="-2">
-        {commentsQuery.isLoading ? (
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            pt="12"
-          >
-            <Spinner />
-          </Box>
-        ) : (
-          commentsQuery.data?.pages?.map((page, index) => (
-            <Fragment key={index}>
-              {page.map((comment) => (
-                <CommentListItem
-                  isRoot
-                  key={comment.id}
-                  comment={comment}
-                  postAuthor={postQuery.data?.author}
-                  forum={postQuery.data?.forum}
-                  queryKey={commentsQueryKey}
-                />
-              ))}
-            </Fragment>
-          )) ?? null
-        )}
-        {!commentsQuery.isLoading && commentsQuery.hasNextPage && (
-          <FetchMore
-            isFetching={commentsQuery.isFetchingNextPage}
-            onFetchMore={commentsQuery.fetchNextPage}
+        <Box mb="6">
+          <PostButtons
+            displayVote
+            post={postQuery.data}
+            displayDelete={isAuthor && !isDeleted}
+            onDeleted={onPostDeleted}
           />
-        )}
-      </Box>
-    </Container>
+        </Box>
+
+        <Editor
+          buttonLabel="Comment"
+          placeholder="Got some thoughts?"
+          successMessage="Reply added"
+          config={{
+            type: "comment",
+            post: id,
+            forum: postQuery.data?.forum,
+            parent: null,
+          }}
+          onSuccess={onCommentCreated}
+        />
+
+        <Divider my="6" />
+
+        <Box pb="12" mx="-2">
+          {commentsQuery.isLoading ? (
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              pt="12"
+            >
+              <Spinner />
+            </Box>
+          ) : (
+            commentsQuery.data?.pages?.map((page, index) => (
+              <Fragment key={index}>
+                {page.map((comment) => (
+                  <CommentListItem
+                    isRoot
+                    key={comment.id}
+                    comment={comment}
+                    postAuthor={postQuery.data?.author}
+                    forum={postQuery.data?.forum}
+                    queryKey={commentsQueryKey}
+                  />
+                ))}
+              </Fragment>
+            )) ?? null
+          )}
+          {!commentsQuery.isLoading && commentsQuery.hasNextPage && (
+            <FetchMore
+              isFetching={commentsQuery.isFetchingNextPage}
+              onFetchMore={commentsQuery.fetchNextPage}
+            />
+          )}
+        </Box>
+      </Container>
+    </>
   );
 };
 
@@ -227,12 +237,9 @@ Comments.getInitialProps = async (ctx) => {
       const queryClient = new QueryClient();
       const id = ctx.query.address as string;
 
-      await Promise.allSettled([
-        queryClient.prefetchQuery(["post", id], () =>
-          fetchPost(id, ctx.req?.headers)
-        ),
-        queryClient.prefetchQuery(["awards"], fetchAwards),
-      ]);
+      queryClient.prefetchQuery(["post", id], () =>
+        fetchPost(id, ctx.req?.headers)
+      );
 
       return {
         dehydratedState: dehydrate(queryClient),

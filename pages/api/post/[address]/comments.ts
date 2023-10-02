@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { parseBigInt } from "utils/format";
 import { getCurrentUser } from "utils/verify";
 import prisma from "lib/prisma";
-import { SerializedComment, SerializedCommentNested } from "lib/api";
+import { SerializedCommentNested } from "lib/api";
 
 export const config = {
   runtime: "edge",
