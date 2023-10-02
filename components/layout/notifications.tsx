@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { useRouter } from "next/router";
 import {
   Box,
   Button,
@@ -21,22 +22,21 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { IoNotificationsOutline } from "react-icons/io5";
-import { Fragment, useMemo } from "react";
-import { NotificationType } from "@prisma/client";
 import { useConnection } from "@solana/wallet-adapter-react";
+import { NotificationType } from "@prisma/client";
+import { Fragment, useEffect, useMemo } from "react";
+import { IoNotificationsOutline } from "react-icons/io5";
 import toast from "react-hot-toast";
+import dayjs from "lib/dayjs";
 
 import {
   SerializedNotification,
   fetchNotificationCount,
   fetchUserNotifications,
   getTransaction,
+  markNotificationsAsRead,
 } from "lib/api";
 import { useAuth } from "components/providers/auth";
-import dayjs from "lib/dayjs";
-import Link from "next/link";
-import { useRouter } from "next/router";
 
 export const Notifications = () => {
   const auth = useAuth();
@@ -101,6 +101,7 @@ export const Notifications = () => {
 
 const NotificationList = () => {
   const auth = useAuth();
+  const queryClient = useQueryClient();
 
   const notificationsQuery = useInfiniteQuery({
     enabled: Boolean(auth.address),
@@ -111,6 +112,18 @@ const NotificationList = () => {
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === 20 ? allPages.length * 20 : undefined,
   });
+
+  useEffect(() => {
+    if (auth.address) {
+      markNotificationsAsRead(auth.address)
+        .then(() =>
+          queryClient.invalidateQueries(["notifications_count", auth.address])
+        )
+        .catch((err) => {
+          console.error(err);
+        });
+    }
+  }, [auth.address, queryClient]);
 
   if (notificationsQuery.isLoading) {
     return (

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import prisma from "lib/prisma";
 import { getCurrentUser } from "utils/verify";
+import { StatusError } from "utils/error";
 
 export const config = {
   runtime: "edge",
@@ -158,14 +159,5 @@ function getOperation(vote: VoteType, undo: boolean) {
 
     default:
       throw new StatusError(404, "Invalid vote type");
-  }
-}
-
-class StatusError extends Error {
-  status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
   }
 }

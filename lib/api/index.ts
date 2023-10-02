@@ -198,6 +198,15 @@ export function fetchNotificationCount(user: string) {
   ).then((res) => res.json());
 }
 
+export function markNotificationsAsRead(user: string) {
+  return fetch(
+    `${process.env.NEXT_PUBLIC_HOST}/api/user/${user}/notifications/mark`,
+    {
+      method: "PUT",
+    }
+  ).then((res) => res.json());
+}
+
 export function fetchUserNotifications(
   user: string,
   offset = 0
