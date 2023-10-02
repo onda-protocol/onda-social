@@ -43,7 +43,6 @@ const Home: NextPage<PageProps> = () => {
       <Box position="relative" height="200px" width="100%" zIndex={-1}>
         <Box position="fixed" height="200px" width="100%">
           <Image
-            unoptimized
             fill
             src="/banner2.png"
             alt="Homepage banner"
