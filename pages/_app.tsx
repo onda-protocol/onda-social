@@ -11,7 +11,7 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Toaster } from "react-hot-toast";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
@@ -24,6 +24,24 @@ import { AuthProvider } from "components/providers/auth";
 
 export default function App({ Component, pageProps }: AppProps) {
   const wallets = useMemo(() => [], []);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js").then(
+          (registration) => {
+            console.log(
+              "Service Worker registration successful with scope: ",
+              registration.scope
+            );
+          },
+          (err) => {
+            console.log("Service Worker registration failed: ", err);
+          }
+        );
+      });
+    }
+  }, []);
 
   const connectionConfig = useMemo(
     () => ({
