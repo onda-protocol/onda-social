@@ -1,4 +1,11 @@
-import { CSSProperties, memo, useEffect, useMemo, useRef } from "react";
+import {
+  CSSProperties,
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { InfiniteData } from "@tanstack/react-query";
 import { VariableSizeList as List } from "react-window";
 
@@ -42,13 +49,13 @@ export const PostList = ({
   const rowHeights = useRef<number[]>([]);
   const items: Items = useMemo(() => {
     const posts: Items = data?.pages.flat() ?? [];
-
     if (shouldFetchMore) {
       posts.push({ id: "PLACEHOLDER" });
     }
-
     return posts;
   }, [data, shouldFetchMore]);
+  const [renderCount, forceRender] = useState(0);
+  const timeoutRef = useRef<NodeJS.Timeout>();
 
   function getRowHeight(index: number) {
     return rowHeights.current[index] ?? 180;
@@ -68,12 +75,22 @@ export const PostList = ({
       isFetchingMore,
       onFetchMore,
       setRowHeight,
+      renderCount,
     }),
-    [items, displayIcon, isFetchingMore, onFetchMore]
+    [items, displayIcon, isFetchingMore, onFetchMore, renderCount]
   );
 
   const isFetchingRef = useRef(false);
   isFetchingRef.current = Boolean(isFetchingMore);
+
+  useEffect(() => {
+    if (!listRef.current) return;
+    if (renderCount > 0) {
+      console.log("forceUpdate...");
+      listRef.current.resetAfterIndex(0);
+      listRef.current.forceUpdate();
+    }
+  }, [renderCount]);
 
   useEffect(() => {
     const handleWindowScroll = () => {
@@ -90,8 +107,16 @@ export const PostList = ({
     };
 
     const handleResize = () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
       if (!listRef.current) return;
-      listRef.current.resetAfterIndex(0);
+      if (listRef?.current) {
+        timeoutRef.current = setTimeout(() => {
+          forceRender((prev) => prev + 1);
+        }, 500);
+      }
     };
 
     listRef.current?.scrollTo(window.scrollY);
