@@ -237,7 +237,7 @@ Comments.getInitialProps = async (ctx) => {
       const queryClient = new QueryClient();
       const id = ctx.query.address as string;
 
-      queryClient.prefetchQuery(["post", id], () =>
+      await queryClient.prefetchQuery(["post", id], () =>
         fetchPost(id, ctx.req?.headers)
       );
 
@@ -245,7 +245,7 @@ Comments.getInitialProps = async (ctx) => {
         dehydratedState: dehydrate(queryClient),
       };
     } catch (err) {
-      console.log(err);
+      console.log("ERROR: ", err);
     }
   }
 

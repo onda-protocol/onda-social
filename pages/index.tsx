@@ -88,8 +88,8 @@ const Home: NextPage<PageProps> = () => {
               <SidebarSection title="Home">
                 <Box px="4">
                   <Text>
-                    Welcome to Onda. The place to discover and engage with web3
-                    Communities, powered by the Solana blockchain.
+                    Decentralized, community moderated forums. Powered by
+                    Solana.
                   </Text>
                 </Box>
                 <SidebarButtons />

@@ -60,7 +60,7 @@ export default function App({ Component, pageProps }: AppProps) {
                 <AuthProvider>
                   <DocumentHead
                     title="Onda | Find your community"
-                    description="Decentralized, community-owned, and community-driven. Discover your web3 tribe today with Onda."
+                    description="Decentralized, community moderated forums. Powered by Solana."
                     url={``}
                   />
                   <Navbar />

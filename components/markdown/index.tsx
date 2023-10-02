@@ -10,8 +10,6 @@ export const Markdown = ({
   children: string;
   preview?: boolean;
 }) => {
-  console.log("Markdown", children);
-
   const components = useMemo(() => {
     return ChakraUIRenderer({
       h1: (props) => (
