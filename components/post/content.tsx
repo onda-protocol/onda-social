@@ -53,12 +53,15 @@ export const PostContent = memo(function PostContent({
             maxHeight={clip ? "250px" : "auto"}
             overflow="hidden"
           >
-            <Markdown>{body ?? ""}</Markdown>
+            <Markdown preview={clip}>{body ?? ""}</Markdown>
             {clip ? (
               <Box
                 position="absolute"
-                inset={0}
-                background="linear-gradient(to bottom, transparent 100px, var(--chakra-colors-onda-1000))"
+                left={0}
+                right={0}
+                bottom={0}
+                height="50px"
+                background="linear-gradient(to bottom, transparent, var(--chakra-colors-onda-1000))"
               />
             ) : null}
           </Box>
