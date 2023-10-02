@@ -128,7 +128,7 @@ export const PostList = ({
       itemKey={itemKey}
       itemData={itemData}
       style={{
-        overflow: "hidden",
+        overflow: "visible",
         height: "100%",
         marginTop: "var(--chakra-space-4)",
       }}

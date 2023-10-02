@@ -14,6 +14,7 @@ export const Panel = forwardRef<BoxProps, "div">(
       borderRadius="md"
       backgroundColor="onda.1000"
       borderColor="gray.800"
+      boxShadow="md"
       {...other}
     >
       {children}

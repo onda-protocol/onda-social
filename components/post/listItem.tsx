@@ -7,6 +7,7 @@ import { Panel } from "components/panel";
 import { PostMeta } from "components/post/meta";
 import { PostButtons, PostVoteButtons } from "components/post/buttons";
 import { PostContent } from "components/post/content";
+import { useMemo } from "react";
 
 interface PostListItemProps {
   displayIcon?: boolean;
@@ -29,6 +30,11 @@ export const PostListItem = forwardRef<PostListItemProps, "div">(
       );
     };
 
+    const awardsCount = useMemo(
+      () => Object.values(post.awards ?? {}).length,
+      [post.awards]
+    );
+
     return (
       <Panel
         ref={ref}
@@ -41,6 +47,11 @@ export const PostListItem = forwardRef<PostListItemProps, "div">(
           cursor: "pointer",
           borderColor: "gray.600",
         }}
+        boxShadow={
+          awardsCount > 1
+            ? "0 0 4px 3px rgba(49, 130, 206, 0.25), 0 0 4px 3px rgba(49, 130, 206, 0.25)"
+            : "md"
+        }
         onClick={handlePostClick}
       >
         <Flex>
