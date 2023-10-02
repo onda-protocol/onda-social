@@ -36,7 +36,8 @@ export const Markdown = ({
       ),
       img: preview
         ? () => null
-        : (props) => <Image {...props} ml="auto" mr="auto" my="6" />,
+        : /* eslint-disable jsx-a11y/alt-text */
+          (props) => <Image {...props} ml="auto" mr="auto" my="6" />,
     });
   }, [preview]);
 
