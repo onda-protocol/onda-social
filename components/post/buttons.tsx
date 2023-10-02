@@ -19,7 +19,7 @@ import {
   AwardsJson,
   PostWithCommentsCountAndForum,
   SerializedAward,
-  getTransaction,
+  signAndConfirmTransaction,
   vote,
 } from "lib/api";
 import { useAwardModal } from "components/modal";
@@ -114,7 +114,7 @@ export const DeleteButton = ({
         throw new Error("Wallet not connected");
       }
 
-      const response = await getTransaction({
+      await signAndConfirmTransaction(connection, auth, {
         method: "deleteEntry",
         data: {
           author: auth.address,
@@ -123,40 +123,6 @@ export const DeleteButton = ({
           entryType,
         },
       });
-
-      const transaction = web3.Transaction.from(
-        base58.decode(response.transaction)
-      );
-      const payerSig = transaction.signatures.find((sig) =>
-        transaction.feePayer?.equals(sig.publicKey)
-      );
-
-      if (!payerSig?.signature) {
-        throw new Error("Payer signature not found");
-      }
-
-      const signedTransaction = await auth.signTransaction(transaction);
-      signedTransaction.addSignature(payerSig.publicKey, payerSig.signature);
-
-      const txId = await connection.sendRawTransaction(
-        signedTransaction.serialize(),
-        {
-          preflightCommitment: "confirmed",
-        }
-      );
-
-      const blockhash = await connection.getLatestBlockhash();
-      const result = await connection.confirmTransaction(
-        {
-          signature: txId,
-          ...blockhash,
-        },
-        "confirmed"
-      );
-
-      if (result.value.err) {
-        throw new Error(result.value.err.toString());
-      }
     },
     {
       onError(err) {

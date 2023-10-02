@@ -12,7 +12,11 @@ import {
   Notification,
   Claim,
 } from "@prisma/client";
+
+import { AuthContext } from "components/providers/auth";
 import { SerializedTransactionResponse, TransactionArgs } from "./types";
+import { web3 } from "@project-serum/anchor";
+import base58 from "bs58";
 
 type DeepReplaceBigInt<T, U> = {
   [K in keyof T]: T[K] extends bigint
@@ -296,11 +300,12 @@ export function uploadContent(body: string) {
 }
 
 export function getTransaction(
-  args: TransactionArgs
+  args: TransactionArgs,
+  funded: boolean = false
 ): Promise<SerializedTransactionResponse> {
   return fetch(`${process.env.NEXT_PUBLIC_HOST}/api/transaction`, {
     method: "POST",
-    body: JSON.stringify(args),
+    body: JSON.stringify({ ...args, funded }),
     headers: {
       "Content-Type": "application/json",
     },
@@ -313,6 +318,88 @@ export function getTransaction(
 
     return data;
   });
+}
+
+export async function signAndConfirmTransaction(
+  connection: web3.Connection,
+  auth: AuthContext,
+  args: TransactionArgs
+) {
+  if (!auth.signTransaction) {
+    throw new Error("No signTransaction method found");
+  }
+
+  if (auth.provider === "magic") {
+    const response = await getTransaction(args, true);
+
+    const transaction = web3.Transaction.from(
+      base58.decode(response.transaction)
+    );
+    const payerSig = transaction.signatures.find((sig) =>
+      transaction.feePayer?.equals(sig.publicKey)
+    );
+
+    if (!payerSig || !payerSig.signature) {
+      throw new Error("Payer signature not found");
+    }
+
+    const signedTransaction = await auth.signTransaction(transaction);
+    signedTransaction.addSignature(payerSig.publicKey, payerSig.signature);
+    const txId = await connection.sendRawTransaction(
+      signedTransaction.serialize(),
+      {
+        preflightCommitment: "confirmed",
+      }
+    );
+    const blockhash = await connection.getLatestBlockhash();
+    const result = await connection.confirmTransaction(
+      {
+        signature: txId,
+        ...blockhash,
+      },
+      "confirmed"
+    );
+
+    if (result.value.err) {
+      throw new Error(result.value.err.toString());
+    }
+
+    return {
+      txId,
+      uri: response.uri,
+    };
+  } else {
+    const response = await getTransaction(args);
+
+    const transaction = web3.Transaction.from(
+      base58.decode(response.transaction)
+    );
+
+    const signedTransaction = await auth.signTransaction(transaction);
+    const txId = await connection.sendRawTransaction(
+      signedTransaction.serialize(),
+      {
+        preflightCommitment: "confirmed",
+      }
+    );
+    const blockhash = await connection.getLatestBlockhash();
+    const result = await connection.confirmTransaction(
+      {
+        signature: txId,
+        ...blockhash,
+      },
+      "confirmed"
+    );
+
+    if (result.value.err) {
+      throw new Error(result.value.err.toString());
+    }
+
+    return {
+      txId,
+      uri: response.uri,
+    };
+  }
 }
 
 export function vote(

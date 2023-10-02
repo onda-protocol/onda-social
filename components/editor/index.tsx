@@ -15,15 +15,9 @@ import {
 } from "@chakra-ui/react";
 import toast from "react-hot-toast";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import {
-  IoDocumentText,
-  IoInformation,
-  IoInformationCircle,
-  IoLink,
-} from "react-icons/io5";
-import base58 from "bs58";
+import { IoDocumentText, IoInformationCircle, IoLink } from "react-icons/io5";
 
-import { fetchFora, getTransaction } from "lib/api";
+import { fetchFora, signAndConfirmTransaction } from "lib/api";
 import {
   EntryDataArgs,
   CommentArgs,
@@ -183,45 +177,14 @@ export const Editor = ({
         }
       }
 
-      const response = await getTransaction({
+      const response = await signAndConfirmTransaction(connection, auth, {
         method: "addEntry",
         data: dataArgs,
       });
-      const transaction = web3.Transaction.from(
-        base58.decode(response.transaction)
-      );
-      const payerSig = transaction.signatures.find((sig) =>
-        transaction.feePayer?.equals(sig.publicKey)
-      );
-
-      if (!payerSig || !payerSig.signature) {
-        throw new Error("Payer signature not found");
-      }
-
-      const signedTransaction = await auth.signTransaction(transaction);
-      signedTransaction.addSignature(payerSig.publicKey, payerSig.signature);
-      const txId = await connection.sendRawTransaction(
-        signedTransaction.serialize(),
-        {
-          preflightCommitment: "confirmed",
-        }
-      );
-      const blockhash = await connection.getLatestBlockhash();
-      const result = await connection.confirmTransaction(
-        {
-          signature: txId,
-          ...blockhash,
-        },
-        "confirmed"
-      );
-
-      if (result.value.err) {
-        throw new Error(result.value.err.toString());
-      }
 
       return {
         uri: response.uri!,
-        signature: txId,
+        signature: response.txId,
       };
     },
     {

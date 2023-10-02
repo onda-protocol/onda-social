@@ -33,8 +33,8 @@ import {
   SerializedNotification,
   fetchNotificationCount,
   fetchUserNotifications,
-  getTransaction,
   markNotificationsAsRead,
+  signAndConfirmTransaction,
 } from "lib/api";
 import { useAuth } from "components/providers/auth";
 
@@ -163,9 +163,7 @@ const NotificationItem = ({ item }: NotificationProps) => {
       }
 
       if (item.Claim) {
-        const base58 = await import("bs58");
-
-        const response = await getTransaction({
+        const result = await signAndConfirmTransaction(connection, auth, {
           method: "claimAward",
           data: {
             award: item.Claim.award,
@@ -173,38 +171,6 @@ const NotificationItem = ({ item }: NotificationProps) => {
             recipient: auth.address!,
           },
         });
-
-        const transaction = web3.Transaction.from(
-          base58.decode(response.transaction)
-        );
-        const payerSig = transaction.signatures.find((sig) =>
-          transaction.feePayer?.equals(sig.publicKey)
-        );
-
-        if (!payerSig || !payerSig.signature) {
-          throw new Error("Payer signature not found");
-        }
-
-        const signedTransaction = await auth.signTransaction(transaction);
-        signedTransaction.addSignature(payerSig.publicKey, payerSig.signature);
-        const txId = await connection.sendRawTransaction(
-          signedTransaction.serialize(),
-          {
-            preflightCommitment: "confirmed",
-          }
-        );
-        const blockhash = await connection.getLatestBlockhash();
-        const result = await connection.confirmTransaction(
-          {
-            signature: txId,
-            ...blockhash,
-          },
-          "confirmed"
-        );
-
-        if (result.value.err) {
-          throw new Error(result.value.err.toString());
-        }
         console.log(result);
       }
     },

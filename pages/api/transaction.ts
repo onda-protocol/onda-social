@@ -17,7 +17,6 @@ import {
   TransactionResponse,
 } from "lib/api/types";
 import { nodeUpload } from "lib/bundlr";
-import { getDataHash } from "lib/anchor";
 import { getProof } from "./proof/[address]";
 import { findClaimPda } from "utils/pda";
 
@@ -30,7 +29,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<TransactionResponse>
 ) {
-  const { data, method } = req.body as TransactionArgs;
+  const { data, method, funded } = req.body as TransactionArgs & {
+    funded?: boolean;
+  };
 
   switch (method) {
     case "addEntry": {
@@ -54,9 +55,10 @@ export default async function handler(
       }
 
       const [dataV1Args, uri] = await parseData(req.body.data);
+      const author = new web3.PublicKey(data.author);
       const instruction = await addEntryIx(connection, {
         data: dataV1Args,
-        author: new web3.PublicKey(data.author),
+        author,
         forum: new web3.PublicKey(data.forum),
         mint: pass?.mint ? new web3.PublicKey(pass.mint) : null,
         metadata: pass?.metadata ? new web3.PublicKey(pass.metadata) : null,
@@ -65,19 +67,10 @@ export default async function handler(
           : null,
       });
 
-      const latestBlockhash = await connection.getLatestBlockhash();
-
-      const transaction = new web3.Transaction({
-        feePayer: signer.publicKey,
-        ...latestBlockhash,
-      }).add(instruction);
-
-      transaction.partialSign(signer);
-
-      const serializedTransaction = base58.encode(
-        transaction.serialize({
-          requireAllSignatures: false,
-        })
+      const serializedTransaction = await prepareTransaction(
+        instruction,
+        funded ? signer.publicKey : author,
+        funded
       );
 
       return res.status(200).json({
@@ -141,8 +134,9 @@ export default async function handler(
       }
 
       const proof = await getProof(data.forum, nonce);
+      const author = new web3.PublicKey(data.author);
       const instruction = await deleteEntryIx(connection, {
-        author: new web3.PublicKey(data.author),
+        author,
         forum: new web3.PublicKey(data.forum),
         createdAt,
         editedAt,
@@ -151,18 +145,10 @@ export default async function handler(
         proof: proof.proof,
       });
 
-      const latestBlockhash = await connection.getLatestBlockhash();
-      const transaction = new web3.Transaction({
-        feePayer: signer.publicKey,
-        ...latestBlockhash,
-      }).add(instruction);
-
-      transaction.partialSign(signer);
-
-      const serializedTransaction = base58.encode(
-        transaction.serialize({
-          requireAllSignatures: false,
-        })
+      const serializedTransaction = await prepareTransaction(
+        instruction,
+        funded ? signer.publicKey : author,
+        funded
       );
       return res.status(200).json({
         transaction: serializedTransaction,
@@ -191,9 +177,10 @@ export default async function handler(
         : null;
 
       const proof = await getProof(data.forum, data.nonce);
+      const payer = new web3.PublicKey(data.payer);
       const instruction = await giveAwardIx(connection, {
+        payer,
         entry: new web3.PublicKey(data.entryId),
-        payer: new web3.PublicKey(data.payer),
         recipient: new web3.PublicKey(data.author),
         award: new web3.PublicKey(data.award),
         claim: claimPda,
@@ -209,18 +196,10 @@ export default async function handler(
         proof: proof.proof,
       });
 
-      const latestBlockhash = await connection.getLatestBlockhash();
-      const transaction = new web3.Transaction({
-        feePayer: signer.publicKey,
-        ...latestBlockhash,
-      }).add(instruction);
-
-      transaction.partialSign(signer);
-
-      const serializedTransaction = base58.encode(
-        transaction.serialize({
-          requireAllSignatures: false,
-        })
+      const serializedTransaction = await prepareTransaction(
+        instruction,
+        funded ? signer.publicKey : payer,
+        funded
       );
       return res.status(200).json({
         transaction: serializedTransaction,
@@ -241,28 +220,22 @@ export default async function handler(
         return res.status(401).json({ error: "Award not found" });
       }
 
+      const recipient = new web3.PublicKey(data.recipient);
       const instruction = await claimAwardIx(connection, {
+        recipient,
         award: new web3.PublicKey(award.id),
         treasury: new web3.PublicKey(award.treasury),
         claim: new web3.PublicKey(data.claim),
-        recipient: new web3.PublicKey(data.recipient),
         merkleTree: new web3.PublicKey(award.merkleTree),
         collectionMint: new web3.PublicKey(award.collectionMint),
       });
 
-      const latestBlockhash = await connection.getLatestBlockhash();
-      const transaction = new web3.Transaction({
-        feePayer: signer.publicKey,
-        ...latestBlockhash,
-      }).add(instruction);
-
-      transaction.partialSign(signer);
-
-      const serializedTransaction = base58.encode(
-        transaction.serialize({
-          requireAllSignatures: false,
-        })
+      const serializedTransaction = await prepareTransaction(
+        instruction,
+        funded ? signer.publicKey : recipient,
+        funded
       );
+
       return res.status(200).json({
         transaction: serializedTransaction,
       });
@@ -272,6 +245,29 @@ export default async function handler(
       res.status(400).json({ error: "Invalid method" });
     }
   }
+}
+
+async function prepareTransaction(
+  instruction: web3.TransactionInstruction,
+  feePayer: web3.PublicKey,
+  funded?: boolean
+) {
+  const latestBlockhash = await connection.getLatestBlockhash();
+
+  const transaction = new web3.Transaction({
+    feePayer,
+    ...latestBlockhash,
+  }).add(instruction);
+
+  if (funded) {
+    transaction.partialSign(signer);
+  }
+
+  return base58.encode(
+    transaction.serialize({
+      requireAllSignatures: false,
+    })
+  );
 }
 
 async function parseData(data: EntryDataArgs): Promise<[DataV1, string]> {

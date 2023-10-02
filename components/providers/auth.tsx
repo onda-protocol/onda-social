@@ -30,8 +30,9 @@ export enum AuthStatus {
 
 const AUTH_MESSAGE = process.env.NEXT_PUBLIC_AUTH_MESSAGE!;
 
-interface AuthContext {
+export interface AuthContext {
   status: AuthStatus;
+  provider: Provider;
   address?: string;
   showUI: () => void;
   signOut: () => Promise<void>;
@@ -44,6 +45,7 @@ interface AuthContext {
 
 const AuthContext = createContext<AuthContext>({
   status: AuthStatus.IDLE,
+  provider: null,
   address: undefined,
   showUI: () => {},
   signOut: async () => {},
@@ -193,6 +195,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     () => ({
       signIn,
       status: authStatus,
+      provider,
       address:
         provider === "magic"
           ? userInfoQuery.data?.publicAddress ?? undefined
