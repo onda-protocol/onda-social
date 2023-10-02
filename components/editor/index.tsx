@@ -7,14 +7,20 @@ import {
   Box,
   Button,
   Input,
+  Text,
   Textarea,
   Select,
-  Heading,
   Flex,
+  Link as ChakraLink,
 } from "@chakra-ui/react";
 import toast from "react-hot-toast";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { IoDocumentText, IoLink } from "react-icons/io5";
+import {
+  IoDocumentText,
+  IoInformation,
+  IoInformationCircle,
+  IoLink,
+} from "react-icons/io5";
 import base58 from "bs58";
 
 import { fetchFora, getTransaction } from "lib/api";
@@ -27,6 +33,7 @@ import {
 import { RadioCardMenu } from "components/input";
 import { AuthStatus, useAuth } from "components/providers/auth";
 import { Markdown } from "components/markdown";
+import Link from "next/link";
 // import { ImagePicker } from "components/input/imagePicker";
 
 export interface EntryForm {
@@ -502,7 +509,20 @@ const MarkdownEditor = forwardRef<HTMLTextAreaElement, MarkdownEditorProps>(
           padding="3"
         >
           <Flex align="center" justify="space-between">
-            <Heading fontSize="sm">Markdown</Heading>
+            <ChakraLink
+              display="flex"
+              alignItems="center"
+              href="https://commonmark.org/help/"
+              target="_blank"
+            >
+              <IoInformationCircle
+                style={{
+                  display: "inline",
+                  marginRight: "var(--chakra-space-1)",
+                }}
+              />
+              <Text as="span">Markdown</Text>
+            </ChakraLink>
             <Button
               size="sm"
               variant={previewMode ? "primary" : "solid"}
