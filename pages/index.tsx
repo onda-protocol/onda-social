@@ -1,8 +1,6 @@
 import type { NextPage } from "next";
 import {
   DehydratedState,
-  QueryClient,
-  dehydrate,
   useInfiniteQuery,
   useQuery,
   useQueryClient,
@@ -11,12 +9,13 @@ import { Box, Text } from "@chakra-ui/react";
 import Image from "next/image";
 import { motion, useScroll, useTransform, circOut } from "framer-motion";
 
-import { fetchFora, fetchPosts, fetchAwards } from "lib/api";
+import { fetchFora, fetchPosts } from "lib/api";
 import {
   Sidebar,
   SidebarSection,
   SidebarButtons,
   SidebarItem,
+  SidebarItemSkeleton,
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
 import { PostList } from "components/post/list";
@@ -27,19 +26,9 @@ interface PageProps {
 }
 
 const Home: NextPage<PageProps> = () => {
-  const queryClient = useQueryClient();
   const scroll = useScroll();
   const opacity = useTransform(scroll.scrollY, [0, 190], [0, 1], {
     ease: circOut,
-  });
-
-  const foraQuery = useQuery(["fora"], async () => {
-    const fora = await fetchFora();
-    for (const forum of fora) {
-      queryClient.setQueryData(["forum", forum.id], forum);
-      queryClient.setQueryData(["forum", "namespace", forum.namespace], forum);
-    }
-    return fora;
   });
 
   const postsQuery = useInfiniteQuery({
@@ -106,15 +95,7 @@ const Home: NextPage<PageProps> = () => {
                 <SidebarButtons />
               </SidebarSection>
               <SidebarSection title="Communities">
-                {foraQuery.data?.map((forum) => (
-                  <SidebarItem
-                    key={forum.id}
-                    active={false}
-                    href={`/o/${forum.namespace}`}
-                    label={forum.displayName!}
-                    image={forum.icon}
-                  />
-                ))}
+                <ForumList />
               </SidebarSection>
             </Box>
           </Sidebar>
@@ -125,27 +106,42 @@ const Home: NextPage<PageProps> = () => {
   );
 };
 
-Home.getInitialProps = async () => {
-  if (typeof window === "undefined") {
-    try {
-      const queryClient = new QueryClient();
+const ForumList = () => {
+  const queryClient = useQueryClient();
 
-      await Promise.allSettled([
-        queryClient.prefetchQuery(["fora"], fetchFora),
-        queryClient.prefetchQuery(["awards"], fetchAwards),
-      ]);
-
-      return {
-        dehydratedState: dehydrate(queryClient),
-      };
-    } catch (err) {
-      console.log(err);
+  const foraQuery = useQuery(["fora"], async () => {
+    const fora = await fetchFora();
+    for (const forum of fora) {
+      queryClient.setQueryData(["forum", forum.id], forum);
+      queryClient.setQueryData(["forum", "namespace", forum.namespace], forum);
     }
-  }
+    return fora;
+  });
 
-  return {
-    dehydratedState: undefined,
-  };
+  if (foraQuery.isLoading)
+    return (
+      <>
+        <SidebarItemSkeleton />
+        <SidebarItemSkeleton />
+        <SidebarItemSkeleton />
+        <SidebarItemSkeleton />
+        <SidebarItemSkeleton />
+      </>
+    );
+
+  return (
+    <>
+      {foraQuery.data?.map((forum) => (
+        <SidebarItem
+          key={forum.id}
+          active={false}
+          href={`/o/${forum.namespace}`}
+          label={forum.displayName!}
+          image={forum.icon}
+        />
+      ))}
+    </>
+  );
 };
 
 export default Home;

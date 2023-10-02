@@ -11,6 +11,7 @@ import {
   PopoverBody,
   PopoverArrow,
   Text,
+  Spinner,
 } from "@chakra-ui/react";
 import { web3 } from "@project-serum/anchor";
 import {
@@ -78,7 +79,8 @@ export const Notifications = () => {
         <PopoverHeader
           fontWeight="semibold"
           fontSize="sm"
-          borderBottom="none"
+          borderBottom="1px solid"
+          borderColor="whiteAlpha.100"
           py="4"
         >
           Notifications
@@ -109,6 +111,14 @@ const NotificationList = () => {
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === 20 ? allPages.length * 20 : undefined,
   });
+
+  if (notificationsQuery.isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" pt="12">
+        <Spinner />
+      </Box>
+    );
+  }
 
   return (
     <Fragment>

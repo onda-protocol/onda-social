@@ -8,6 +8,8 @@ import {
   List,
   ListItem,
   Link as ChakraLink,
+  Skeleton,
+  SkeletonText,
 } from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
 
@@ -93,6 +95,15 @@ export const SidebarItem = ({
           </Text>
         </Box>
       </Link>
+    </Box>
+  );
+};
+
+export const SidebarItemSkeleton = () => {
+  return (
+    <Box display="flex" alignItems="center" p="4" my="2">
+      <Skeleton height="24px" width="24px" borderRadius="full" mr="2" />
+      <SkeletonText width="52px" noOfLines={1} />
     </Box>
   );
 };
