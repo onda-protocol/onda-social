@@ -46,6 +46,14 @@ export type OndaCompression = {
           type: "u32";
         },
         {
+          name: "flair";
+          type: {
+            vec: {
+              defined: "Flair";
+            };
+          };
+        },
+        {
           name: "gate";
           type: {
             option: {
@@ -253,6 +261,14 @@ export type OndaCompression = {
             type: "publicKey";
           },
           {
+            name: "flair";
+            type: {
+              vec: {
+                defined: "Flair";
+              };
+            };
+          },
+          {
             name: "gate";
             type: {
               vec: {
@@ -290,6 +306,24 @@ export type OndaCompression = {
             name: "address";
             type: {
               vec: "publicKey";
+            };
+          }
+        ];
+      };
+    },
+    {
+      name: "Flair";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "name";
+            type: "string";
+          },
+          {
+            name: "color";
+            type: {
+              array: ["u8", 3];
             };
           }
         ];
@@ -406,7 +440,7 @@ export type OndaCompression = {
                 type: "string";
               },
               {
-                name: "tag";
+                name: "flair";
                 type: {
                   option: "string";
                 };
@@ -433,7 +467,7 @@ export type OndaCompression = {
                 type: "string";
               },
               {
-                name: "tag";
+                name: "flair";
                 type: {
                   option: "string";
                 };
@@ -460,7 +494,7 @@ export type OndaCompression = {
                 type: "string";
               },
               {
-                name: "tag";
+                name: "flair";
                 type: {
                   option: "string";
                 };
@@ -487,7 +521,7 @@ export type OndaCompression = {
                 type: "string";
               },
               {
-                name: "tag";
+                name: "flair";
                 type: {
                   option: "string";
                 };
@@ -579,16 +613,21 @@ export type OndaCompression = {
     },
     {
       code: 6002;
-      name: "TagTooLong";
+      name: "FlairTooLong";
       msg: "Tag too long";
     },
     {
       code: 6003;
+      name: "InvalidFlair";
+      msg: "Invalid flair";
+    },
+    {
+      code: 6004;
       name: "InsufficientPostCapacity";
       msg: "Insufficient post capacity";
     },
     {
-      code: 6004;
+      code: 6005;
       name: "Unauthorized";
       msg: "Unauthorized";
     }
@@ -641,6 +680,14 @@ export const IDL: OndaCompression = {
         {
           name: "maxBufferSize",
           type: "u32",
+        },
+        {
+          name: "flair",
+          type: {
+            vec: {
+              defined: "Flair",
+            },
+          },
         },
         {
           name: "gate",
@@ -850,6 +897,14 @@ export const IDL: OndaCompression = {
             type: "publicKey",
           },
           {
+            name: "flair",
+            type: {
+              vec: {
+                defined: "Flair",
+              },
+            },
+          },
+          {
             name: "gate",
             type: {
               vec: {
@@ -887,6 +942,24 @@ export const IDL: OndaCompression = {
             name: "address",
             type: {
               vec: "publicKey",
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "Flair",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "name",
+            type: "string",
+          },
+          {
+            name: "color",
+            type: {
+              array: ["u8", 3],
             },
           },
         ],
@@ -1003,7 +1076,7 @@ export const IDL: OndaCompression = {
                 type: "string",
               },
               {
-                name: "tag",
+                name: "flair",
                 type: {
                   option: "string",
                 },
@@ -1030,7 +1103,7 @@ export const IDL: OndaCompression = {
                 type: "string",
               },
               {
-                name: "tag",
+                name: "flair",
                 type: {
                   option: "string",
                 },
@@ -1057,7 +1130,7 @@ export const IDL: OndaCompression = {
                 type: "string",
               },
               {
-                name: "tag",
+                name: "flair",
                 type: {
                   option: "string",
                 },
@@ -1084,7 +1157,7 @@ export const IDL: OndaCompression = {
                 type: "string",
               },
               {
-                name: "tag",
+                name: "flair",
                 type: {
                   option: "string",
                 },
@@ -1176,16 +1249,21 @@ export const IDL: OndaCompression = {
     },
     {
       code: 6002,
-      name: "TagTooLong",
+      name: "FlairTooLong",
       msg: "Tag too long",
     },
     {
       code: 6003,
+      name: "InvalidFlair",
+      msg: "Invalid flair",
+    },
+    {
+      code: 6004,
       name: "InsufficientPostCapacity",
       msg: "Insufficient post capacity",
     },
     {
-      code: 6004,
+      code: 6005,
       name: "Unauthorized",
       msg: "Unauthorized",
     },

@@ -8,7 +8,7 @@ import { findEntryId } from "../../utils/pda";
 import { trimNullChars } from "../../utils/format";
 import { parseDataV1Fields } from "../../utils/parse";
 import { IDL as CompressionIDL } from "../anchor/idl/onda_compression";
-import { DataV1, LeafSchemaV1, Gate } from "../anchor/types";
+import { DataV1, LeafSchemaV1, Gate, Flair } from "../anchor/types";
 import { getCompressionProgram } from "../anchor/provider";
 import prisma from "../prisma";
 import { genIxIdentifier } from "./helpers";
@@ -61,6 +61,7 @@ export async function compressionParser(ix: Instruction) {
       const forumConfig = await compressionProgram.account.forumConfig.fetch(
         forumConfigAddress
       );
+      const flair = forumConfig.flair as Array<Flair>;
       const gates = forumConfig.gate as Array<Gate>;
 
       await prisma.forum.create({
@@ -71,6 +72,16 @@ export async function compressionParser(ix: Instruction) {
           totalCapacity: totalCapacity.toNumber(),
         },
       });
+
+      if (flair.length) {
+        await prisma.flair.createMany({
+          data: flair.map((flair) => ({
+            name: flair.name,
+            color: `rgb(${flair.color.join(",")})`,
+            forum: merkleTreeAddress.toBase58(),
+          })),
+        });
+      }
 
       if (gates.length) {
         await prisma.gate.createMany({
@@ -257,7 +268,7 @@ interface CreatePostV1Args {
   hash: string;
 }
 
-function createPostV1({
+async function createPostV1({
   forumId,
   schemaV1,
   dataV1,
@@ -267,6 +278,20 @@ function createPostV1({
 }: CreatePostV1Args) {
   if (schemaV1 === undefined) {
     throw new Error("Schema is undefined");
+  }
+
+  let flairId: number | undefined;
+
+  if (dataV1.flair) {
+    const flair = await prisma.flair.findFirst({
+      where: {
+        name: dataV1.flair,
+        forum: forumId,
+      },
+    });
+    if (flair) {
+      flairId = flair.id;
+    }
   }
 
   return prisma.post.create({
@@ -280,6 +305,13 @@ function createPostV1({
       uri: trimNullChars(dataV1.uri),
       createdAt: schemaV1.createdAt.toNumber(),
       nonce: schemaV1.nonce.toNumber(),
+      Flair: flairId
+        ? {
+            connect: {
+              id: flairId,
+            },
+          }
+        : undefined,
       Forum: {
         connect: {
           id: forumId,

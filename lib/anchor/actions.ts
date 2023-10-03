@@ -17,7 +17,7 @@ import {
 } from "utils/pda";
 import { fetchProof } from "lib/api";
 import { parseDataV1Fields } from "utils/parse";
-import { DataV1, LeafSchemaV1, Gate } from "./types";
+import { DataV1, LeafSchemaV1, Gate, Flair } from "./types";
 import { getCompressionProgram, getNamespaceProgram } from "./provider";
 
 export async function initForumAndNamespace(
@@ -27,6 +27,7 @@ export async function initForumAndNamespace(
   maxBufferSize: number,
   name: string,
   uri: string,
+  flair: Flair[] = [],
   gates: Gate[] = []
 ) {
   const compressionProgram = getCompressionProgram(connection, wallet);
@@ -62,7 +63,7 @@ export async function initForumAndNamespace(
   });
 
   const initIx = await compressionProgram.methods
-    .initForum(maxDepth, maxBufferSize, gates)
+    .initForum(maxDepth, maxBufferSize, flair, gates)
     .accounts({
       payer,
       forumConfig,
@@ -198,73 +199,6 @@ function waitForConfirmation(
       waitForConfirmation(connection, signature, retries + 1).then(resolve);
     }, 500);
   });
-}
-
-export function getDataHash(
-  connection: web3.Connection,
-  entry: Post | Comment
-) {
-  const program = getCompressionProgram(connection);
-
-  if ("postType" in entry) {
-    switch (entry.postType) {
-      case PostType.TEXT: {
-        return pkg.keccak_256.digest(
-          program.coder.types.encode<DataV1>("DataV1", {
-            textPost: {
-              title: entry.title,
-              uri: entry.uri,
-              tag: entry.tag,
-              nsfw: entry.nsfw,
-              spoiler: entry.spoiler,
-            },
-          })
-        );
-      }
-
-      case PostType.IMAGE: {
-        return pkg.keccak_256.digest(
-          program.coder.types.encode<DataV1>("DataV1", {
-            imagePost: {
-              title: entry.title,
-              uri: entry.uri,
-              tag: entry.tag,
-              nsfw: entry.nsfw,
-              spoiler: entry.spoiler,
-            },
-          })
-        );
-      }
-
-      case PostType.LINK: {
-        return pkg.keccak_256.digest(
-          program.coder.types.encode<DataV1>("DataV1", {
-            linkPost: {
-              title: entry.title,
-              uri: entry.uri,
-              tag: entry.tag,
-              nsfw: entry.nsfw,
-              spoiler: entry.spoiler,
-            },
-          })
-        );
-      }
-
-      default: {
-        throw new Error("Invalid post type");
-      }
-    }
-  }
-
-  return pkg.keccak_256.digest(
-    program.coder.types.encode<DataV1>("DataV1", {
-      comment: {
-        post: new web3.PublicKey(entry.post),
-        parent: entry.parent ? new web3.PublicKey(entry.parent) : null,
-        uri: entry.uri,
-      },
-    })
-  );
 }
 
 export async function deleteEntry(

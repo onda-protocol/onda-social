@@ -9,6 +9,8 @@ export function parseDataV1Fields(entryData: DataV1) {
       title: entryData.textPost.title,
       uri: entryData.textPost.uri,
       nsfw: entryData.textPost.nsfw,
+      spoiler: entryData.textPost.spoiler,
+      flair: entryData.textPost.flair,
     };
   }
 
@@ -17,6 +19,8 @@ export function parseDataV1Fields(entryData: DataV1) {
       type: "LinkPost",
       title: entryData.linkPost.title,
       uri: entryData.linkPost.uri,
+      spoiler: entryData.linkPost.spoiler,
+      flair: entryData.linkPost.flair,
     };
   }
 
@@ -26,6 +30,8 @@ export function parseDataV1Fields(entryData: DataV1) {
       title: entryData.imagePost.title,
       uri: entryData.imagePost.uri,
       nsfw: entryData.imagePost.nsfw,
+      spoiler: entryData.imagePost.spoiler,
+      flair: entryData.imagePost.flair,
     };
   }
 

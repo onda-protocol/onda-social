@@ -12,6 +12,7 @@ export type TextPostArgs = {
   author: string;
   title: string;
   body: string;
+  flair: string | null;
   forum: string;
 };
 
@@ -20,6 +21,7 @@ export type LinkPostArgs = {
   author: string;
   title: string;
   url: string;
+  flair: string | null;
   forum: string;
 };
 

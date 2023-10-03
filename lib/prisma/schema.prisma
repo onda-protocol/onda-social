@@ -35,6 +35,17 @@ enum Operator {
   NOT
 }
 
+model Flair {
+  id          Int      @id @default(autoincrement())
+  name        String
+  color       String?
+  forum       String
+  Forum       Forum    @relation("ForumToFlair", fields: [forum], references: [id])
+  Posts       Post[]   @relation("FlairToPost")
+
+  @@index(fields: [id, name, forum])
+}
+
 model Gate {
   id       Int      @id @default(autoincrement())
   amount   BigInt
@@ -56,6 +67,7 @@ model Forum {
   icon          String?
   banner        String?
   totalCapacity BigInt
+  Flair         Flair[]     @relation("ForumToFlair")
   Gates         Gate[]      @relation("ForumToGate")
   Moderators    Moderator[] @relation("ForumToModerator")
   Posts         Post[]      @relation("ForumToPost")
@@ -132,6 +144,8 @@ model Post {
   nonce     BigInt
   awards    Json?
   points    BigInt     @default(0)
+  flair     Int?
+  Flair     Flair?     @relation("FlairToPost", fields: [flair], references: [id])
   forum     String
   Forum     Forum      @relation("ForumToPost", fields: [forum], references: [id])
   Comments  Comment[]  @relation("PostToComment")

@@ -36,6 +36,7 @@ export interface EntryForm {
   image: File | null;
   forum: string;
   url: string;
+  flair: string | null;
   postType: "textPost" | "linkPost";
 }
 
@@ -100,6 +101,7 @@ export const Editor = ({
       body: "",
       image: null,
       forum: forum || "",
+      flair: null,
       postType: "textPost",
     },
   });
@@ -154,6 +156,7 @@ export const Editor = ({
               forum: data.forum,
               title: data.title,
               body: data.body,
+              flair: data.flair,
             };
             dataArgs = textPost;
             break;
@@ -166,6 +169,7 @@ export const Editor = ({
               forum: data.forum,
               title: data.title,
               url: data.url,
+              flair: data.flair,
             };
             dataArgs = linkPost;
             break;
