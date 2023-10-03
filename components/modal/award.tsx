@@ -14,7 +14,6 @@ import {
   ModalCloseButton,
 } from "@chakra-ui/react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { web3 } from "@project-serum/anchor";
 import Image from "next/image";
 import {
   createContext,
@@ -32,7 +31,6 @@ import {
 } from "lib/api";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useAuth } from "components/providers/auth";
-import base58 from "bs58";
 
 import { formatAmount } from "utils/format";
 
@@ -65,7 +63,7 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
   const { connection } = useConnection();
   const auth = useAuth();
   const [entry, setEntry] = useState<SelectedEntry | null>(null);
-  const [selected, setSelected] = useState<SerializedAward>();
+  const [selected, setSelected] = useState<SerializedAward | null>(null);
   const isOpen = entry !== null;
 
   const rewardsQuery = useQuery(["awards"], fetchAwards, {
@@ -214,7 +212,6 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
                   justifyContent="flex-end"
                   height="100%"
                 >
-                  {/* @ts-expect-error */}
                   <AwardDetails award={selected} />
 
                   <Flex flex={0} p="6" pt="0">
@@ -269,12 +266,13 @@ const AwardDetails = ({ award }: AwardDetails) => {
       if (award.feeBasisPoints === 0) {
         return [100, 0];
       }
-      return [
-        Math.round(award.feeBasisPoints / 100),
-        Math.round(award.feeBasisPoints / 100),
-      ];
+
+      const creatorSplit = Math.round(award.feeBasisPoints / 100);
+      const userSplit = 100 - creatorSplit;
+
+      return [userSplit, creatorSplit];
     }
-    return [null, null];
+    return [0, 0];
   }, [award]);
 
   return award ? (
@@ -390,7 +388,10 @@ const AwardDetails = ({ award }: AwardDetails) => {
               fontWeight="400"
               whiteSpace="nowrap"
             >
-              ◎0.01
+              ◎
+              {userSplit > 0
+                ? formatAmount((Number(award.amount) / 100) * userSplit)
+                : formatAmount(award.amount)}
             </Text>
           </Flex>
         </Flex>
@@ -436,7 +437,10 @@ const AwardDetails = ({ award }: AwardDetails) => {
               fontWeight="400"
               whiteSpace="nowrap"
             >
-              ◎{formatAmount(award.amount)}
+              ◎
+              {creatorSplit > 0
+                ? formatAmount((Number(award.amount) / 100) * creatorSplit)
+                : "0.00"}
             </Text>
           </Flex>
         </Flex>

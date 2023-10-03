@@ -20,7 +20,7 @@ export function trimNullChars(data: string) {
 
 const amountCache = new Map<string, string>();
 
-export function formatAmount(amount?: string): string {
+export function formatAmount(amount?: string | number): string {
   if (!amount) return "";
 
   if (amountCache.has(amount.toString())) {
@@ -34,7 +34,8 @@ export function formatAmount(amount?: string): string {
   }
 
   const sol = Number(amount) / LAMPORTS_PER_SOL;
-  const rounded = Math.round((sol + Number.EPSILON) * 1000) / 1000;
+  const rounded = Math.round((sol + Number.EPSILON) * 10_000) / 10_000;
+
   let formatted = rounded.toFixed(3).replace(/0{1,2}$/, "");
 
   amountCache.set(amount.toString(), formatted);

@@ -262,6 +262,14 @@ export function fetchAssetsByOwner(
   ).then((res) => res.json());
 }
 
+export function fetchAwardsByOwner(
+  address: string
+): Promise<DAS.GetAssetResponseList["items"]> {
+  return fetch(
+    `${process.env.NEXT_PUBLIC_HOST}/api/user/${address}/awards`
+  ).then((res) => res.json());
+}
+
 export function updateProfile(
   address: string,
   name: string,
