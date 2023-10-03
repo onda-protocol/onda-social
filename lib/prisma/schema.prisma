@@ -36,12 +36,12 @@ enum Operator {
 }
 
 model Flair {
-  id          Int      @id @default(autoincrement())
-  name        String
-  color       String?
-  forum       String
-  Forum       Forum    @relation("ForumToFlair", fields: [forum], references: [id])
-  Posts       Post[]   @relation("FlairToPost")
+  id    Int     @id @default(autoincrement())
+  name  String
+  color String?
+  forum String
+  Forum Forum   @relation("ForumToFlair", fields: [forum], references: [id])
+  Posts Post[]  @relation("FlairToPost")
 
   @@index(fields: [id, name, forum])
 }
@@ -95,8 +95,8 @@ model Award {
 }
 
 model Claim {
-  id String @id @unique
-  award String
+  id           String         @id @unique
+  award        String
   Notification Notification[]
 }
 
@@ -106,7 +106,7 @@ enum NotificationType {
 }
 
 model Notification {
-  id        Int           @id @default(autoincrement())
+  id        Int              @id @default(autoincrement())
   user      String
   type      NotificationType
   title     String
