@@ -38,6 +38,7 @@ export const PostButtons = ({
   displayVote,
   onDeleted,
 }: PostButtonsProps) => {
+  const auth = useAuth();
   const queryClient = useQueryClient();
 
   const handleCacheUpdate = useCallback(
@@ -53,17 +54,20 @@ export const PostButtons = ({
       <Link href={`/comments/${post.id}`}>
         <PostButton icon={<IoChatbox />} label={`${post?._count?.Comments}`} />
       </Link>
-      <AwardButton
-        label="Award"
-        forum={post.forum}
-        entryId={post.id}
-        author={post.Author.id}
-        createdAt={Number(post.createdAt)}
-        editedAt={post.editedAt ? Number(post.editedAt) : null}
-        dataHash={post.dataHash!}
-        nonce={Number(post.nonce)}
-        onSuccess={handleCacheUpdate}
-      />
+      {auth.address && auth.address !== post.Author.id && (
+        <AwardButton
+          label="Award"
+          disabled={!auth.address || auth.address === post.Author.id}
+          forum={post.forum}
+          entryId={post.id}
+          author={post.Author.id}
+          createdAt={Number(post.createdAt)}
+          editedAt={post.editedAt ? Number(post.editedAt) : null}
+          dataHash={post.dataHash!}
+          nonce={Number(post.nonce)}
+          onSuccess={handleCacheUpdate}
+        />
+      )}
       {displayDelete && (
         <DeleteButton
           forumId={post.forum}

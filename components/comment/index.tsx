@@ -163,12 +163,14 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
               </Box>
               <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
                 <CommentVoteButton comment={comment} queryKey={queryKey} />
-                <CommentAwardButton
-                  disabled={disabled}
-                  forum={forum}
-                  comment={comment}
-                  queryKey={queryKey}
-                />
+                {auth.address && auth.address !== comment.author && (
+                  <CommentAwardButton
+                    disabled={disabled}
+                    forum={forum}
+                    comment={comment}
+                    queryKey={queryKey}
+                  />
+                )}
                 {!disableReplies && (
                   <PostButton
                     label="Reply"
