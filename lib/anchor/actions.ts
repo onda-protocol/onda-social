@@ -214,7 +214,9 @@ export function getDataHash(
             textPost: {
               title: entry.title,
               uri: entry.uri,
+              tag: entry.tag,
               nsfw: entry.nsfw,
+              spoiler: entry.spoiler,
             },
           })
         );
@@ -226,7 +228,9 @@ export function getDataHash(
             imagePost: {
               title: entry.title,
               uri: entry.uri,
+              tag: entry.tag,
               nsfw: entry.nsfw,
+              spoiler: entry.spoiler,
             },
           })
         );
@@ -238,7 +242,9 @@ export function getDataHash(
             linkPost: {
               title: entry.title,
               uri: entry.uri,
+              tag: entry.tag,
               nsfw: entry.nsfw,
+              spoiler: entry.spoiler,
             },
           })
         );

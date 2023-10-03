@@ -24,8 +24,8 @@ model Moderator {
 
 enum Rule {
   Token
-  NFT
-  Pass
+  Nft
+  CompressedNft
   AdditionalSigner
 }
 
@@ -121,7 +121,9 @@ model Post {
   title     String
   body      String?
   uri       String
+  tag       String?
   nsfw      Boolean    @default(false)
+  spoiler   Boolean    @default(false)
   hash      String?
   dataHash  String?
   postType  PostType   @default(TEXT)

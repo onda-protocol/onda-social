@@ -105,7 +105,7 @@ export type OndaCompression = {
         {
           name: "additionalSigner";
           isMut: false;
-          isSigner: true;
+          isSigner: false;
           isOptional: true;
         },
         {
@@ -262,32 +262,6 @@ export type OndaCompression = {
           }
         ];
       };
-    },
-    {
-      name: "delegateAction";
-      type: {
-        kind: "struct";
-        fields: [
-          {
-            name: "delegate";
-            type: "publicKey";
-          },
-          {
-            name: "action";
-            type: {
-              defined: "DelegateActionType";
-            };
-          },
-          {
-            name: "expiry";
-            type: "i64";
-          },
-          {
-            name: "nonce";
-            type: "u64";
-          }
-        ];
-      };
     }
   ];
   types: [
@@ -362,10 +336,10 @@ export type OndaCompression = {
             name: "Token";
           },
           {
-            name: "NFT";
+            name: "Nft";
           },
           {
-            name: "Pass";
+            name: "CompressedNft";
           },
           {
             name: "AdditionalSigner";
@@ -379,24 +353,13 @@ export type OndaCompression = {
         kind: "enum";
         variants: [
           {
-            name: "AND";
+            name: "And";
           },
           {
-            name: "OR";
+            name: "Or";
           },
           {
-            name: "NOT";
-          }
-        ];
-      };
-    },
-    {
-      name: "DelegateActionType";
-      type: {
-        kind: "enum";
-        variants: [
-          {
-            name: "Delete";
+            name: "Not";
           }
         ];
       };
@@ -443,7 +406,17 @@ export type OndaCompression = {
                 type: "string";
               },
               {
+                name: "tag";
+                type: {
+                  option: "string";
+                };
+              },
+              {
                 name: "nsfw";
+                type: "bool";
+              },
+              {
+                name: "spoiler";
                 type: "bool";
               }
             ];
@@ -460,7 +433,17 @@ export type OndaCompression = {
                 type: "string";
               },
               {
+                name: "tag";
+                type: {
+                  option: "string";
+                };
+              },
+              {
                 name: "nsfw";
+                type: "bool";
+              },
+              {
+                name: "spoiler";
                 type: "bool";
               }
             ];
@@ -477,7 +460,17 @@ export type OndaCompression = {
                 type: "string";
               },
               {
+                name: "tag";
+                type: {
+                  option: "string";
+                };
+              },
+              {
                 name: "nsfw";
+                type: "bool";
+              },
+              {
+                name: "spoiler";
                 type: "bool";
               }
             ];
@@ -494,7 +487,17 @@ export type OndaCompression = {
                 type: "string";
               },
               {
+                name: "tag";
+                type: {
+                  option: "string";
+                };
+              },
+              {
                 name: "nsfw";
+                type: "bool";
+              },
+              {
+                name: "spoiler";
                 type: "bool";
               }
             ];
@@ -567,22 +570,27 @@ export type OndaCompression = {
     {
       code: 6000;
       name: "InvalidUri";
-      msg: "Invalid uri.";
+      msg: "Invalid uri";
     },
     {
       code: 6001;
       name: "TitleTooLong";
-      msg: "Title too long.";
+      msg: "Title too long";
     },
     {
       code: 6002;
-      name: "InsufficientPostCapacity";
-      msg: "Insufficient post capacity.";
+      name: "TagTooLong";
+      msg: "Tag too long";
     },
     {
       code: 6003;
+      name: "InsufficientPostCapacity";
+      msg: "Insufficient post capacity";
+    },
+    {
+      code: 6004;
       name: "Unauthorized";
-      msg: "Unauthorized.";
+      msg: "Unauthorized";
     }
   ];
 };
@@ -694,7 +702,7 @@ export const IDL: OndaCompression = {
         {
           name: "additionalSigner",
           isMut: false,
-          isSigner: true,
+          isSigner: false,
           isOptional: true,
         },
         {
@@ -852,32 +860,6 @@ export const IDL: OndaCompression = {
         ],
       },
     },
-    {
-      name: "delegateAction",
-      type: {
-        kind: "struct",
-        fields: [
-          {
-            name: "delegate",
-            type: "publicKey",
-          },
-          {
-            name: "action",
-            type: {
-              defined: "DelegateActionType",
-            },
-          },
-          {
-            name: "expiry",
-            type: "i64",
-          },
-          {
-            name: "nonce",
-            type: "u64",
-          },
-        ],
-      },
-    },
   ],
   types: [
     {
@@ -951,10 +933,10 @@ export const IDL: OndaCompression = {
             name: "Token",
           },
           {
-            name: "NFT",
+            name: "Nft",
           },
           {
-            name: "Pass",
+            name: "CompressedNft",
           },
           {
             name: "AdditionalSigner",
@@ -968,24 +950,13 @@ export const IDL: OndaCompression = {
         kind: "enum",
         variants: [
           {
-            name: "AND",
+            name: "And",
           },
           {
-            name: "OR",
+            name: "Or",
           },
           {
-            name: "NOT",
-          },
-        ],
-      },
-    },
-    {
-      name: "DelegateActionType",
-      type: {
-        kind: "enum",
-        variants: [
-          {
-            name: "Delete",
+            name: "Not",
           },
         ],
       },
@@ -1032,7 +1003,17 @@ export const IDL: OndaCompression = {
                 type: "string",
               },
               {
+                name: "tag",
+                type: {
+                  option: "string",
+                },
+              },
+              {
                 name: "nsfw",
+                type: "bool",
+              },
+              {
+                name: "spoiler",
                 type: "bool",
               },
             ],
@@ -1049,7 +1030,17 @@ export const IDL: OndaCompression = {
                 type: "string",
               },
               {
+                name: "tag",
+                type: {
+                  option: "string",
+                },
+              },
+              {
                 name: "nsfw",
+                type: "bool",
+              },
+              {
+                name: "spoiler",
                 type: "bool",
               },
             ],
@@ -1066,7 +1057,17 @@ export const IDL: OndaCompression = {
                 type: "string",
               },
               {
+                name: "tag",
+                type: {
+                  option: "string",
+                },
+              },
+              {
                 name: "nsfw",
+                type: "bool",
+              },
+              {
+                name: "spoiler",
                 type: "bool",
               },
             ],
@@ -1083,7 +1084,17 @@ export const IDL: OndaCompression = {
                 type: "string",
               },
               {
+                name: "tag",
+                type: {
+                  option: "string",
+                },
+              },
+              {
                 name: "nsfw",
+                type: "bool",
+              },
+              {
+                name: "spoiler",
                 type: "bool",
               },
             ],
@@ -1156,22 +1167,27 @@ export const IDL: OndaCompression = {
     {
       code: 6000,
       name: "InvalidUri",
-      msg: "Invalid uri.",
+      msg: "Invalid uri",
     },
     {
       code: 6001,
       name: "TitleTooLong",
-      msg: "Title too long.",
+      msg: "Title too long",
     },
     {
       code: 6002,
-      name: "InsufficientPostCapacity",
-      msg: "Insufficient post capacity.",
+      name: "TagTooLong",
+      msg: "Tag too long",
     },
     {
       code: 6003,
+      name: "InsufficientPostCapacity",
+      msg: "Insufficient post capacity",
+    },
+    {
+      code: 6004,
       name: "Unauthorized",
-      msg: "Unauthorized.",
+      msg: "Unauthorized",
     },
   ],
 };

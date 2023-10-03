@@ -16,7 +16,7 @@ export async function findPass(gates: Gate[], owner: string) {
         break;
       }
 
-      case Rule.NFT: {
+      case Rule.Nft: {
         const result = await searchCollection(owner, gate.address[0]);
 
         if (result) {

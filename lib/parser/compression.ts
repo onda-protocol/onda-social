@@ -300,9 +300,8 @@ function createPostV1({
 }
 
 function getRuleType(gate: Gate) {
-  // @ts-ignore
   if (gate.ruleType.nft) {
-    return Rule.NFT;
+    return Rule.Nft;
   }
 
   if (gate.ruleType.token) {
@@ -313,23 +312,22 @@ function getRuleType(gate: Gate) {
     return Rule.AdditionalSigner;
   }
 
-  if (gate.ruleType.pass) {
-    return Rule.Pass;
+  if (gate.ruleType.compressedNft) {
+    return Rule.CompressedNft;
   }
 
   throw new Error("Unknown rule type");
 }
 
 function getOperator(gate: Gate) {
-  // @ts-ignore
   if (gate.operator.and) {
     return Operator.AND;
   }
-  // @ts-ignore
+
   if (gate.operator.or) {
     return Operator.OR;
   }
-  // @ts-ignore
+
   if (gate.operator.not) {
     return Operator.NOT;
   }

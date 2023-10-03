@@ -289,7 +289,18 @@ async function parseData(data: EntryDataArgs): Promise<[DataV1, string]> {
 
     case "textPost": {
       const uri = await nodeUpload(signer, data.body, "application/json");
-      return [{ textPost: { title: data.title, uri, nsfw: false } }, uri];
+      return [
+        {
+          textPost: {
+            title: data.title,
+            uri,
+            tag: null,
+            nsfw: false,
+            spoiler: false,
+          },
+        },
+        uri,
+      ];
     }
 
     case "linkPost": {
@@ -298,7 +309,9 @@ async function parseData(data: EntryDataArgs): Promise<[DataV1, string]> {
           linkPost: {
             uri: data.url,
             title: data.title,
+            tag: null,
             nsfw: false,
+            spoiler: false,
           },
         },
         data.url,

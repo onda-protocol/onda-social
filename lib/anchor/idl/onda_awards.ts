@@ -332,6 +332,11 @@ export type OndaAwards = {
             type: "u64";
           },
           {
+            name: "public";
+            docs: ["Whether the award is public"];
+            type: "bool";
+          },
+          {
             name: "feeBasisPoints";
             docs: ["The amount which goes to the creator"];
             type: "u16";
@@ -787,6 +792,11 @@ export const IDL: OndaAwards = {
             name: "amount",
             docs: ["The cost in lamports to mint a reward"],
             type: "u64",
+          },
+          {
+            name: "public",
+            docs: ["Whether the award is public"],
+            type: "bool",
           },
           {
             name: "feeBasisPoints",
