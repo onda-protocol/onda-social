@@ -629,7 +629,12 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
       );
     },
     {
-      async onSuccess(data) {
+      onError(err) {
+        console.log(err);
+        // @ts-ignore
+        console.log(err.logs);
+      },
+      onSuccess(data) {
         console.log("=====> ", data);
         // TODO wait for forum
         router.push(`/o/${metadata.namespace}`);

@@ -91,10 +91,15 @@ export async function initForumAndNamespace(
   tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
   try {
-    await compressionProgram.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
-      commitment: "confirmed",
-      skipPreflight: true,
-    });
+    const signature = await compressionProgram.provider.sendAndConfirm(
+      tx,
+      [merkleTreeKeypair],
+      {
+        commitment: "confirmed",
+        skipPreflight: true,
+      }
+    );
+    console.log(signature);
   } catch (err) {
     // @ts-ignore
     console.log(err.logs);

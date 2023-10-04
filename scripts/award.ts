@@ -1,12 +1,9 @@
 import path from "path";
-
-const SYMBOL = "GLASS";
-const NAME = "The Gigabrain Glass Eater";
-const DESCRIPTION = "Nobody knowns why these mysterious creatures eat glass.";
-const IMAGE = path.join(__dirname, "../public/glasseater-dark.png");
-const MATCHING_AWARD = "GJ5eFxBGsf2wmKcQRGRNhbj93sdynSwy1DQwaqYxcxu3";
+import { web3 } from "@project-serum/anchor";
 
 interface Award {
+  amount: number;
+  feeBasisPoints: number;
   name: string;
   description: string;
   symbol: string;
@@ -15,7 +12,9 @@ interface Award {
   matchingAward?: string;
 }
 
-const award: Award = {
+const chewedGlass: Award = {
+  amount: 0,
+  feeBasisPoints: 0,
   name: "Chewed Glass",
   description: "Glass: thoroughly chewed.",
   symbol: "GLASS",
@@ -23,4 +22,15 @@ const award: Award = {
   public: false,
 };
 
-export default award;
+const gigbrain: Award = {
+  amount: Math.floor(web3.LAMPORTS_PER_SOL * 0.069),
+  feeBasisPoints: 2000,
+  name: "Gigabrain Glasseater",
+  description: "Nobody knowns why these mysterious creatures eat glass..",
+  symbol: "GIGABRAIN",
+  image: path.join(__dirname, "../public/glasseater-dark.png"),
+  public: true,
+  matchingAward: "AaEiKWuVvy512iaoKCZopKFQkz4pZPanEFEJE7cwEth6",
+};
+
+export default gigbrain;

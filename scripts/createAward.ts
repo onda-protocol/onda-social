@@ -45,7 +45,6 @@ async function createAward(
   const maxDepth = 14;
   const bufferSize = 64;
   const canopyDepth = maxDepth - 3;
-  const amount = anchor.web3.LAMPORTS_PER_SOL / 100;
   const space = getConcurrentMerkleTreeAccountSize(
     maxDepth,
     bufferSize,
@@ -63,9 +62,9 @@ async function createAward(
 
   const createRewardIx = await program.methods
     .createAward(maxDepth, bufferSize, {
-      amount: new anchor.BN(amount),
-      public: false,
-      feeBasisPoints: 5000,
+      amount: new anchor.BN(award.amount),
+      public: award.public,
+      feeBasisPoints: award.feeBasisPoints,
     })
     .accounts({
       award: accounts.awardPda,
@@ -178,7 +177,7 @@ async function uploadMetadata(authority: anchor.web3.Keypair) {
   const metadataUri = await metaplex.storage().uploadJson({
     name: award.name,
     symbol: award.symbol,
-    uri: imageUri,
+    image: imageUri,
     external_url: "https://onda.community",
     attributes: {
       trait_type: "glass",

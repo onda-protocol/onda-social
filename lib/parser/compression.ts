@@ -332,6 +332,7 @@ async function createPostV1({
 }
 
 function getRuleType(gate: Gate) {
+  console.log(gate.ruleType);
   if (gate.ruleType.nft) {
     return Rule.Nft;
   }
