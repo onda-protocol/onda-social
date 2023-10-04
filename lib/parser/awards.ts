@@ -63,12 +63,14 @@ export async function awardsParser(ix: Instruction) {
       const collectionMetadata = ix.accounts[collectionMetadataIndex];
       const merkleTree = ix.accounts[merkleTreeIndex];
 
-      const metadataArgs = rewardsProgram.coder.types.decode<CreateAwardArgs>(
-        "CreateAwardArgs",
-        Buffer.from(ixData.slice(16))
-      );
-      const amount = metadataArgs.amount;
-      const feeBasisPoints = metadataArgs.feeBasisPoints;
+      const createAwardArgs =
+        rewardsProgram.coder.types.decode<CreateAwardArgs>(
+          "CreateAwardArgs",
+          Buffer.from(ixData.slice(16))
+        );
+      const amount = createAwardArgs.amount;
+      const isPublic = createAwardArgs.public;
+      const feeBasisPoints = createAwardArgs.feeBasisPoints;
       const metadata = await Metadata.fromAccountAddress(
         connection,
         new web3.PublicKey(collectionMetadata)
@@ -83,6 +85,7 @@ export async function awardsParser(ix: Instruction) {
         data: {
           id: award,
           amount: BigInt(amount.toNumber()),
+          public: isPublic,
           authority,
           treasury,
           feeBasisPoints,

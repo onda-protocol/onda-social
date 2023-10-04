@@ -1,5 +1,4 @@
 import fs from "fs";
-import path from "path";
 import os from "os";
 import * as dotenv from "dotenv";
 import * as anchor from "@project-serum/anchor";
@@ -20,15 +19,9 @@ import {
 } from "../lib/anchor/constants";
 import { getAwardsProgram } from "../lib/anchor/provider";
 import { findAwardPda, findTreeAuthorityPda } from "../utils/pda";
+import award from "./award";
 
 dotenv.config();
-
-const SYMBOL = "GLASS";
-const NAME = "The Gigabrain Glass Eater";
-const IMAGE = path.join(__dirname, "../public/glasseater-dark.png");
-const MATCHING_AWARD = new anchor.web3.PublicKey(
-  "GJ5eFxBGsf2wmKcQRGRNhbj93sdynSwy1DQwaqYxcxu3"
-);
 
 const connection = new anchor.web3.Connection(
   process.env.HELIUS_RPC_URL as string
@@ -71,11 +64,14 @@ async function createAward(
   const createRewardIx = await program.methods
     .createAward(maxDepth, bufferSize, {
       amount: new anchor.BN(amount),
+      public: false,
       feeBasisPoints: 5000,
     })
     .accounts({
       award: accounts.awardPda,
-      matchingAward: MATCHING_AWARD,
+      matchingAward: award.matchingAward
+        ? new anchor.web3.PublicKey(award.matchingAward)
+        : null,
       treasury: authority.publicKey,
       collectionMint: accounts.collectionMint,
       collectionMetadata: accounts.collectionMetadata,
@@ -132,8 +128,8 @@ async function createCollectionMint(
   const metaplex = new Metaplex(connection).use(keypairIdentity(authority));
 
   const transactionBuilder = await metaplex.nfts().builders().create({
-    symbol: SYMBOL,
-    name: NAME,
+    symbol: award.symbol,
+    name: award.name,
     uri: metadataUri,
     sellerFeeBasisPoints: 0,
     isCollection: true,
@@ -176,12 +172,12 @@ async function uploadMetadata(authority: anchor.web3.Keypair) {
     })
   );
 
-  const file = fs.readFileSync(IMAGE);
+  const file = fs.readFileSync(award.image);
   const metaplexFile = toMetaplexFile(file, "image/png");
   const imageUri = await metaplex.storage().upload(metaplexFile);
   const metadataUri = await metaplex.storage().uploadJson({
-    symbol: SYMBOL,
-    name: NAME,
+    name: award.name,
+    symbol: award.symbol,
     uri: imageUri,
     external_url: "https://onda.community",
     attributes: {

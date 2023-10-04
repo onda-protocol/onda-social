@@ -409,6 +409,10 @@ export type OndaAwards = {
             type: "u64";
           },
           {
+            name: "public";
+            type: "bool";
+          },
+          {
             name: "feeBasisPoints";
             type: "u16";
           }
@@ -869,6 +873,10 @@ export const IDL: OndaAwards = {
           {
             name: "amount",
             type: "u64",
+          },
+          {
+            name: "public",
+            type: "bool",
           },
           {
             name: "feeBasisPoints",

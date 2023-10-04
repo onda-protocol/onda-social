@@ -78,6 +78,7 @@ model Forum {
 model Award {
   id             String  @id @unique
   amount         BigInt
+  public         Boolean @default(false)
   feeBasisPoints Int
   authority      String
   treasury       String
