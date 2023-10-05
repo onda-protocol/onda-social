@@ -1,6 +1,12 @@
 import Image from "next/image";
 import { PostType } from "@prisma/client";
-import { Box, Heading, Link as CLink, TypographyProps } from "@chakra-ui/react";
+import {
+  Box,
+  Heading,
+  Link as CLink,
+  TypographyProps,
+  Flex,
+} from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
 import React, { memo } from "react";
 import { Tweet } from "react-tweet";
@@ -41,22 +47,35 @@ export const PostContent = memo(function PostContent({
   clip,
 }: PostContentProps) {
   const heading = (
-    <>
-      {flair && (
-        <Box
-          bgColor={flairColor ?? "gray.500"}
-          borderRadius="sm"
-          fontSize="sm"
-          fontWeight="semibold"
-          p="2"
-        >
-          {flair}
-        </Box>
-      )}
-      <Heading mt="6" mb="4" as="h2" fontSize={titleSize} fontWeight="semibold">
+    <Box mt="2" mb="4" verticalAlign="baseline">
+      <Heading
+        as="h2"
+        display="inline"
+        fontSize={titleSize}
+        fontWeight="semibold"
+      >
         {title}
       </Heading>
-    </>
+      {flair && (
+        <Box display="inline-flex" verticalAlign="text-top">
+          <Box
+            display="inline-block"
+            color="gray.700"
+            bgColor={flairColor ?? "gray.500"}
+            borderRadius="xl"
+            fontSize="xs"
+            fontWeight="semibold"
+            width="fit-content"
+            whiteSpace="nowrap"
+            py="0.25"
+            px="2"
+            mx="2"
+          >
+            {flair}
+          </Box>
+        </Box>
+      )}
+    </Box>
   );
 
   switch (type) {

@@ -77,6 +77,8 @@ export const PostListItem = forwardRef<PostListItemProps, "div">(
                 title={post.title}
                 body={post.body}
                 uri={post.uri}
+                flair={post.Flair?.name}
+                flairColor={post.Flair?.color}
               />
             </Box>
             <PostButtons post={post} />

@@ -1,4 +1,5 @@
 import type { NextPage } from "next";
+import dynamic from "next/dynamic";
 import {
   DehydratedState,
   useInfiniteQuery,
@@ -19,7 +20,13 @@ import {
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
 import { PostList } from "components/post/list";
-import { PostModal } from "components/modal/post";
+
+const PostModal = dynamic(
+  () => import("../components/modal/post").then((mod) => mod.PostModal),
+  {
+    ssr: false,
+  }
+);
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
