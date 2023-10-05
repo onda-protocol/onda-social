@@ -1,4 +1,5 @@
 import type { NextPage } from "next";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import {
@@ -12,7 +13,6 @@ import {
 import {
   Box,
   Container,
-  Spinner,
   Text,
   Heading,
   Tabs,
@@ -27,7 +27,6 @@ import {
   fetchForumByNamespace,
   fetchPostsByForumNamespace,
 } from "lib/api";
-import { PostListItem } from "components/post/listItem";
 import {
   Sidebar,
   SidebarSection,
@@ -36,9 +35,14 @@ import {
   SidebarLink,
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
-import { Fragment } from "react";
-import { FetchMore } from "components/fetchMore";
 import { PostList } from "components/post/list";
+
+const PostModal = dynamic(
+  () => import("../../components/modal/post").then((mod) => mod.PostModal),
+  {
+    ssr: false,
+  }
+);
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -165,6 +169,7 @@ const Community: NextPage<PageProps> = () => {
           </TabPanel>
         </TabPanels>
       </Tabs>
+      <PostModal />
     </>
   );
 };

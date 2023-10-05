@@ -53,6 +53,8 @@ export const PostContent = memo(function PostContent({
         display="inline"
         fontSize={titleSize}
         fontWeight="semibold"
+        lineHeight="1.5"
+        mr="2"
       >
         {title}
       </Heading>
@@ -69,7 +71,7 @@ export const PostContent = memo(function PostContent({
             whiteSpace="nowrap"
             py="0.25"
             px="2"
-            mx="2"
+            mr="1"
           >
             {flair}
           </Box>

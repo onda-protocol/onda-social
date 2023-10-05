@@ -61,11 +61,12 @@ export const PostModal = () => {
           width="100%"
           backgroundColor="blackAlpha.800"
           zIndex={1}
-          onClick={() =>
-            router.push("/", "/", {
+          onClick={() => {
+            const backPath = (router.query.from as string) ?? "/";
+            router.push(backPath, backPath, {
               scroll: false,
-            })
-          }
+            });
+          }}
         >
           <Container
             left="0"
@@ -73,12 +74,25 @@ export const PostModal = () => {
             maxW="container.lg"
             backgroundColor="onda.1050"
           >
-            <Flex height="42px" align="center" justify="space-between">
-              <Flex align="center">
+            <Flex
+              height="42px"
+              width="100%"
+              maxWidth="100%"
+              align="center"
+              justify="space-between"
+            >
+              <Flex maxWidth="calc(100% - 72px)" align="center">
                 <Box pr="2" color="gray.300">
                   {icon}
                 </Box>
-                <Heading fontSize="md" fontWeight="medium" color="gray.300">
+                <Heading
+                  fontSize="md"
+                  fontWeight="medium"
+                  color="gray.300"
+                  whiteSpace="nowrap"
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                >
                   {postQuery.data?.title}
                 </Heading>
               </Flex>
