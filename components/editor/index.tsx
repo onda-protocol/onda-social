@@ -1,6 +1,5 @@
 import { useRouter } from "next/router";
 import React, { useEffect, forwardRef, useState } from "react";
-import { web3 } from "@project-serum/anchor";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -14,10 +13,16 @@ import {
   Link as ChakraLink,
 } from "@chakra-ui/react";
 import toast from "react-hot-toast";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import {
+  Control,
+  Controller,
+  useController,
+  useForm,
+  useWatch,
+} from "react-hook-form";
 import { IoDocumentText, IoInformationCircle, IoLink } from "react-icons/io5";
 
-import { fetchFora, signAndConfirmTransaction } from "lib/api";
+import { SerializedForum, fetchFora, signAndConfirmTransaction } from "lib/api";
 import {
   EntryDataArgs,
   CommentArgs,
@@ -27,7 +32,6 @@ import {
 import { RadioCardMenu } from "components/input";
 import { AuthStatus, useAuth } from "components/providers/auth";
 import { Markdown } from "components/markdown";
-import Link from "next/link";
 // import { ImagePicker } from "components/input/imagePicker";
 
 export interface EntryForm {
@@ -36,7 +40,7 @@ export interface EntryForm {
   image: File | null;
   forum: string;
   url: string;
-  flair: string | null;
+  flair?: string;
   postType: "textPost" | "linkPost";
 }
 
@@ -101,7 +105,7 @@ export const Editor = ({
       body: "",
       image: null,
       forum: forum || "",
-      flair: null,
+      flair: undefined,
       postType: "textPost",
     },
   });
@@ -156,7 +160,7 @@ export const Editor = ({
               forum: data.forum,
               title: data.title,
               body: data.body,
-              flair: data.flair,
+              flair: data.flair ?? null,
             };
             dataArgs = textPost;
             break;
@@ -169,7 +173,7 @@ export const Editor = ({
               forum: data.forum,
               title: data.title,
               url: data.url,
-              flair: data.flair,
+              flair: data.flair ?? null,
             };
             dataArgs = linkPost;
             break;
@@ -180,6 +184,7 @@ export const Editor = ({
           }
         }
       }
+      console.log("dataArgs: ", dataArgs);
 
       const response = await signAndConfirmTransaction(connection, auth, {
         method: "addEntry",
@@ -369,7 +374,7 @@ export const Editor = ({
             })}
           />
           {renderInputs()}
-          <Box display="flex" mt="2" justifyContent="right">
+          <Box display="flex" mt="2" alignItems="center" justifyContent="right">
             {onRequestClose && (
               <Button
                 isDisabled={mutation.isLoading}
@@ -379,6 +384,11 @@ export const Editor = ({
               >
                 Cancel
               </Button>
+            )}
+            {config.type === "post" && foraQuery.data && (
+              <Box width="200px" pr="2">
+                <SelectFlair fora={foraQuery.data} control={methods.control} />
+              </Box>
             )}
             <Button
               isDisabled={auth.status !== AuthStatus.AUTHENTICATED}
@@ -400,7 +410,7 @@ export const Editor = ({
 const SelectForum = React.forwardRef<
   HTMLSelectElement,
   {
-    options: Awaited<ReturnType<typeof fetchFora>>;
+    options: SerializedForum[];
     selected: string;
   } & React.ComponentPropsWithoutRef<typeof Select>
 >(function SelectForum({ options, selected, ...other }, ref) {
@@ -416,6 +426,51 @@ const SelectForum = React.forwardRef<
     </Select>
   );
 });
+
+interface SelectFlairProps {
+  fora: SerializedForum[];
+  control: Control<EntryForm>;
+}
+
+const SelectFlair = ({ fora, control }: SelectFlairProps) => {
+  const selectedForum = useWatch<EntryForm, "forum">({
+    control,
+    name: "forum",
+  });
+  const flairControl = useController<EntryForm, "flair">({
+    control,
+    name: "flair",
+    rules: { required: false },
+  });
+
+  const forum = fora?.find((f) => f.id === selectedForum);
+
+  useEffect(() => {
+    if (selectedForum) {
+      flairControl.field.onChange(undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedForum]);
+
+  if (!forum?.Flair) return null;
+
+  return (
+    <Select
+      placeholder="Select Flair"
+      {...flairControl.field}
+      onChange={(e) => {
+        console.log(e.target.value);
+        flairControl.field.onChange(e.target.value);
+      }}
+    >
+      {forum.Flair?.map((flair) => (
+        <option key={flair.id} value={flair.name}>
+          {flair.name}
+        </option>
+      ))}
+    </Select>
+  );
+};
 
 interface MarkdownEditorProps {
   placeholder?: string;

@@ -293,42 +293,44 @@ async function createPostV1({
       flairId = flair.id;
     }
   }
-
-  return prisma.post.create({
-    data: {
-      postType,
-      hash,
-      dataHash: base58.encode(schemaV1.dataHash),
-      body: body ?? null,
-      id: schemaV1.id.toBase58(),
-      title: dataV1.title!,
-      uri: trimNullChars(dataV1.uri),
-      createdAt: schemaV1.createdAt.toNumber(),
-      nonce: schemaV1.nonce.toNumber(),
-      Flair: flairId
-        ? {
-            connect: {
-              id: flairId,
-            },
-          }
-        : undefined,
-      Forum: {
-        connect: {
-          id: forumId,
-        },
-      },
-      Author: {
-        connectOrCreate: {
-          where: {
-            id: schemaV1.author.toBase58(),
-          },
-          create: {
-            id: schemaV1.author.toBase58(),
-          },
-        },
-      },
-    },
-  });
+  console.log("flairId: ", flairId);
+  console.log("dataV1: ", dataV1);
+  return;
+  // return prisma.post.create({
+  //   data: {
+  //     postType,
+  //     hash,
+  //     dataHash: base58.encode(schemaV1.dataHash),
+  //     body: body ?? null,
+  //     id: schemaV1.id.toBase58(),
+  //     title: dataV1.title!,
+  //     uri: trimNullChars(dataV1.uri),
+  //     createdAt: schemaV1.createdAt.toNumber(),
+  //     nonce: schemaV1.nonce.toNumber(),
+  //     Flair: flairId
+  //       ? {
+  //           connect: {
+  //             id: flairId,
+  //           },
+  //         }
+  //       : undefined,
+  //     Forum: {
+  //       connect: {
+  //         id: forumId,
+  //       },
+  //     },
+  //     Author: {
+  //       connectOrCreate: {
+  //         where: {
+  //           id: schemaV1.author.toBase58(),
+  //         },
+  //         create: {
+  //           id: schemaV1.author.toBase58(),
+  //         },
+  //       },
+  //     },
+  //   },
+  // });
 }
 
 function getRuleType(gate: Gate) {

@@ -178,6 +178,7 @@ const Pending: NextPage = () => {
       <PostHead
         title={data.title}
         titleSize="3xl"
+        flair={null} // TODO
         body={data.body}
         uri={data.uri}
         points={0}

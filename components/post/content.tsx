@@ -23,6 +23,8 @@ interface PostContentProps {
   type: PostType;
   title: string;
   titleSize?: TypographyProps["fontSize"];
+  flair?: string;
+  flairColor?: string | null;
   body: string | null;
   uri: string;
   clip?: boolean;
@@ -32,14 +34,29 @@ export const PostContent = memo(function PostContent({
   type,
   title,
   titleSize = "2xl",
+  flair,
+  flairColor,
   body,
   uri,
   clip,
 }: PostContentProps) {
   const heading = (
-    <Heading mt="6" mb="4" as="h2" fontSize={titleSize} fontWeight="semibold">
-      {title}
-    </Heading>
+    <>
+      {flair && (
+        <Box
+          bgColor={flairColor ?? "gray.500"}
+          borderRadius="sm"
+          fontSize="sm"
+          fontWeight="semibold"
+          p="2"
+        >
+          {flair}
+        </Box>
+      )}
+      <Heading mt="6" mb="4" as="h2" fontSize={titleSize} fontWeight="semibold">
+        {title}
+      </Heading>
+    </>
   );
 
   switch (type) {

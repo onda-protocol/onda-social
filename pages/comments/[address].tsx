@@ -20,7 +20,6 @@ import {
   fetchUser,
   PostWithCommentsCountAndForum,
   AwardsJson,
-  fetchAwards,
 } from "lib/api";
 import type { EntryForm } from "components/editor";
 import { CommentListItem } from "components/comment";
@@ -156,6 +155,7 @@ const Comments: NextPage<PageProps> = () => {
         <PostHead
           title={postQuery.data?.title}
           titleSize="3xl"
+          flair={postQuery.data?.Flair}
           body={postQuery.data?.body}
           uri={postQuery.data?.uri}
           points={Number(postQuery.data.points)}

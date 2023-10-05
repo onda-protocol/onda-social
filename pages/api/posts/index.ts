@@ -21,6 +21,9 @@ export async function queryPosts(
       "User".name AS "Author.name",
       "User".mint AS "Author.mint",
       "User".avatar AS "Author.avatar",
+      "Flair".id AS "Flair.id",
+      "Flair".name AS "Flair.name",
+      "Flair".color AS "Flair.color",
       "Forum".id AS "Forum.id",
       "Forum".config AS "Forum.config",
       "Forum".namespace AS "Forum.namespace",
@@ -36,6 +39,8 @@ export async function queryPosts(
     LEFT JOIN 
       "User" ON "Post"."author" = "User"."id"
     LEFT JOIN 
+      "Flair" ON "Post"."flair" = "Flair"."id"
+    LEFT JOIN 
       "Forum" ON "Post"."forum" = "Forum"."id"
     ${where}
     ORDER BY points_per_created_at DESC
@@ -48,6 +53,9 @@ export async function queryPosts(
     const authorName = post["Author.name"];
     const authorMint = post["Author.mint"];
     const authorAvatar = post["Author.avatar"];
+    const flairId = post["Flair.id"];
+    const flairName = post["Flair.name"];
+    const flairColor = post["Flair.color"];
     const forumId = post["Forum.id"];
     const forumConfig = post["Forum.config"];
     const forumNamespace = post["Forum.namespace"];
@@ -59,8 +67,13 @@ export async function queryPosts(
     delete post["Author.name"];
     delete post["Author.mint"];
     delete post["Author.avatar"];
+    delete post["Flair.id"];
+    delete post["Flair.name"];
+    delete post["Flair.color"];
     delete post["Forum.id"];
     delete post["Forum.config"];
+    delete post["Forum.namespace"];
+    delete post["Forum.icon"];
     delete post["_count.Comments"];
     delete post["Vote.vote"];
 
@@ -72,6 +85,13 @@ export async function queryPosts(
         mint: authorMint,
         avatar: authorAvatar,
       },
+      Flair: flairId
+        ? {
+            id: flairId,
+            name: flairName,
+            color: flairColor,
+          }
+        : null,
       Forum: {
         id: forumId,
         config: forumConfig,

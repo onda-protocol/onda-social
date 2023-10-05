@@ -292,9 +292,9 @@ async function parseData(data: EntryDataArgs): Promise<[DataV1, string]> {
       return [
         {
           textPost: {
-            title: data.title,
             uri,
-            flair: null,
+            title: data.title,
+            flair: data.flair,
             nsfw: false,
             spoiler: false,
           },
@@ -309,7 +309,7 @@ async function parseData(data: EntryDataArgs): Promise<[DataV1, string]> {
           linkPost: {
             uri: data.url,
             title: data.title,
-            flair: null,
+            flair: data.flair,
             nsfw: false,
             spoiler: false,
           },

@@ -139,6 +139,7 @@ export const Comments = ({ postId }: CommentsProps) => {
       <PostHead
         title={postQuery.data?.title}
         titleSize="3xl"
+        flair={postQuery.data?.Flair}
         body={postQuery.data?.body}
         uri={postQuery.data?.uri}
         points={Number(postQuery.data.points)}

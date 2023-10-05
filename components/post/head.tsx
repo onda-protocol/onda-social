@@ -1,4 +1,4 @@
-import { PostType, User } from "@prisma/client";
+import { Flair, PostType, User } from "@prisma/client";
 import { Box, Heading, TypographyProps } from "@chakra-ui/react";
 
 import { PostMeta } from "components/post/meta";
@@ -10,6 +10,7 @@ interface PostHeadProps {
   body: string | null;
   uri: string;
   author: User;
+  flair: Flair | null;
   points: number;
   awards: AwardsJson;
   createdAt: string;
@@ -26,6 +27,7 @@ export const PostHead = ({
   body,
   uri,
   author,
+  flair,
   points,
   awards,
   createdAt,
@@ -53,6 +55,8 @@ export const PostHead = ({
       </Box>
       <Box mb="6">
         <PostContent
+          flair={flair?.name}
+          flairColor={flair?.color}
           type={postType}
           titleSize={titleSize}
           title={title}

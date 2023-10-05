@@ -3,6 +3,7 @@ import { IncomingHttpHeaders } from "http";
 import {
   Comment,
   Forum,
+  Flair,
   Gate,
   Post,
   Award,
@@ -41,6 +42,7 @@ export type SerializedPost = DeepReplaceBigInt<Post, string> & {
 export type PostWithCommentsCountAndForum = DeepReplaceBigInt<
   SerializedPost & {
     Author: User;
+    Flair: Flair | null;
     Forum: Forum;
     _vote: VoteType | null;
     _count: { Comments: number };
@@ -53,6 +55,7 @@ export type LinkJson = {
   url: string;
 };
 export type SerializedForum = DeepReplaceBigInt<Forum, string> & {
+  Flair: Flair[];
   Gates: Gate[];
   links: LinkJson[] | null;
 };
