@@ -1,7 +1,8 @@
 import NextLink from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
-import { IoChevronDown, IoPerson, IoWallet } from "react-icons/io5";
+import { IoAdd, IoChevronDown, IoPerson, IoWallet } from "react-icons/io5";
 import {
   Avatar,
   Box,
@@ -15,6 +16,7 @@ import {
   Text,
   MenuGroup,
   MenuDivider,
+  IconButton,
 } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -97,6 +99,7 @@ export function Navbar() {
 }
 
 const UserMenu = () => {
+  const router = useRouter();
   const auth = useAuth();
   const userQuery = useQuery(
     ["user", auth.address],
@@ -127,6 +130,15 @@ const UserMenu = () => {
     case AuthStatus.AUTHENTICATED: {
       return (
         <>
+          <Box display={["block", "none"]} pr="2">
+            <IconButton
+              aria-label="Create Post"
+              variant="solid"
+              onClick={() => router.push("/submit")}
+            >
+              <IoAdd size={21} />
+            </IconButton>
+          </Box>
           <Box pr="2">
             <Notifications />
           </Box>

@@ -14,7 +14,6 @@ import {
   Text,
   Spinner,
 } from "@chakra-ui/react";
-import { web3 } from "@project-serum/anchor";
 import {
   InfiniteData,
   useInfiniteQuery,
