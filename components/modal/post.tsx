@@ -10,7 +10,7 @@ import {
   Heading,
   Portal,
 } from "@chakra-ui/react";
-import { useLayoutEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo } from "react";
 import { IoClose, IoDocumentText, IoLink } from "react-icons/io5";
 
 import { SerializedPost } from "lib/api";
@@ -37,6 +37,19 @@ export const PostModal = () => {
     };
   }, [postId]);
 
+  useEffect(() => {
+    if (postId) {
+      router.beforePopState(({ url, as }) => {
+        router.replace(url, as, { scroll: false });
+        return false;
+      });
+
+      return () => {
+        router.beforePopState(() => true);
+      };
+    }
+  }, [router, postId]);
+
   const icon = useMemo(() => {
     switch (post?.postType) {
       case PostType.TEXT:
@@ -61,12 +74,6 @@ export const PostModal = () => {
           width="100%"
           backgroundColor="blackAlpha.800"
           zIndex={1}
-          onClick={() => {
-            const backPath = (router.query.from as string) ?? "/";
-            router.push(backPath, backPath, {
-              scroll: false,
-            });
-          }}
         >
           <Container
             left="0"
@@ -98,12 +105,15 @@ export const PostModal = () => {
               </Flex>
 
               <Button
-                as={Link}
-                href="/"
-                scroll={false}
                 variant="ghost"
                 fontSize="sm"
                 leftIcon={<IoClose size={18} />}
+                onClick={() => {
+                  const backPath = (router.query.from as string) ?? "/";
+                  router.replace(backPath, backPath, {
+                    scroll: false,
+                  });
+                }}
               >
                 Close
               </Button>
