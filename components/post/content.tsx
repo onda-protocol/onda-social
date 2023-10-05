@@ -64,7 +64,7 @@ export const PostContent = memo(function PostContent({
             bgColor={flairColor ?? "gray.500"}
             borderRadius="xl"
             fontSize="xs"
-            fontWeight="semibold"
+            fontWeight="bold"
             width="fit-content"
             whiteSpace="nowrap"
             py="0.25"
@@ -96,6 +96,7 @@ export const PostContent = memo(function PostContent({
                 left={0}
                 right={0}
                 bottom={0}
+                top="200px"
                 height="50px"
                 background="linear-gradient(to bottom, transparent, var(--chakra-colors-onda-1000))"
               />
