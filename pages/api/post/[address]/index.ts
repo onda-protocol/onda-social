@@ -30,8 +30,9 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
       id: address as string,
     },
     include: {
-      Forum: true,
       Author: true,
+      Flair: true,
+      Forum: true,
       Votes: votes,
       _count: {
         select: {

@@ -44,18 +44,32 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
     }
   }
 
-  const user = await prisma.user.update({
-    where: {
-      id: currentUser,
-    },
-    data: {
-      mint,
-      avatar,
-      name: payload.name,
-    },
-  });
+  try {
+    const user = await prisma.user.upsert({
+      where: {
+        id: currentUser,
+      },
+      create: {
+        mint,
+        avatar,
+        id: currentUser,
+        name: payload.name,
+      },
+      update: {
+        mint,
+        avatar,
+        name: payload.name,
+      },
+    });
 
-  return NextResponse.json(user);
+    return NextResponse.json(user);
+  } catch (err) {
+    console.error(err);
+    return new NextResponse(null, {
+      status: 500,
+      statusText: "Internal Server Error",
+    });
+  }
 }
 
 interface GetAssetResult {
@@ -74,7 +88,7 @@ interface GetAssetResult {
 
 async function getAsset(id: string): Promise<GetAssetResult> {
   const requestId = uuid();
-  console.log(`request id: ${requestId}`);
+  console.log(`getAsset ${id} - request id: ${requestId}`);
   const response = await fetch(process.env.HELIUS_RPC_URL!, {
     method: "POST",
     headers: {
@@ -106,7 +120,7 @@ function isValidPayload(payload: any) {
     return false;
   }
 
-  if (typeof payload.mint !== "string" && typeof payload.mint !== null) {
+  if (typeof payload.mint !== "string" && payload.mint !== null) {
     return false;
   }
 
