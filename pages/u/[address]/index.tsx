@@ -1,4 +1,5 @@
 import type { NextPage } from "next";
+import dynamic from "next/dynamic";
 import {
   Avatar,
   Box,
@@ -13,7 +14,6 @@ import {
   Spinner,
 } from "@chakra-ui/react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { useRouter } from "next/router";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -24,6 +24,13 @@ import { CommentListItem } from "components/comment";
 import { useAuth } from "components/providers/auth";
 import { PostList } from "components/post/list";
 import { ProfileModal } from "components/modal/profile";
+
+const PostModal = dynamic(
+  () => import("../../../components/modal/post").then((mod) => mod.PostModal),
+  {
+    ssr: false,
+  }
+);
 
 const User: NextPage = () => {
   const router = useRouter();
@@ -155,13 +162,16 @@ const PostsTab: React.FC<PostsTabProps> = ({ id }) => {
   });
 
   return (
-    <PostList
-      data={postsQuery.data}
-      isLoading={postsQuery.isLoading}
-      shouldFetchMore={postsQuery.hasNextPage}
-      isFetchingMore={postsQuery.isFetchingNextPage}
-      onFetchMore={() => postsQuery.fetchNextPage()}
-    />
+    <>
+      <PostList
+        data={postsQuery.data}
+        isLoading={postsQuery.isLoading}
+        shouldFetchMore={postsQuery.hasNextPage}
+        isFetchingMore={postsQuery.isFetchingNextPage}
+        onFetchMore={() => postsQuery.fetchNextPage()}
+      />
+      <PostModal />
+    </>
   );
 };
 

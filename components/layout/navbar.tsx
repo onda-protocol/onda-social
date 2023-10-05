@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { IoChevronDown, IoPerson, IoWallet } from "react-icons/io5";
 import {
+  Avatar,
   Box,
   Button,
   Flex,
@@ -21,7 +22,6 @@ import toast from "react-hot-toast";
 import { fetchUser } from "lib/api";
 import { shortenAddress } from "utils/format";
 import { AuthStatus, useAuth } from "components/providers/auth";
-import { Avatar } from "components/avatar";
 import { Notifications } from "./notifications";
 
 export function Navbar() {
@@ -185,7 +185,7 @@ export const UserMenuButton = forwardRef<UserMenuButtonProps, "button">(
       <Box
         ref={ref}
         as="button"
-        borderRadius="sm"
+        borderRadius="xl"
         border="1px solid transparent"
         px="3"
         py="1"
@@ -196,7 +196,7 @@ export const UserMenuButton = forwardRef<UserMenuButtonProps, "button">(
         {...other}
       >
         <Flex align="center" gap="2">
-          <Avatar size={32} name={name ?? "anon"} image={image} />
+          <Avatar size="sm" name={name ?? "anon"} src={image} />
           <Flex flexDirection="column">
             {name ? (
               <>

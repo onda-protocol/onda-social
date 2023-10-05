@@ -151,7 +151,7 @@ const Comments: NextPage<PageProps> = () => {
         }`}
         url={`${process.env.NEXT_PUBLIC_SITE_URL}/comments/${postQuery.data.id}`}
       />
-      <Container maxW="container.md">
+      <Container maxW="container.md" pt="4">
         <PostHead
           title={postQuery.data?.title}
           titleSize="3xl"
