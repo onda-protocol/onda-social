@@ -83,7 +83,7 @@ export const PostContent = memo(function PostContent({
           <Box
             position="relative"
             width="100%"
-            maxHeight={clip ? "250px" : "auto"}
+            maxHeight={clip ? "120px" : "auto"}
             overflow="hidden"
           >
             <Markdown preview={clip}>{body ?? ""}</Markdown>
@@ -93,8 +93,8 @@ export const PostContent = memo(function PostContent({
                 left={0}
                 right={0}
                 bottom={0}
-                top="200px"
-                height="50px"
+                top="90px"
+                height="30px"
                 background="linear-gradient(to bottom, transparent, var(--chakra-colors-onda-1000))"
               />
             ) : null}
@@ -188,6 +188,11 @@ export const PostContent = memo(function PostContent({
             <CLink
               href={uri}
               isExternal
+              display="block"
+              maxWidth={["160px", "none"]}
+              whiteSpace="nowrap"
+              textOverflow="ellipsis"
+              overflow="hidden"
               sx={{
                 "& svg": {
                   display: "inline",
@@ -200,7 +205,9 @@ export const PostContent = memo(function PostContent({
               <ExternalLinkIcon />
             </CLink>
           </Box>
-          <OG url={uri} />
+          <Box position="relative" bottom={["-2", "-2", "2"]} px="2">
+            <OG url={uri} />
+          </Box>
         </Box>
       );
     }

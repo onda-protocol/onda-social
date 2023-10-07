@@ -50,6 +50,7 @@ export const PostListItem = forwardRef<PostListItemProps, "div">(
         pr="0"
         pb="0"
         mb="3"
+        overflow="hidden"
         _hover={{
           cursor: "pointer",
           borderColor: "gray.600",
@@ -77,17 +78,15 @@ export const PostListItem = forwardRef<PostListItemProps, "div">(
               forumIcon={post.Forum.icon}
               createdAt={String(post.createdAt)}
             />
-            <Box overflow="hidden">
-              <PostContent
-                clip
-                type={post.postType}
-                title={post.title}
-                body={post.body}
-                uri={post.uri}
-                flair={post.Flair?.name}
-                flairColor={post.Flair?.color}
-              />
-            </Box>
+            <PostContent
+              clip
+              type={post.postType}
+              title={post.title}
+              body={post.body}
+              uri={post.uri}
+              flair={post.Flair?.name}
+              flairColor={post.Flair?.color}
+            />
             <PostButtons post={post} />
           </Box>
         </Flex>
