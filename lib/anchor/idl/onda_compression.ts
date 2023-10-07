@@ -48,9 +48,7 @@ export type OndaCompression = {
         {
           name: "flair";
           type: {
-            vec: {
-              defined: "Flair";
-            };
+            vec: "string";
           };
         },
         {
@@ -263,9 +261,7 @@ export type OndaCompression = {
           {
             name: "flair";
             type: {
-              vec: {
-                defined: "Flair";
-              };
+              vec: "string";
             };
           },
           {
@@ -306,24 +302,6 @@ export type OndaCompression = {
             name: "address";
             type: {
               vec: "publicKey";
-            };
-          }
-        ];
-      };
-    },
-    {
-      name: "Flair";
-      type: {
-        kind: "struct";
-        fields: [
-          {
-            name: "name";
-            type: "string";
-          },
-          {
-            name: "color";
-            type: {
-              array: ["u8", 3];
             };
           }
         ];
@@ -684,9 +662,7 @@ export const IDL: OndaCompression = {
         {
           name: "flair",
           type: {
-            vec: {
-              defined: "Flair",
-            },
+            vec: "string",
           },
         },
         {
@@ -899,9 +875,7 @@ export const IDL: OndaCompression = {
           {
             name: "flair",
             type: {
-              vec: {
-                defined: "Flair",
-              },
+              vec: "string",
             },
           },
           {
@@ -942,24 +916,6 @@ export const IDL: OndaCompression = {
             name: "address",
             type: {
               vec: "publicKey",
-            },
-          },
-        ],
-      },
-    },
-    {
-      name: "Flair",
-      type: {
-        kind: "struct",
-        fields: [
-          {
-            name: "name",
-            type: "string",
-          },
-          {
-            name: "color",
-            type: {
-              array: ["u8", 3],
             },
           },
         ],

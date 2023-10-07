@@ -17,7 +17,7 @@ import {
 } from "utils/pda";
 import { fetchProof } from "lib/api";
 import { parseDataV1Fields } from "utils/parse";
-import { DataV1, LeafSchemaV1, Gate, Flair } from "./types";
+import { DataV1, LeafSchemaV1, Gate } from "./types";
 import { getCompressionProgram, getNamespaceProgram } from "./provider";
 
 export async function initForumAndNamespace(
@@ -27,7 +27,7 @@ export async function initForumAndNamespace(
   maxBufferSize: number,
   name: string,
   uri: string,
-  flair: Flair[] = [],
+  flair: string[] = [],
   gates: Gate[] = []
 ) {
   const compressionProgram = getCompressionProgram(connection, wallet);

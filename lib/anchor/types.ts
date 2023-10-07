@@ -11,7 +11,6 @@ export type DataV1 = OndaCompressionTypes["DataV1"];
 export type LeafSchemaV1 = SnakeToCamelCaseObj<
   OndaCompressionTypes["LeafSchema"]["v1"]
 >;
-export type Flair = OndaCompressionTypes["Flair"];
 export type Gate = OndaCompressionTypes["Gate"];
 export type Rule = OndaCompressionTypes["Rule"];
 export type Operator = OndaCompressionTypes["Operator"];

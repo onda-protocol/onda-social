@@ -8,7 +8,7 @@ import { findEntryId } from "../../utils/pda";
 import { trimNullChars } from "../../utils/format";
 import { parseDataV1Fields } from "../../utils/parse";
 import { IDL as CompressionIDL } from "../anchor/idl/onda_compression";
-import { DataV1, LeafSchemaV1, Gate, Flair } from "../anchor/types";
+import { DataV1, LeafSchemaV1, Gate } from "../anchor/types";
 import { getCompressionProgram } from "../anchor/provider";
 import prisma from "../prisma";
 import { genIxIdentifier } from "./helpers";
@@ -61,7 +61,7 @@ export async function compressionParser(ix: Instruction) {
       const forumConfig = await compressionProgram.account.forumConfig.fetch(
         forumConfigAddress
       );
-      const flair = forumConfig.flair as Array<Flair>;
+      const flair = forumConfig.flair as Array<string>;
       const gates = forumConfig.gate as Array<Gate>;
 
       await prisma.forum.create({
@@ -76,8 +76,7 @@ export async function compressionParser(ix: Instruction) {
       if (flair.length) {
         await prisma.flair.createMany({
           data: flair.map((flair) => ({
-            name: flair.name,
-            color: `rgb(${flair.color.join(",")})`,
+            name: flair,
             forum: merkleTreeAddress.toBase58(),
           })),
         });

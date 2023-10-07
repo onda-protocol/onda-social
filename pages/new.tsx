@@ -47,7 +47,7 @@ import {
 } from "@solana/wallet-adapter-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { Gate, Flair, initForumAndNamespace } from "lib/anchor";
+import { Gate, initForumAndNamespace } from "lib/anchor";
 import { ContentType, webUpload } from "lib/bundlr";
 import { ImagePicker } from "components/input/imagePicker";
 import { findNamespacePda } from "utils/pda";
@@ -573,23 +573,11 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
         throw new Error("Wallet not connected");
       }
 
-      const flair: Flair[] = [
-        {
-          name: "News",
-          color: [255, 69, 0], // "#ff4500",
-        },
-        {
-          name: "Discussion",
-          color: [148, 224, 68], // "#94e044",
-        },
-        {
-          name: "Announcement",
-          color: [113, 147, 255], // "#7193ff",
-        },
-        {
-          name: "Ask Me Anything",
-          color: [255, 176, 0], // "#ffb000",
-        },
+      const flair: string[] = [
+        "News",
+        "Discussion",
+        "Announcement",
+        "Ask Me Anything",
       ];
 
       const gates: Gate[] = config.gates.map((gate) => {

@@ -1,19 +1,14 @@
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { PostType } from "@prisma/client";
-import {
-  Box,
-  Heading,
-  Link as CLink,
-  TypographyProps,
-  Flex,
-} from "@chakra-ui/react";
+import { Box, Heading, Link as CLink, TypographyProps } from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
 import React, { memo } from "react";
 import { Tweet } from "react-tweet";
 
+import { defaultFlairColors } from "utils/colors";
 import { Markdown } from "components/markdown";
 import { OG } from "components/post/og";
-import dynamic from "next/dynamic";
 
 const YouTubeVideo = dynamic(
   () => import("components/video/youtube").then((mod) => mod.YouTubeVideo),
@@ -63,7 +58,7 @@ export const PostContent = memo(function PostContent({
           <Box
             display="inline-block"
             color="gray.700"
-            bgColor={flairColor ?? "gray.500"}
+            bgColor={flairColor ?? defaultFlairColors[flair] ?? "gray.500"}
             borderRadius="xl"
             fontSize="xs"
             fontWeight="bold"
