@@ -100,8 +100,10 @@ const Home: NextPage<PageProps> = () => {
               <SidebarSection title="Home">
                 <Box px="4">
                   <Text>
-                    Decentralized, community moderated forums. Powered by
-                    Solana.
+                    Onda is a protocol for open and decentralized community
+                    forums. Built on the Solana Blockchain, the protocol enables
+                    permissionless community creation and interaction, ensuring
+                    feeds remain open and censorship-resistant.
                   </Text>
                 </Box>
                 <SidebarButtons />
