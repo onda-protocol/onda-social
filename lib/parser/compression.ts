@@ -7,11 +7,11 @@ import { Instruction } from "helius-sdk";
 import { findEntryId } from "../../utils/pda";
 import { trimNullChars } from "../../utils/format";
 import { parseDataV1Fields } from "../../utils/parse";
+import { genIxIdentifier } from "../../utils/web3";
 import { IDL as CompressionIDL } from "../anchor/idl/onda_compression";
 import { DataV1, LeafSchemaV1, Gate } from "../anchor/types";
 import { getCompressionProgram } from "../anchor/provider";
 import prisma from "../prisma";
-import { genIxIdentifier } from "./helpers";
 
 const connection = new web3.Connection(
   process.env.NEXT_PUBLIC_RPC_ENDPOINT as string

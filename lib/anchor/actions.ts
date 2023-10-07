@@ -1,5 +1,4 @@
 import { web3, BN } from "@project-serum/anchor";
-import { Comment, Post, PostType } from "@prisma/client";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
   ConcurrentMerkleTreeAccount,
@@ -8,7 +7,6 @@ import {
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
 import base58 from "bs58";
-import pkg from "js-sha3";
 
 import {
   findForumConfigPda,
@@ -17,6 +15,7 @@ import {
 } from "utils/pda";
 import { fetchProof } from "lib/api";
 import { parseDataV1Fields } from "utils/parse";
+import { genIxIdentifier } from "utils/web3";
 import { DataV1, LeafSchemaV1, Gate } from "./types";
 import { getCompressionProgram, getNamespaceProgram } from "./provider";
 
@@ -118,10 +117,13 @@ export async function getEventFromSignature(
   signature: string
 ) {
   const program = getCompressionProgram(connection);
-  const ixAccounts = program.idl.instructions.find(
+  const addEntryIx = program.idl.instructions.find(
     (i) => i.name === "addEntry"
-  )?.accounts;
+  );
+  const addEntryId = genIxIdentifier(addEntryIx!.name);
+
   const response = await waitForConfirmation(connection, signature);
+  console.log("response: ", response);
   const message = response?.transaction.message;
   const innerInstructions = response?.meta?.innerInstructions?.[0];
 
@@ -133,19 +135,27 @@ export async function getEventFromSignature(
     throw new Error("Noop instruction not found");
   }
 
-  const instruction = message.instructions[0];
+  const instruction = message.instructions.find((ix) => {
+    const discriminator = base58.encode(base58.decode(ix.data).slice(0, 8));
+    return discriminator === addEntryId;
+  });
+
+  if (!instruction) {
+    throw new Error("Add entry instruction not found");
+  }
+
   const accountKeys = message.accountKeys;
   const accounts = instruction.accounts.map((key) => accountKeys[key]);
   accounts.forEach((key) => console.log(key.toBase58()));
 
-  const merkleTreeAddressIndex = ixAccounts!.findIndex(
+  const merkleTreeAddressIndex = addEntryIx!.accounts.findIndex(
     (a) => a.name === "merkleTree"
   );
 
   if (merkleTreeAddressIndex === undefined) {
     throw new Error("Merkle tree address index not found");
   }
-
+  console.log(accounts);
   const merkleTreeAddress = accounts[merkleTreeAddressIndex];
   const forumConfig = findForumConfigPda(merkleTreeAddress);
 

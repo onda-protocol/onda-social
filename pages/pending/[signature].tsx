@@ -1,9 +1,8 @@
 import type { NextPage } from "next";
-import axios from "axios";
 import { useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/router";
-import { PostType, User } from "@prisma/client";
+import { PostType } from "@prisma/client";
 import {
   Box,
   Button,
@@ -15,8 +14,8 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useConnection } from "@solana/wallet-adapter-react";
 
-import { getEventFromSignature } from "lib/anchor/actions";
 import { getPrismaPostType } from "utils/parse";
+import { getEventFromSignature } from "lib/anchor/actions";
 import { PostWithCommentsCountAndForum, fetchForum, fetchUser } from "lib/api";
 import { useAuth } from "components/providers/auth";
 import { PostHead } from "components/post/head";
@@ -44,7 +43,7 @@ const Pending: NextPage = () => {
         uri: string;
         title: string;
         body: string | null;
-        forumNamespace: string;
+        forum: string;
         createdAt: string;
         author: string;
         postType: PostType;
@@ -154,10 +153,10 @@ const Pending: NextPage = () => {
   );
 
   const forumQuery = useQuery(
-    ["forum", data?.forumNamespace],
-    () => fetchForum(data!.forumNamespace),
+    ["forum", data?.forum],
+    () => fetchForum(data!.forum),
     {
-      enabled: Boolean(data?.forumNamespace),
+      enabled: Boolean(data?.forum),
       refetchOnMount: false,
       staleTime: 300_000,
     }
