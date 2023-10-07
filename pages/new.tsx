@@ -47,10 +47,11 @@ import {
 } from "@solana/wallet-adapter-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
+import { findNamespacePda } from "utils/pda";
 import { Gate, initForumAndNamespace } from "lib/anchor";
 import { ContentType, webUpload } from "lib/bundlr";
 import { ImagePicker } from "components/input/imagePicker";
-import { findNamespacePda } from "utils/pda";
+import { useAuth, AuthStatus } from "components/providers/auth";
 
 const SIZE_OPTIONS = [14, 15, 16, 17, 18, 19, 20];
 
@@ -61,6 +62,7 @@ const STEPS = [
 ];
 
 const New: NextPage = () => {
+  const auth = useAuth();
   const [step1Data, setStep1Data] = useState<Step1Form>();
   const [step2Data, setStep2Data] = useState<Step2Form>();
   const { activeStep, goToNext, goToPrevious } = useSteps({
@@ -71,6 +73,20 @@ const New: NextPage = () => {
   const max = STEPS.length - 1;
   const progressPercent = (activeStep / max) * 100;
   const activeStepText = STEPS[activeStep].description;
+
+  if (auth.status !== AuthStatus.AUTHENTICATED || auth.provider !== "wallet") {
+    return (
+      <Container maxW="container.sm">
+        <Heading my="12">Create Community</Heading>
+        <Text my="4">Please sign in with wallet to get started</Text>
+        {auth.provider === "magic" ? (
+          <Button onClick={auth.signOut}>Sign Out</Button>
+        ) : (
+          <Button onClick={auth.showUI}>Sign In</Button>
+        )}
+      </Container>
+    );
+  }
 
   return (
     <Container maxW="container.sm">
