@@ -173,7 +173,7 @@ const Pending: NextPage = () => {
   }
 
   return (
-    <Container maxW="container.md">
+    <Container maxW="container.md" pt="4">
       <PostHead
         title={data.title}
         titleSize="3xl"
