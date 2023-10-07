@@ -85,6 +85,9 @@ const Community: NextPage<PageProps> = () => {
               fill
               src={forumQuery.data.banner}
               alt={forumQuery.data.namespace + " banner"}
+              style={{
+                objectFit: "cover",
+              }}
             />
           ) : null}
         </Box>
@@ -98,7 +101,7 @@ const Community: NextPage<PageProps> = () => {
                   p="3px"
                   bgColor="#fff"
                   borderRadius="100%"
-                  zIndex="1"
+                  zIndex="0"
                 >
                   <Image
                     alt={forumQuery.data.namespace + " logo"}
@@ -130,7 +133,7 @@ const Community: NextPage<PageProps> = () => {
           </Container>
         </TabList>
         <TabPanels>
-          <TabPanel>
+          <TabPanel padding="0">
             <GridLayout
               leftColumn={
                 <PostList

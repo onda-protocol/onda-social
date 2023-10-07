@@ -72,62 +72,75 @@ export const PostModal = () => {
           top="56px"
           height="calc(100% - 56px)"
           width="100%"
-          backgroundColor="blackAlpha.800"
-          zIndex={1}
+          zIndex={2}
         >
-          <Container
-            left="0"
-            top="56px"
-            maxW="container.lg"
-            backgroundColor="onda.1050"
-          >
-            <Flex
-              height="42px"
-              width="100%"
-              maxWidth="100%"
-              align="center"
-              justify="space-between"
-            >
-              <Flex maxWidth="calc(100% - 72px)" align="center">
-                <Box pr="2" color="gray.300">
-                  {icon}
-                </Box>
-                <Heading
-                  fontSize="md"
-                  fontWeight="medium"
-                  color="gray.300"
-                  whiteSpace="nowrap"
-                  overflow="hidden"
-                  textOverflow="ellipsis"
-                >
-                  {postQuery.data?.title}
-                </Heading>
-              </Flex>
-
-              <Button
-                variant="ghost"
-                fontSize="sm"
-                leftIcon={<IoClose size={18} />}
-                onClick={() => {
-                  const backPath = (router.query.from as string) ?? "/";
-                  router.replace(backPath, backPath, {
-                    scroll: false,
-                  });
-                }}
-              >
-                Close
-              </Button>
-            </Flex>
-          </Container>
-          <Box height="calc(100% - 42px)" width="100%" overflowY="scroll">
+          <Box
+            position="absolute"
+            inset={0}
+            backgroundColor="blackAlpha.700"
+            zIndex={-1}
+            onClick={() => router.back()}
+          />
+          <Box height="100%" width="100%" overflowY="auto">
             <Container
+              position="relative"
               maxW="container.lg"
               minH="100%"
               backgroundColor="onda.1000"
-              pt="6"
+              pt="42px"
             >
+              <Box
+                position="fixed"
+                top="56px"
+                left="0"
+                right="0"
+                backgroundColor="onda.1050"
+                zIndex={2}
+              >
+                <Flex
+                  height="42px"
+                  width="100%"
+                  maxWidth="100%"
+                  align="center"
+                  justify="space-between"
+                  px="4"
+                >
+                  <Flex maxWidth="calc(100% - 72px)" align="center">
+                    <Box pr="2" color="gray.300">
+                      {icon}
+                    </Box>
+                    <Heading
+                      fontSize="md"
+                      fontWeight="medium"
+                      color="gray.300"
+                      whiteSpace="nowrap"
+                      overflow="hidden"
+                      textOverflow="ellipsis"
+                    >
+                      {postQuery.data?.title}
+                    </Heading>
+                  </Flex>
+
+                  <Button
+                    variant="ghost"
+                    fontSize="sm"
+                    leftIcon={<IoClose size={18} />}
+                    onClick={() => {
+                      const backPath = (router.query.from as string) ?? "/";
+                      router.replace(backPath, backPath, {
+                        scroll: false,
+                      });
+                    }}
+                  >
+                    Close
+                  </Button>
+                </Flex>
+              </Box>
               <Container
                 maxW="container.md"
+                pt="4"
+                paddingLeft="0"
+                paddingRight="0"
                 onClick={(e) => {
                   e.stopPropagation();
                   return false;
