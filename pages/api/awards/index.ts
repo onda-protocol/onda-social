@@ -11,7 +11,7 @@ export const config = {
 export default async function handler(_req: NextRequest, _ctx: NextFetchEvent) {
   const result = await prisma.award.findMany({
     where: {
-      public: false,
+      public: true,
     },
     orderBy: {
       amount: "desc",

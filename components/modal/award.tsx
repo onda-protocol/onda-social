@@ -7,11 +7,10 @@ import {
   ModalContent,
   ModalOverlay,
   ModalBody,
-  Wrap,
-  WrapItem,
   ModalFooter,
   Flex,
   ModalCloseButton,
+  Spinner,
 } from "@chakra-ui/react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import Image from "next/image";
@@ -165,72 +164,84 @@ export const AwardModalProvider = ({ children }: AwardModalProviderProps) => {
         >
           <ModalCloseButton />
           <ModalBody padding="0" height="100%">
-            <Box
-              display="flex"
-              height="100%"
-              flexDirection={{
-                base: "column",
-                md: "row",
-              }}
-            >
-              <Box flex={3} p="6">
-                <Box pb="8">
-                  <Heading fontSize="xl" mb="2">
-                    Give an award to this post
-                  </Heading>
-                  <Text color="whiteAlpha.700" fontSize="md">
-                    Awards are a way to recognize and reward other users for
-                    their contributions to the community.
-                  </Text>
-                </Box>
-                <Flex flex={1} display="flex" flexWrap="wrap">
-                  {rewardsQuery.data &&
-                    rewardsQuery.data.map((award) => (
-                      <Flex key={award.id} width="25%" p="2">
-                        <AwardItem
-                          award={award}
-                          selected={award.id === selected?.id}
-                          onSelect={setSelected}
-                        />
-                      </Flex>
-                    ))}
-                </Flex>
-              </Box>
+            {rewardsQuery.isLoading ? (
               <Box
-                flex={2}
-                borderColor="whiteAlpha.100"
-                borderTopWidth={{
-                  base: "1px",
-                  md: 0,
-                }}
-                borderLeftWidth={{
-                  md: "1px",
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                height="100%"
+                width="100%"
+              >
+                <Spinner />
+              </Box>
+            ) : (
+              <Box
+                display="flex"
+                height="100%"
+                flexDirection={{
+                  base: "column",
+                  md: "row",
                 }}
               >
-                <Flex
-                  flexDirection="column"
-                  justifyContent="flex-end"
-                  height="100%"
-                >
-                  <AwardDetails award={selected} />
-
-                  <Flex flex={0} p="6" pt="0">
-                    <Button
-                      display={{
-                        base: "none",
-                        md: "inline-flex",
-                      }}
-                      width="100%"
-                      isDisabled={!selected}
-                      isLoading={giveRewardMutation.isLoading}
-                      onClick={handleGiveReward}
-                    >
-                      Give &nbsp;🎉
-                    </Button>
+                <Box flex={3} p="6">
+                  <Box pb="8">
+                    <Heading fontSize="xl" mb="2">
+                      Give an award to this post
+                    </Heading>
+                    <Text color="whiteAlpha.700" fontSize="md">
+                      Awards are a way to recognize and reward other users for
+                      their contributions to the community.
+                    </Text>
+                  </Box>
+                  <Flex flex={1} display="flex" flexWrap="wrap">
+                    {rewardsQuery.data &&
+                      rewardsQuery.data.map((award) => (
+                        <Flex key={award.id} width="25%" p="2">
+                          <AwardItem
+                            award={award}
+                            selected={award.id === selected?.id}
+                            onSelect={setSelected}
+                          />
+                        </Flex>
+                      ))}
                   </Flex>
-                </Flex>
+                </Box>
+                <Box
+                  flex={2}
+                  borderColor="whiteAlpha.100"
+                  borderTopWidth={{
+                    base: "1px",
+                    md: 0,
+                  }}
+                  borderLeftWidth={{
+                    md: "1px",
+                  }}
+                >
+                  <Flex
+                    flexDirection="column"
+                    justifyContent="flex-end"
+                    height="100%"
+                  >
+                    <AwardDetails award={selected} />
+
+                    <Flex flex={0} p="6" pt="0">
+                      <Button
+                        display={{
+                          base: "none",
+                          md: "inline-flex",
+                        }}
+                        width="100%"
+                        isDisabled={!selected}
+                        isLoading={giveRewardMutation.isLoading}
+                        onClick={handleGiveReward}
+                      >
+                        Give &nbsp;🎉
+                      </Button>
+                    </Flex>
+                  </Flex>
+                </Box>
               </Box>
-            </Box>
+            )}
           </ModalBody>
           <ModalFooter
             display={{

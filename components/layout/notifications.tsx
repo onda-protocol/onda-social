@@ -162,7 +162,7 @@ const NotificationItem = ({ item }: NotificationProps) => {
       }
 
       if (item.Claim) {
-        const result = await signAndConfirmTransaction(connection, auth, {
+        await signAndConfirmTransaction(connection, auth, {
           method: "claimAward",
           data: {
             award: item.Claim.award,
@@ -170,7 +170,6 @@ const NotificationItem = ({ item }: NotificationProps) => {
             recipient: auth.address!,
           },
         });
-        console.log(result);
       }
     },
     {
@@ -184,24 +183,28 @@ const NotificationItem = ({ item }: NotificationProps) => {
               if (data) {
                 for (const pageIndex in data.pages) {
                   const page = data.pages[pageIndex];
+
                   for (const index in page) {
                     const notification = page[index];
 
                     if (notification.id === item.id) {
+                      const pages = [
+                        ...data.pages.slice(0, Number(pageIndex)),
+                        [
+                          ...page.slice(0, Number(index)),
+                          {
+                            ...notification,
+                            read: true,
+                            Claim: null,
+                          },
+                          ...page.slice(Number(index) + 1),
+                        ],
+                        ...data.pages.slice(Number(pageIndex) + 1),
+                      ];
+
                       return {
                         ...data,
-                        pages: [
-                          ...data.pages.slice(0, Number(page)),
-                          [
-                            ...page.slice(0, Number(index)),
-                            {
-                              ...notification,
-                              Claim: null,
-                            },
-                            ...page.slice(Number(index) + 1),
-                          ],
-                          ...data.pages.slice(Number(page) + 1),
-                        ],
+                        pages,
                       };
                     }
                   }
@@ -230,12 +233,13 @@ const NotificationItem = ({ item }: NotificationProps) => {
 
   return (
     <Box
-      as="button"
+      aria-label="Notification"
       width="100%"
       pl="3"
       pr="6"
       py="6"
       bgColor={item.read ? "transparent" : "whiteAlpha.100"}
+      cursor="pointer"
       _hover={{
         bg: "whiteAlpha.200",
       }}

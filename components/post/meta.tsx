@@ -230,17 +230,17 @@ export const PostMeta: React.FC<PostMetaProps> = ({
             ) : null}
           </Box>
         </Box>
-        {awardsEl && displayAward !== "large" && (
+        {awardsEl?.length && displayAward !== "large" ? (
           <Box ml={{ sx: "-0.5", md: 0 }}>
             <Wrap spacing="0">{awardsEl}</Wrap>
           </Box>
-        )}
+        ) : null}
       </Box>
-      {awardsEl && displayAward === "large" && (
-        <Box width="fit-content" my="2">
+      {awardsEl?.length && displayAward === "large" ? (
+        <Box width="fit-content" mb="2" mt="4">
           <Wrap spacing="2">{awardsEl}</Wrap>
         </Box>
-      )}
+      ) : null}
     </Box>
   );
 };
