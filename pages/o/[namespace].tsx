@@ -150,7 +150,7 @@ const Community: NextPage<PageProps> = () => {
                     </Box>
                     <SidebarButtons forum={forumQuery.data?.id} />
                   </SidebarSection>
-                  {Array.isArray(forumQuery.data?.links) ? (
+                  {forumQuery.data?.links?.length ? (
                     <SidebarSection title="Links">
                       <SidebarList>
                         {forumQuery.data?.links.map((link, index) => (
