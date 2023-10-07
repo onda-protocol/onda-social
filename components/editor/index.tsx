@@ -226,7 +226,13 @@ export const Editor = ({
       <Box
         noValidate
         as="form"
-        onSubmit={methods.handleSubmit((data) => mutation.mutate(data))}
+        onSubmit={methods.handleSubmit((data) => {
+          if (auth.status !== AuthStatus.AUTHENTICATED) {
+            auth.showUI();
+          } else {
+            mutation.mutate(data);
+          }
+        })}
       >
         <Textarea
           mt="2"
@@ -254,11 +260,10 @@ export const Editor = ({
             </Button>
           )}
           <Button
-            isDisabled={auth.status !== AuthStatus.AUTHENTICATED}
-            isLoading={mutation.isLoading}
             variant="solid"
             type="submit"
             cursor="pointer"
+            isLoading={mutation.isLoading}
           >
             {buttonLabel || "Submit"}
           </Button>
@@ -316,7 +321,13 @@ export const Editor = ({
     <Box
       noValidate
       as="form"
-      onSubmit={methods.handleSubmit((data) => mutation.mutate(data))}
+      onSubmit={methods.handleSubmit((data) => {
+        if (auth.status !== AuthStatus.AUTHENTICATED) {
+          auth.showUI();
+        } else {
+          mutation.mutate(data);
+        }
+      })}
     >
       <Controller
         name="forum"
@@ -391,12 +402,11 @@ export const Editor = ({
               </Box>
             )}
             <Button
-              isDisabled={auth.status !== AuthStatus.AUTHENTICATED}
-              isLoading={mutation.isLoading}
               variant="solid"
               minWidth="100px"
               type="submit"
               cursor="pointer"
+              isLoading={mutation.isLoading}
             >
               {buttonLabel || "Submit"}
             </Button>
