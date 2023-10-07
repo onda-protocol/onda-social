@@ -72,26 +72,25 @@ export const PostModal = () => {
           top="56px"
           height="calc(100% - 56px)"
           width="100%"
+          backgroundColor="blackAlpha.700"
           zIndex={2}
+          onClick={() => router.back()}
         >
-          <Box
-            position="absolute"
-            inset={0}
-            backgroundColor="blackAlpha.700"
-            zIndex={-1}
-            onClick={() => router.back()}
-          />
           <Box height="100%" width="100%" overflowY="auto">
             <Container
               position="relative"
               maxW="container.lg"
               minH="100%"
               backgroundColor="onda.1000"
-              pt="42px"
+              px="0"
+              onClick={(e) => {
+                e.stopPropagation();
+                return false;
+              }}
             >
               <Box
-                position="fixed"
-                top="56px"
+                position="sticky"
+                top="0"
                 left="0"
                 right="0"
                 backgroundColor="onda.1050"
@@ -139,8 +138,6 @@ export const PostModal = () => {
               <Container
                 maxW="container.md"
                 pt="4"
-                paddingLeft="0"
-                paddingRight="0"
                 onClick={(e) => {
                   e.stopPropagation();
                   return false;
