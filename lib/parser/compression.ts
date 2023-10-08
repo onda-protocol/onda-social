@@ -7,11 +7,11 @@ import { Instruction } from "helius-sdk";
 import { findEntryId } from "../../utils/pda";
 import { trimNullChars } from "../../utils/format";
 import { parseDataV1Fields } from "../../utils/parse";
+import { genIxIdentifier } from "../../utils/web3";
 import { IDL as CompressionIDL } from "../anchor/idl/onda_compression";
 import { DataV1, LeafSchemaV1, Gate } from "../anchor/types";
 import { getCompressionProgram } from "../anchor/provider";
 import prisma from "../prisma";
-import { genIxIdentifier } from "./helpers";
 
 const connection = new web3.Connection(
   process.env.NEXT_PUBLIC_RPC_ENDPOINT as string
@@ -61,6 +61,7 @@ export async function compressionParser(ix: Instruction) {
       const forumConfig = await compressionProgram.account.forumConfig.fetch(
         forumConfigAddress
       );
+      const flair = forumConfig.flair as Array<string>;
       const gates = forumConfig.gate as Array<Gate>;
 
       await prisma.forum.create({
@@ -71,6 +72,15 @@ export async function compressionParser(ix: Instruction) {
           totalCapacity: totalCapacity.toNumber(),
         },
       });
+
+      if (flair.length) {
+        await prisma.flair.createMany({
+          data: flair.map((flair) => ({
+            name: flair,
+            forum: merkleTreeAddress.toBase58(),
+          })),
+        });
+      }
 
       if (gates.length) {
         await prisma.gate.createMany({
@@ -168,6 +178,7 @@ export async function compressionParser(ix: Instruction) {
               id: schemaV1.id.toBase58(),
               uri: trimNullChars(dataV1.uri),
               hash: encodedLeafHash,
+              dataHash: base58.encode(schemaV1.dataHash),
               createdAt: schemaV1.createdAt.toNumber(),
               nonce: schemaV1.nonce.toNumber(),
               Parent: dataV1.parent
@@ -256,7 +267,7 @@ interface CreatePostV1Args {
   hash: string;
 }
 
-function createPostV1({
+async function createPostV1({
   forumId,
   schemaV1,
   dataV1,
@@ -268,16 +279,38 @@ function createPostV1({
     throw new Error("Schema is undefined");
   }
 
+  let flairId: number | undefined;
+
+  if (dataV1.flair) {
+    const flair = await prisma.flair.findFirst({
+      where: {
+        name: dataV1.flair,
+        forum: forumId,
+      },
+    });
+    if (flair) {
+      flairId = flair.id;
+    }
+  }
+
   return prisma.post.create({
     data: {
       postType,
       hash,
+      dataHash: base58.encode(schemaV1.dataHash),
       body: body ?? null,
       id: schemaV1.id.toBase58(),
       title: dataV1.title!,
       uri: trimNullChars(dataV1.uri),
       createdAt: schemaV1.createdAt.toNumber(),
       nonce: schemaV1.nonce.toNumber(),
+      Flair: flairId
+        ? {
+            connect: {
+              id: flairId,
+            },
+          }
+        : undefined,
       Forum: {
         connect: {
           id: forumId,
@@ -298,9 +331,9 @@ function createPostV1({
 }
 
 function getRuleType(gate: Gate) {
-  // @ts-ignore
+  console.log(gate.ruleType);
   if (gate.ruleType.nft) {
-    return Rule.NFT;
+    return Rule.Nft;
   }
 
   if (gate.ruleType.token) {
@@ -311,23 +344,22 @@ function getRuleType(gate: Gate) {
     return Rule.AdditionalSigner;
   }
 
-  if (gate.ruleType.pass) {
-    return Rule.Pass;
+  if (gate.ruleType.compressedNft) {
+    return Rule.CompressedNft;
   }
 
   throw new Error("Unknown rule type");
 }
 
 function getOperator(gate: Gate) {
-  // @ts-ignore
   if (gate.operator.and) {
     return Operator.AND;
   }
-  // @ts-ignore
+
   if (gate.operator.or) {
     return Operator.OR;
   }
-  // @ts-ignore
+
   if (gate.operator.not) {
     return Operator.NOT;
   }

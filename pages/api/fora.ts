@@ -11,6 +11,7 @@ export const config = {
 export default async function handler(_req: NextRequest, _ctx: NextFetchEvent) {
   const result = await prisma.forum.findMany({
     include: {
+      Flair: true,
       Gates: true,
     },
   });

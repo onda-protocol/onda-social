@@ -1,7 +1,7 @@
-import type { NextFetchEvent, NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { NextFetchEvent, NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client/edge";
 
+import { getCurrentUser } from "utils/verify";
 import { parseBigInt } from "utils/format";
 import prisma from "lib/prisma";
 
@@ -9,7 +9,11 @@ export const config = {
   runtime: "edge",
 };
 
-export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
+export async function queryPosts(
+  select: Prisma.Sql = Prisma.empty,
+  where: Prisma.Sql = Prisma.empty,
+  offset: number = 0
+) {
   const result: any = await prisma.$queryRaw`
     SELECT 
       "Post".*,
@@ -17,10 +21,14 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
       "User".name AS "Author.name",
       "User".mint AS "Author.mint",
       "User".avatar AS "Author.avatar",
+      "Flair".id AS "Flair.id",
+      "Flair".name AS "Flair.name",
+      "Flair".color AS "Flair.color",
       "Forum".id AS "Forum.id",
       "Forum".config AS "Forum.config",
       "Forum".namespace AS "Forum.namespace",
       "Forum".icon AS "Forum.icon",
+      ${select}
       (
         SELECT COUNT(*)
         FROM "Comment"
@@ -31,9 +39,13 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
     LEFT JOIN 
       "User" ON "Post"."author" = "User"."id"
     LEFT JOIN 
+      "Flair" ON "Post"."flair" = "Flair"."id"
+    LEFT JOIN 
       "Forum" ON "Post"."forum" = "Forum"."id"
     ${where}
-    ORDER BY points_per_created_at DESC;
+    ORDER BY points_per_created_at DESC
+    LIMIT 20
+    OFFSET ${offset};
   `;
 
   return result.map((post: any) => {
@@ -41,19 +53,29 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
     const authorName = post["Author.name"];
     const authorMint = post["Author.mint"];
     const authorAvatar = post["Author.avatar"];
+    const flairId = post["Flair.id"];
+    const flairName = post["Flair.name"];
+    const flairColor = post["Flair.color"];
     const forumId = post["Forum.id"];
     const forumConfig = post["Forum.config"];
     const forumNamespace = post["Forum.namespace"];
     const forumIcon = post["Forum.icon"];
     const commentsCount = post["_count.Comments"];
+    const vote = post["Vote.vote"];
 
     delete post["Author.id"];
     delete post["Author.name"];
     delete post["Author.mint"];
     delete post["Author.avatar"];
+    delete post["Flair.id"];
+    delete post["Flair.name"];
+    delete post["Flair.color"];
     delete post["Forum.id"];
     delete post["Forum.config"];
+    delete post["Forum.namespace"];
+    delete post["Forum.icon"];
     delete post["_count.Comments"];
+    delete post["Vote.vote"];
 
     return {
       ...post,
@@ -63,12 +85,20 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
         mint: authorMint,
         avatar: authorAvatar,
       },
+      Flair: flairId
+        ? {
+            id: flairId,
+            name: flairName,
+            color: flairColor,
+          }
+        : null,
       Forum: {
         id: forumId,
         config: forumConfig,
         namespace: forumNamespace,
         icon: forumIcon,
       },
+      _vote: vote ?? null,
       _count: {
         Comments: commentsCount,
       },
@@ -76,8 +106,26 @@ export async function queryPosts(where: Prisma.Sql = Prisma.empty) {
   });
 }
 
-export default async function handler(_req: NextRequest, _ctx: NextFetchEvent) {
-  const result = await queryPosts();
+export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
+  const searchParams = req.nextUrl.searchParams;
+  const offset = parseInt(searchParams.get("offset") ?? "0");
+
+  let select = Prisma.empty;
+  let where = Prisma.empty;
+
+  try {
+    const currentUser = await getCurrentUser(req);
+
+    if (currentUser) {
+      select = Prisma.sql`"PostVote".vote AS "Vote.vote",`;
+      where = Prisma.sql`LEFT JOIN "PostVote" ON "Post"."id" = "PostVote"."post" AND "PostVote"."user" = ${currentUser}`;
+    }
+  } catch (err) {
+    console.log("err: ", err);
+    // Do nothing
+  }
+
+  const result = await queryPosts(select, where, offset);
   const parsedResult = parseBigInt(result);
   return NextResponse.json(parsedResult);
 }

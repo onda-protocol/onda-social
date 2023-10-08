@@ -47,10 +47,11 @@ import {
 } from "@solana/wallet-adapter-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { Gate, initForumAndNamespace } from "lib/anchor";
-import { ContentType, upload } from "lib/bundlr/index";
-import { ImagePicker } from "components/input/imagePicker";
 import { findNamespacePda } from "utils/pda";
+import { Gate, initForumAndNamespace } from "lib/anchor";
+import { ContentType, webUpload } from "lib/bundlr";
+import { ImagePicker } from "components/input/imagePicker";
+import { useAuth, AuthStatus } from "components/providers/auth";
 
 const SIZE_OPTIONS = [14, 15, 16, 17, 18, 19, 20];
 
@@ -61,6 +62,7 @@ const STEPS = [
 ];
 
 const New: NextPage = () => {
+  const auth = useAuth();
   const [step1Data, setStep1Data] = useState<Step1Form>();
   const [step2Data, setStep2Data] = useState<Step2Form>();
   const { activeStep, goToNext, goToPrevious } = useSteps({
@@ -71,6 +73,20 @@ const New: NextPage = () => {
   const max = STEPS.length - 1;
   const progressPercent = (activeStep / max) * 100;
   const activeStepText = STEPS[activeStep].description;
+
+  if (auth.status !== AuthStatus.AUTHENTICATED || auth.provider !== "wallet") {
+    return (
+      <Container maxW="container.sm">
+        <Heading my="12">Create Community</Heading>
+        <Text my="4">Please sign in with wallet to get started</Text>
+        {auth.provider === "magic" ? (
+          <Button onClick={auth.signOut}>Sign Out</Button>
+        ) : (
+          <Button onClick={auth.showUI}>Sign In</Button>
+        )}
+      </Container>
+    );
+  }
 
   return (
     <Container maxW="container.sm">
@@ -234,7 +250,9 @@ const Step1 = ({ data, onNext }: Step1Props) => {
       <Divider my="8" />
 
       <Box display="flex" justifyContent="flex-end" gap="2" my="8">
-        <Button type="submit">Next</Button>
+        <Button type="submit" variant="primary">
+          Next
+        </Button>
       </Box>
     </Box>
   );
@@ -492,7 +510,11 @@ const Step2 = ({ data, onNext, onPrev }: Step2Props) => {
         <Button variant="outline" onClick={onPrev}>
           Back
         </Button>
-        <Button type="submit" isLoading={methods.formState.isValidating}>
+        <Button
+          type="submit"
+          variant="primary"
+          isLoading={methods.formState.isValidating}
+        >
           Next
         </Button>
       </Box>
@@ -567,7 +589,13 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
         throw new Error("Wallet not connected");
       }
 
-      // @ts-expect-error
+      const flair: string[] = [
+        "News",
+        "Discussion",
+        "Announcement",
+        "Ask Me Anything",
+      ];
+
       const gates: Gate[] = config.gates.map((gate) => {
         if (gate.type === "nft") {
           return {
@@ -600,11 +628,17 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
         64, // buffer size
         metadata.namespace,
         uri,
+        flair,
         gates
       );
     },
     {
-      async onSuccess(data) {
+      onError(err) {
+        console.log(err);
+        // @ts-ignore
+        console.log(err.logs);
+      },
+      onSuccess(data) {
         console.log("=====> ", data);
         // TODO wait for forum
         router.push(`/o/${metadata.namespace}`);
@@ -631,9 +665,8 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
       if (metadata.icon) {
         const buffer = Buffer.from(await metadata.icon.arrayBuffer());
 
-        const iconUri = await upload(
+        const iconUri = await webUpload(
           wallet,
-          null,
           buffer,
           metadata.icon.type as ContentType
         );
@@ -643,16 +676,15 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
       if (metadata.banner) {
         const buffer = Buffer.from(await metadata.banner.arrayBuffer());
 
-        const bannerUri = await upload(
+        const bannerUri = await webUpload(
           wallet,
-          null,
           buffer,
           metadata.banner.type as ContentType
         );
         json.banner = bannerUri;
       }
 
-      return upload(wallet, null, JSON.stringify(json), "application/json");
+      return webUpload(wallet, JSON.stringify(json), "application/json");
     },
     {
       onSuccess: (uri) => {
@@ -724,7 +756,7 @@ const Step3 = ({ config, metadata, onPrev }: Step3Props) => {
             Back
           </Button>
           <Button
-            variant="solid"
+            variant="primary"
             onClick={() => metadataUploadMutation.mutate()}
           >
             Confirm

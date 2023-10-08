@@ -9,6 +9,16 @@ export const config = {
 };
 
 export default async function handler(_req: NextRequest, _ctx: NextFetchEvent) {
-  const result = await prisma.award.findMany();
+  const result = await prisma.award.findMany({
+    where: {
+      public: true,
+    },
+    orderBy: {
+      amount: "desc",
+    },
+    include: {
+      Matching: true,
+    },
+  });
   return NextResponse.json(parseBigInt(result));
 }

@@ -1,6 +1,4 @@
-import { Box, Container, Text } from "@chakra-ui/react";
 import Head from "next/head";
-import Image from "next/image";
 import { Fragment } from "react";
 
 interface DocumentHead {
@@ -24,7 +22,8 @@ export const DocumentHead = ({
     <Head>
       <title key="title">{title}</title>
       <meta key="description" name="description" content={description} />
-      <meta key="author" name="author" content="Dexloan" />
+      <meta key="author" name="author" content="Onda" />
+      <link rel="manifest" href="/manifest.json" />
       <link
         key="shortcut-icon"
         rel="shortcut icon"

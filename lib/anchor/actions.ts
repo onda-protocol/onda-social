@@ -1,6 +1,4 @@
-import type { SessionWalletInterface } from "@gumhq/react-sdk";
 import { web3, BN } from "@project-serum/anchor";
-import { PostType } from "@prisma/client";
 import { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
   ConcurrentMerkleTreeAccount,
@@ -9,36 +7,17 @@ import {
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
 import base58 from "bs58";
-import pkg from "js-sha3";
 
 import {
   findForumConfigPda,
-  findMetadataPda,
-  findProfilePda,
   findNamespacePda,
   findTreeMarkerPda,
-  findTreeAuthorityPda,
-  findCollectionAuthorityRecordPda,
-  findEditionPda,
-  findBubblegumSignerPda,
 } from "utils/pda";
-import {
-  PostWithCommentsCountAndForum,
-  SerializedCommentNested,
-  SerializedForum,
-  SerializedAward,
-  fetchForumPass,
-  fetchProof,
-} from "lib/api";
+import { fetchProof } from "lib/api";
 import { parseDataV1Fields } from "utils/parse";
+import { genIxIdentifier } from "utils/web3";
 import { DataV1, LeafSchemaV1, Gate } from "./types";
-import { BUBBLEGUM_PROGRAM_ID, METADATA_PROGRAM_ID } from "./constants";
-import {
-  getCompressionProgram,
-  getProfileProgram,
-  getNamespaceProgram,
-  getAwardsProgram,
-} from "./provider";
+import { getCompressionProgram, getNamespaceProgram } from "./provider";
 
 export async function initForumAndNamespace(
   connection: web3.Connection,
@@ -47,6 +26,7 @@ export async function initForumAndNamespace(
   maxBufferSize: number,
   name: string,
   uri: string,
+  flair: string[] = [],
   gates: Gate[] = []
 ) {
   const compressionProgram = getCompressionProgram(connection, wallet);
@@ -82,7 +62,7 @@ export async function initForumAndNamespace(
   });
 
   const initIx = await compressionProgram.methods
-    .initForum(maxDepth, maxBufferSize, gates)
+    .initForum(maxDepth, maxBufferSize, flair, gates)
     .accounts({
       payer,
       forumConfig,
@@ -110,10 +90,15 @@ export async function initForumAndNamespace(
   tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
   try {
-    await compressionProgram.provider.sendAndConfirm(tx, [merkleTreeKeypair], {
-      commitment: "confirmed",
-      skipPreflight: true,
-    });
+    const signature = await compressionProgram.provider.sendAndConfirm(
+      tx,
+      [merkleTreeKeypair],
+      {
+        commitment: "confirmed",
+        skipPreflight: true,
+      }
+    );
+    console.log(signature);
   } catch (err) {
     // @ts-ignore
     console.log(err.logs);
@@ -127,79 +112,18 @@ export async function initForumAndNamespace(
   return merkleTree.toBase58();
 }
 
-export async function addEntry(
-  connection: web3.Connection,
-  wallet: AnchorWallet,
-  session: SessionWalletInterface,
-  options: {
-    forum: SerializedForum;
-    data: DataV1;
-  }
-): Promise<string> {
-  assertSessionIsValid(session);
-  // @ts-ignore
-  const program = getCompressionProgram(connection, wallet);
-  const merkleTree = new web3.PublicKey(options.forum.id);
-  const forumConfig = findForumConfigPda(merkleTree);
-
-  let mint = null;
-  let tokenAccount = null;
-  let metadata = null;
-
-  if (options.forum.Gates?.length) {
-    const result = await fetchForumPass(
-      options.forum.id,
-      wallet.publicKey.toBase58()
-    );
-
-    if (result.error) {
-      throw new Error(result.error);
-    }
-
-    mint = new web3.PublicKey(result.mint);
-    tokenAccount = new web3.PublicKey(result.tokenAccount);
-    metadata = result.metadata ? new web3.PublicKey(result.metadata) : null;
-  }
-
-  const transaction = await program.methods
-    .addEntry(options.data)
-    .accounts({
-      forumConfig,
-      merkleTree,
-      mint,
-      tokenAccount,
-      metadata,
-      author: wallet.publicKey,
-      sessionToken: new web3.PublicKey(session.sessionToken!),
-      additionalSigner: null,
-      signer: session.publicKey!,
-      logWrapper: SPL_NOOP_PROGRAM_ID,
-      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-    })
-    .transaction();
-
-  const [signature] = await session.signAndSendTransaction!(
-    transaction,
-    connection,
-    {
-      preflightCommitment: "confirmed",
-    }
-  );
-  console.log("Transaction sent: ", signature);
-
-  return signature;
-}
-
 export async function getEventFromSignature(
   connection: web3.Connection,
-  wallet: AnchorWallet,
   signature: string
 ) {
-  const program = getCompressionProgram(connection, wallet);
-  const ixAccounts = program.idl.instructions.find(
+  const program = getCompressionProgram(connection);
+  const addEntryIx = program.idl.instructions.find(
     (i) => i.name === "addEntry"
-  )?.accounts;
+  );
+  const addEntryId = genIxIdentifier(addEntryIx!.name);
+
   const response = await waitForConfirmation(connection, signature);
+  console.log("response: ", response);
   const message = response?.transaction.message;
   const innerInstructions = response?.meta?.innerInstructions?.[0];
 
@@ -211,19 +135,27 @@ export async function getEventFromSignature(
     throw new Error("Noop instruction not found");
   }
 
-  const instruction = message.instructions[0];
+  const instruction = message.instructions.find((ix) => {
+    const discriminator = base58.encode(base58.decode(ix.data).slice(0, 8));
+    return discriminator === addEntryId;
+  });
+
+  if (!instruction) {
+    throw new Error("Add entry instruction not found");
+  }
+
   const accountKeys = message.accountKeys;
   const accounts = instruction.accounts.map((key) => accountKeys[key]);
   accounts.forEach((key) => console.log(key.toBase58()));
 
-  const merkleTreeAddressIndex = ixAccounts!.findIndex(
+  const merkleTreeAddressIndex = addEntryIx!.accounts.findIndex(
     (a) => a.name === "merkleTree"
   );
 
   if (merkleTreeAddressIndex === undefined) {
     throw new Error("Merkle tree address index not found");
   }
-
+  console.log(accounts);
   const merkleTreeAddress = accounts[merkleTreeAddressIndex];
   const forumConfig = findForumConfigPda(merkleTreeAddress);
 
@@ -282,68 +214,6 @@ function waitForConfirmation(
       waitForConfirmation(connection, signature, retries + 1).then(resolve);
     }, 500);
   });
-}
-
-export function getDataHash(
-  connection: web3.Connection,
-  wallet: AnchorWallet,
-  entry: PostWithCommentsCountAndForum | SerializedCommentNested
-) {
-  const program = getCompressionProgram(connection, wallet);
-
-  if ("postType" in entry) {
-    switch (entry.postType) {
-      case PostType.TEXT: {
-        return pkg.keccak_256.digest(
-          program.coder.types.encode<DataV1>("DataV1", {
-            textPost: {
-              title: entry.title,
-              uri: entry.uri,
-              nsfw: entry.nsfw,
-            },
-          })
-        );
-      }
-
-      case PostType.IMAGE: {
-        return pkg.keccak_256.digest(
-          program.coder.types.encode<DataV1>("DataV1", {
-            imagePost: {
-              title: entry.title,
-              uri: entry.uri,
-              nsfw: entry.nsfw,
-            },
-          })
-        );
-      }
-
-      case PostType.LINK: {
-        return pkg.keccak_256.digest(
-          program.coder.types.encode<DataV1>("DataV1", {
-            linkPost: {
-              title: entry.title,
-              uri: entry.uri,
-              nsfw: entry.nsfw,
-            },
-          })
-        );
-      }
-
-      default: {
-        throw new Error("Invalid post type");
-      }
-    }
-  }
-
-  return pkg.keccak_256.digest(
-    program.coder.types.encode<DataV1>("DataV1", {
-      comment: {
-        post: new web3.PublicKey(entry.post),
-        parent: entry.parent ? new web3.PublicKey(entry.parent) : null,
-        uri: entry.uri,
-      },
-    })
-  );
 }
 
 export async function deleteEntry(
@@ -409,38 +279,6 @@ export async function deleteEntry(
     });
 }
 
-export async function updateProfile(
-  connection: web3.Connection,
-  wallet: AnchorWallet,
-  options: {
-    name: string;
-    mint: string;
-  }
-) {
-  const program = getProfileProgram(connection, wallet);
-  const mint = new web3.PublicKey(options.mint);
-  const metadataPda = findMetadataPda(mint);
-  const profilePda = findProfilePda(wallet.publicKey);
-
-  const tokenAccount = await connection
-    .getTokenLargestAccounts(mint)
-    .then(
-      (result) =>
-        result.value.find((account) => Number(account.amount) > 0)?.address
-    );
-
-  await program.methods
-    .updateProfile(options.name)
-    .accounts({
-      mint,
-      tokenAccount,
-      author: wallet.publicKey,
-      profile: profilePda,
-      metadata: metadataPda,
-    })
-    .rpc();
-}
-
 export async function createNamepace(
   connection: web3.Connection,
   wallet: AnchorWallet,
@@ -464,69 +302,4 @@ export async function createNamepace(
       forumConfig: forumConfigPda,
     })
     .rpc();
-}
-
-function assertSessionIsValid(session: SessionWalletInterface) {
-  if (!session.sessionToken) {
-    throw new Error("Session token not found");
-  }
-
-  if (!session.publicKey) {
-    throw new Error("Session publicKey not found");
-  }
-
-  if (!session.ownerPublicKey) {
-    throw new Error("Session owner not found");
-  }
-
-  if (!session.signAndSendTransaction) {
-    throw new Error("Session signAndSendTransaction not found");
-  }
-}
-
-export async function giveAward(
-  connection: web3.Connection,
-  wallet: AnchorWallet,
-  options: {
-    entryId: string;
-    award: SerializedAward;
-  }
-) {
-  const program = getAwardsProgram(connection, wallet);
-  const leafOwner = new web3.PublicKey(options.entryId);
-  const award = new web3.PublicKey(options.award.id);
-  const merkleTree = new web3.PublicKey(options.award.merkleTree);
-  const collectionMint = new web3.PublicKey(options.award.collectionMint);
-  const collectionMetadataPda = findMetadataPda(collectionMint);
-  const editionPda = findEditionPda(collectionMint);
-  const treeAuthorityPda = findTreeAuthorityPda(merkleTree);
-  const collectionAuthorityRecordPda = findCollectionAuthorityRecordPda(
-    collectionMint,
-    award
-  );
-  const bubblegumSignerPda = findBubblegumSignerPda();
-
-  await program.methods
-    .giveAward()
-    .accounts({
-      award,
-      leafOwner,
-      merkleTree,
-      payer: wallet.publicKey,
-      sessionToken: null,
-      signer: wallet.publicKey,
-      treeAuthority: treeAuthorityPda,
-      collectionAuthorityRecordPda,
-      collectionMint,
-      collectionMetadata: collectionMetadataPda,
-      editionAccount: editionPda,
-      logWrapper: SPL_NOOP_PROGRAM_ID,
-      bubblegumSigner: bubblegumSignerPda,
-      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-      tokenMetadataProgram: METADATA_PROGRAM_ID,
-      bubblegumProgram: BUBBLEGUM_PROGRAM_ID,
-    })
-    .rpc({
-      preflightCommitment: "confirmed",
-    });
 }

@@ -12,9 +12,15 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const url = new URL(req.url);
   const address = url.pathname.split("/")[3] as string;
 
-  const result = await prisma.user.findUnique({
+  const result = await prisma.notification.findMany({
     where: {
-      id: address as string,
+      user: address as string,
+    },
+    include: {
+      Claim: true,
+    },
+    orderBy: {
+      createdAt: "desc",
     },
   });
 

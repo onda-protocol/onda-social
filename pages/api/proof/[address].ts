@@ -20,6 +20,16 @@ export default async function handler(
   const { address } = req.query;
 
   const { forum, hash, nonce } = await getEntry(address as string);
+
+  const proof = await getProof(forum, nonce);
+
+  return res.json({
+    hash,
+    proof,
+  });
+}
+
+export async function getProof(forum: string, nonce: bigint | number) {
   const merkleTree = new web3.PublicKey(forum);
   const merkleTreeAccount =
     await ConcurrentMerkleTreeAccount.fromAccountAddress(
@@ -52,10 +62,10 @@ export default async function handler(
     }
   });
 
-  res.json({
-    hash,
+  return {
+    root: merkleTreeAccount.getCurrentRoot(),
     proof,
-  });
+  };
 }
 
 function flattenPath(items: NestedPath) {

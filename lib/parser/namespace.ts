@@ -5,9 +5,9 @@ import axios from "axios";
 import base58 from "bs58";
 import { Instruction } from "helius-sdk";
 
+import { genIxIdentifier } from "../../utils/web3";
 import { getNamespaceProgram } from "../anchor/provider";
 import prisma from "../prisma";
-import { genIxIdentifier } from "./helpers";
 
 const connection = new web3.Connection(
   process.env.NEXT_PUBLIC_RPC_ENDPOINT as string

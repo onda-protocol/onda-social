@@ -24,8 +24,8 @@ model Moderator {
 
 enum Rule {
   Token
-  NFT
-  Pass
+  Nft
+  CompressedNft
   AdditionalSigner
 }
 
@@ -33,6 +33,17 @@ enum Operator {
   AND
   OR
   NOT
+}
+
+model Flair {
+  id    Int     @id @default(autoincrement())
+  name  String
+  color String?
+  forum String
+  Forum Forum   @relation("ForumToFlair", fields: [forum], references: [id])
+  Posts Post[]  @relation("FlairToPost")
+
+  @@index(fields: [id, name, forum])
 }
 
 model Gate {
@@ -56,20 +67,58 @@ model Forum {
   icon          String?
   banner        String?
   totalCapacity BigInt
+  Flair         Flair[]     @relation("ForumToFlair")
   Gates         Gate[]      @relation("ForumToGate")
   Moderators    Moderator[] @relation("ForumToModerator")
   Posts         Post[]      @relation("ForumToPost")
+
+  @@index(fields: [namespace, displayName])
 }
 
 model Award {
   id             String  @id @unique
   amount         BigInt
+  public         Boolean @default(false)
+  feeBasisPoints Int
   authority      String
+  treasury       String
   collectionMint String
   merkleTree     String
   name           String
   description    String?
   image          String
+  enabled        Boolean @default(false)
+  matching       String?
+  Matching       Award?  @relation("Matching", fields: [matching], references: [id])
+  Matched        Award[] @relation("Matching")
+
+  @@index(fields: [name])
+}
+
+model Claim {
+  id           String         @id @unique
+  award        String
+  Notification Notification[]
+}
+
+enum NotificationType {
+  Award
+  Claim
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  user      String
+  type      NotificationType
+  title     String
+  body      String
+  createdAt BigInt
+  meta      Json?
+  read      Boolean          @default(false)
+  claimId   String?
+  Claim     Claim?           @relation(fields: [claimId], references: [id])
+
+  @@index(fields: [user, createdAt, read, claimId])
 }
 
 enum PostType {
@@ -79,50 +128,87 @@ enum PostType {
 }
 
 model Post {
-  id        String    @id @unique
+  id        String     @id @unique
   author    String
-  Author    User      @relation("UserToPost", fields: [author], references: [id])
+  Author    User       @relation("UserToPost", fields: [author], references: [id])
   title     String
   body      String?
   uri       String
-  nsfw      Boolean   @default(false)
+  tag       String?
+  nsfw      Boolean    @default(false)
+  spoiler   Boolean    @default(false)
   hash      String?
-  postType  PostType  @default(TEXT)
+  dataHash  String?
+  postType  PostType   @default(TEXT)
   createdAt BigInt
   editedAt  BigInt?
   nonce     BigInt
   awards    Json?
-  points    BigInt    @default(0)
+  points    BigInt     @default(0)
+  flair     Int?
+  Flair     Flair?     @relation("FlairToPost", fields: [flair], references: [id])
   forum     String
-  Forum     Forum     @relation("ForumToPost", fields: [forum], references: [id])
-  Comments  Comment[] @relation("PostToComment")
+  Forum     Forum      @relation("ForumToPost", fields: [forum], references: [id])
+  Comments  Comment[]  @relation("PostToComment")
+  Votes     PostVote[] @relation("PostToVote")
+
+  @@index(fields: [author, title, createdAt(sort: Desc), points, forum])
 }
 
 model Comment {
-  id        String    @id @unique
+  id        String        @id @unique
   author    String
-  Author    User      @relation("UserToComment", fields: [author], references: [id])
+  Author    User          @relation("UserToComment", fields: [author], references: [id])
   body      String
   uri       String
-  nsfw      Boolean   @default(false)
+  nsfw      Boolean       @default(false)
   hash      String?
+  dataHash  String?
   createdAt BigInt
   editedAt  BigInt?
   nonce     BigInt
   awards    Json?
-  points    BigInt    @default(0)
+  points    BigInt        @default(0)
   post      String
-  Post      Post      @relation("PostToComment", fields: [post], references: [id])
+  Post      Post          @relation("PostToComment", fields: [post], references: [id])
   parent    String?
-  Parent    Comment?  @relation("CommentToParent", fields: [parent], references: [id])
-  Children  Comment[] @relation("CommentToParent")
+  Parent    Comment?      @relation("CommentToParent", fields: [parent], references: [id])
+  Children  Comment[]     @relation("CommentToParent")
+  Votes     CommentVote[] @relation("CommentToVote")
+
+  @@index(fields: [author, createdAt(sort: Desc), points, post, parent])
 }
 
 model User {
   id       String    @id @unique
-  name     String?
+  name     String?   @unique
   mint     String?
   avatar   String?
   Posts    Post[]    @relation("UserToPost")
   Comments Comment[] @relation("UserToComment")
+
+  @@index(fields: [name])
+}
+
+enum VoteType {
+  UP
+  DOWN
+}
+
+model CommentVote {
+  user    String
+  comment String
+  Comment Comment  @relation("CommentToVote", fields: [comment], references: [id])
+  vote    VoteType
+
+  @@id([user, comment])
+}
+
+model PostVote {
+  user String
+  post String
+  Post Post     @relation("PostToVote", fields: [post], references: [id])
+  vote VoteType
+
+  @@id([user, post])
 }

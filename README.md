@@ -1,8 +1,45 @@
+## Onda dApp
+
+This fullstack app serves the Onda Community dApp in addition to handling indexing of forums via Helius Webhooks.
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
 
-First, run the development server:
+A PostgreSQL database is required for indexing data via Helius. Because the API uses the Next.js Edge Runtime, the Prisma Client requires a Data Proxy connection.
+
+Vercel offers free Postgres hosting to Pro users and a Prisma Data Proxy can be setup for free @ [https://cloud.prisma.io/](https://cloud.prisma.io/).
+
+Additionally, a [Magic](https://magic.link/) account is required for Social Logins. Their free tier allows upto 1000 DAUs.
+
+Finally, a [Helius](https://www.helius.dev/) Webhook should be created for the following program addresses:
+
+```
+ondaTPaRbk5xRJiqje7DS8n6nFu7Hg6jvKthXNemsHg
+Awrdi1SPuntNpnm1hvDVDNsLnxg4zVotHsYF4FWNyaFj
+namev2tpRrZEN9VWNKoktWxTJ9bYxkyVXCJJqZtuMuG
+```
+
+Provide the follow to a `.env`
+
+```
+MIGRATE_DATABASE_URL=[Postgres connection string]
+DATABASE_URL=[Data Proxy connection string]
+WEBHOOK_AUTH_TOKEN=[Authentication string for Helius Webhooks]
+SIGNER_SECRET_KEY=[Secret Key for Gassless Relay]
+HELIUS_API_KEY=[Helius API Key]
+HELIUS_RPC_URL=[Helius RPC Endpoint]
+
+NEXT_PUBLIC_BUNDLR_URL=[Bundlr Node]
+NEXT_PUBLIC_HOST=http://localhost:3000
+NEXT_PUBLIC_RPC_ENDPOINT=[Public RPC Endpoint]
+NEXT_PUBLIC_MAGIC_PUBKEY=[Magic Pubkey]
+NEXT_PUBLIC_AUTH_MESSAGE="Please sign this message to sign in";
+```
+
+Run `npm run generate` and then `npx prisma db push` to initialize the db schema.
+
+Then, run the development server:
 
 ```bash
 npm run dev
@@ -13,26 +50,3 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
-
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.

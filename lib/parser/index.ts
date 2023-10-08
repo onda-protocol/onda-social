@@ -1,14 +1,12 @@
 import { EnrichedTransaction } from "helius-sdk";
 import {
   COMPRESSION_PROGRAM_ID,
-  PROFILE_PROGRAM_ID,
   MODERATION_PROGRAM_ID,
   NAMESPACE_PROGRAM_ID,
   AWARDS_PROGRAM_ID,
 } from "../anchor/constants";
 import { compressionParser } from "./compression";
 import { awardsParser } from "./awards";
-import { profileParser } from "./profile";
 import { namespaceParser } from "./namespace";
 
 export default async function enhancedTransactionParser(
@@ -35,11 +33,6 @@ export default async function enhancedTransactionParser(
         case NAMESPACE_PROGRAM_ID.toBase58(): {
           await namespaceParser(ix);
           // Do nothing
-          break;
-        }
-
-        case PROFILE_PROGRAM_ID.toBase58(): {
-          await profileParser(ix);
           break;
         }
 

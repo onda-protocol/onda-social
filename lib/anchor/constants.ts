@@ -1,7 +1,7 @@
 import { web3 } from "@project-serum/anchor";
 
 export const COMPRESSION_PROGRAM_ID = new web3.PublicKey(
-  "onda1FgCsQMC4zBhsjGjKoHDgGp6q7pK48HQaVXf28d"
+  "ondaTPaRbk5xRJiqje7DS8n6nFu7Hg6jvKthXNemsHg"
 );
 
 export const MODERATION_PROGRAM_ID = new web3.PublicKey(
@@ -9,15 +9,11 @@ export const MODERATION_PROGRAM_ID = new web3.PublicKey(
 );
 
 export const NAMESPACE_PROGRAM_ID = new web3.PublicKey(
-  "ona67gSygPUkb34U5sgPZK7AkgXDJJrNoi5nrraEHvE"
+  "namev2tpRrZEN9VWNKoktWxTJ9bYxkyVXCJJqZtuMuG"
 );
 
 export const AWARDS_PROGRAM_ID = new web3.PublicKey(
-  "AwrdSLTcfNkVSARz8YoNYcVhknD7oxm7t3EqyYZ9bPK5"
-);
-
-export const PROFILE_PROGRAM_ID = new web3.PublicKey(
-  "ondapcq2qXTSynRieMCE9BjRsZ2XALEEZZunkwbhCPF"
+  "Awrdi1SPuntNpnm1hvDVDNsLnxg4zVotHsYF4FWNyaFj"
 );
 
 export const METADATA_PROGRAM_ID = new web3.PublicKey(

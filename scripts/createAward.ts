@@ -2,7 +2,12 @@ import fs from "fs";
 import os from "os";
 import * as dotenv from "dotenv";
 import * as anchor from "@project-serum/anchor";
-import { keypairIdentity, Metaplex } from "@metaplex-foundation/js";
+import {
+  bundlrStorage,
+  keypairIdentity,
+  Metaplex,
+  toMetaplexFile,
+} from "@metaplex-foundation/js";
 import {
   getConcurrentMerkleTreeAccountSize,
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
@@ -14,6 +19,7 @@ import {
 } from "../lib/anchor/constants";
 import { getAwardsProgram } from "../lib/anchor/provider";
 import { findAwardPda, findTreeAuthorityPda } from "../utils/pda";
+import award from "./award";
 
 dotenv.config();
 
@@ -31,7 +37,7 @@ function getSigner() {
   return anchor.web3.Keypair.fromSecretKey(secretKey);
 }
 
-async function createReward(
+async function createAward(
   authority: anchor.web3.Keypair,
   merkleTree: anchor.web3.Keypair,
   accounts: Awaited<ReturnType<typeof createCollectionMint>>
@@ -56,12 +62,16 @@ async function createReward(
 
   const createRewardIx = await program.methods
     .createAward(maxDepth, bufferSize, {
-      symbol: "PLANK",
-      name: "Plankton",
-      uri: "https://arweave.net/r1Y2R-KIE71TdOGCah4qQ8pTLjBn1WEETxqD8b7X8Lc",
+      amount: new anchor.BN(award.amount),
+      public: award.public,
+      feeBasisPoints: award.feeBasisPoints,
     })
     .accounts({
       award: accounts.awardPda,
+      matchingAward: award.matchingAward
+        ? new anchor.web3.PublicKey(award.matchingAward)
+        : null,
+      treasury: authority.publicKey,
       collectionMint: accounts.collectionMint,
       collectionMetadata: accounts.collectionMetadata,
       collectionAuthorityRecord: accounts.collectionAuthorityRecordPda,
@@ -80,7 +90,13 @@ async function createReward(
   const messageV0 = new anchor.web3.TransactionMessage({
     payerKey: authority.publicKey,
     recentBlockhash: latestBlockhash.blockhash,
-    instructions: [allocTreeIx, createRewardIx],
+    instructions: [
+      anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
+        units: 1000000,
+      }),
+      allocTreeIx,
+      createRewardIx,
+    ],
   }).compileToV0Message();
 
   const transaction = new anchor.web3.VersionedTransaction(messageV0);
@@ -88,7 +104,7 @@ async function createReward(
   try {
     await transaction.sign([authority, merkleTree]);
     const signature = await connection.sendTransaction(transaction, {
-      skipPreflight: true,
+      // skipPreflight: true,
       preflightCommitment: "confirmed",
     });
     console.log("txId: ", signature);
@@ -105,14 +121,15 @@ async function createReward(
 
 async function createCollectionMint(
   authority: anchor.web3.Keypair,
-  merkleTree: anchor.web3.Keypair
+  merkleTree: anchor.web3.Keypair,
+  metadataUri: string
 ) {
   const metaplex = new Metaplex(connection).use(keypairIdentity(authority));
 
   const transactionBuilder = await metaplex.nfts().builders().create({
-    symbol: "PLANK",
-    name: "Planktonites",
-    uri: "https://arweave.net/r1Y2R-KIE71TdOGCah4qQ8pTLjBn1WEETxqD8b7X8Lc",
+    symbol: award.symbol,
+    name: award.name,
+    uri: metadataUri,
     sellerFeeBasisPoints: 0,
     isCollection: true,
   });
@@ -147,12 +164,46 @@ async function createCollectionMint(
   };
 }
 
+async function uploadMetadata(authority: anchor.web3.Keypair) {
+  const metaplex = new Metaplex(connection).use(keypairIdentity(authority)).use(
+    bundlrStorage({
+      address: process.env.NEXT_PUBLIC_BUNDLR_URL!,
+    })
+  );
+
+  const file = fs.readFileSync(award.image);
+  const metaplexFile = toMetaplexFile(file, "image/png");
+  const imageUri = await metaplex.storage().upload(metaplexFile);
+  const metadataUri = await metaplex.storage().uploadJson({
+    name: award.name,
+    symbol: award.symbol,
+    image: imageUri,
+    external_url: "https://onda.community",
+    attributes: {
+      trait_type: "glass",
+      value: "chewed",
+    },
+    properties: {
+      files: [
+        {
+          uri: imageUri,
+          type: "image/png",
+        },
+      ],
+    },
+  });
+  console.log("metadataUri: ", metadataUri);
+
+  return metadataUri;
+}
+
 async function main() {
   const signer = getSigner();
   const merkleTree = anchor.web3.Keypair.generate();
 
-  const accounts = await createCollectionMint(signer, merkleTree);
-  await createReward(signer, merkleTree, accounts);
+  const metadataUri = await uploadMetadata(signer);
+  const accounts = await createCollectionMint(signer, merkleTree, metadataUri);
+  await createAward(signer, merkleTree, accounts);
 }
 
 main();
