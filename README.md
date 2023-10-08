@@ -37,6 +37,8 @@ NEXT_PUBLIC_MAGIC_PUBKEY=[Magic Pubkey]
 NEXT_PUBLIC_AUTH_MESSAGE="Please sign this message to sign in";
 ```
 
+Run `npm run generate` and then `npx prisma db push` to initialize the db schema.
+
 Then, run the development server:
 
 ```bash
