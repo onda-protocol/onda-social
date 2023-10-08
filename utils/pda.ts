@@ -3,7 +3,6 @@ import {
   COMPRESSION_PROGRAM_ID,
   MODERATION_PROGRAM_ID,
   NAMESPACE_PROGRAM_ID,
-  PROFILE_PROGRAM_ID,
   AWARDS_PROGRAM_ID,
   BUBBLEGUM_PROGRAM_ID,
   METADATA_PROGRAM_ID,
@@ -59,13 +58,6 @@ export function findForumConfigPda(merkleTree: web3.PublicKey) {
   return web3.PublicKey.findProgramAddressSync(
     [merkleTree.toBuffer()],
     COMPRESSION_PROGRAM_ID
-  )[0];
-}
-
-export function findProfilePda(author: web3.PublicKey) {
-  return web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("profile"), author.toBuffer()],
-    PROFILE_PROGRAM_ID
   )[0];
 }
 

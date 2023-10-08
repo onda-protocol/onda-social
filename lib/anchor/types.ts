@@ -1,11 +1,9 @@
 import { IdlTypes } from "@project-serum/anchor/dist/cjs/program/namespace/types";
 import { OndaAwards } from "./idl/onda_awards";
 import { OndaCompression } from "./idl/onda_compression";
-import { OndaProfile } from "./idl/onda_profile";
 
 export type OndaAwardsTypes = IdlTypes<OndaAwards>;
 export type OndaCompressionTypes = IdlTypes<OndaCompression>;
-export type OndaProfileTypes = IdlTypes<OndaProfile>;
 
 export type DataV1 = OndaCompressionTypes["DataV1"];
 export type LeafSchemaV1 = SnakeToCamelCaseObj<
