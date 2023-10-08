@@ -15,13 +15,13 @@ import { useRouter } from "next/router";
 
 import { LoginModal } from "components/modal/login";
 import { useMagic } from "./magic";
-import { stat } from "fs";
 
 type Provider = null | "magic" | "wallet";
 
 export enum AuthStatus {
   IDLE = "IDLE",
   RESOLVING = "RESOLVING",
+  UNAUTHENTAICTED = "UNAUTHENTICATED",
   CONNECTED = "CONNECTED",
   AUTHENTICATING = "AUTHENTICATING",
   AUTHENTICATED = "AUTHENTICATED",
@@ -128,6 +128,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .finally(() => {
               isResolvingRef.current = false;
             });
+        } else {
+          isResolvingRef.current = false;
+          setAuthStatus(AuthStatus.UNAUTHENTAICTED);
         }
       });
     }

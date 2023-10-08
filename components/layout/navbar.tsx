@@ -101,6 +101,7 @@ export function Navbar() {
 const UserMenu = () => {
   const router = useRouter();
   const auth = useAuth();
+
   const userQuery = useQuery(
     ["user", auth.address],
     () => fetchUser(auth.address!),
@@ -175,7 +176,10 @@ const UserMenu = () => {
         <Button
           size="sm"
           onClick={auth.showUI}
-          disabled={auth.status === AuthStatus.RESOLVING}
+          isDisabled={
+            auth.status === AuthStatus.RESOLVING ||
+            router.pathname.includes("/oauth/callback")
+          }
           isLoading={auth.status === AuthStatus.AUTHENTICATING}
         >
           Login

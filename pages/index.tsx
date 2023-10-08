@@ -57,6 +57,7 @@ const Home: NextPage<PageProps> = () => {
         <Box position="fixed" height="190px" width="100%">
           <Image
             fill
+            priority
             src="/banner2.png"
             alt="Homepage banner"
             style={{
