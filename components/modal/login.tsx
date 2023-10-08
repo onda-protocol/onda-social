@@ -102,6 +102,14 @@ export const LoginModal = ({ open, onRequestClose }: LoginModalProps) => {
             >
               Sign Message
             </Button>
+            <Button
+              variant="outline"
+              width="100%"
+              mt="2"
+              onClick={auth.signOut}
+            >
+              Disconnect
+            </Button>
           </>
         );
       }

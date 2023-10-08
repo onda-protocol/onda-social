@@ -86,7 +86,6 @@ export const PostList = ({
   useEffect(() => {
     if (!listRef.current) return;
     if (renderCount > 0) {
-      console.log("forceUpdate...");
       listRef.current.resetAfterIndex(0);
       listRef.current.forceUpdate();
     }

@@ -15,13 +15,13 @@ import { useRouter } from "next/router";
 
 import { LoginModal } from "components/modal/login";
 import { useMagic } from "./magic";
-import { stat } from "fs";
 
 type Provider = null | "magic" | "wallet";
 
 export enum AuthStatus {
   IDLE = "IDLE",
   RESOLVING = "RESOLVING",
+  UNAUTHENTAICTED = "UNAUTHENTICATED",
   CONNECTED = "CONNECTED",
   AUTHENTICATING = "AUTHENTICATING",
   AUTHENTICATED = "AUTHENTICATED",
@@ -128,6 +128,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             .finally(() => {
               isResolvingRef.current = false;
             });
+        } else {
+          isResolvingRef.current = false;
+          setAuthStatus((status) => {
+            if (status === AuthStatus.RESOLVING) {
+              return AuthStatus.UNAUTHENTAICTED;
+            }
+            return status;
+          });
         }
       });
     }
@@ -208,7 +216,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await magic.user
             .logout()
             .then(() => {
-              setAuthStatus(AuthStatus.IDLE);
+              setAuthStatus(AuthStatus.UNAUTHENTAICTED);
               setProvider(null);
               toast.success("Logged out");
               queryClient.setQueryData(["user-info"], undefined);
@@ -221,9 +229,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await wallet
             .disconnect()
             .then(() => {
-              setAuthStatus(AuthStatus.IDLE);
+              setAuthStatus(AuthStatus.UNAUTHENTAICTED);
               setProvider(null);
-              toast.success("Logged out");
             })
             .catch((err) => {
               console.error("Failed to disconnect wallet");
