@@ -12,8 +12,7 @@ const Callback: NextPage = () => {
     if (magic && router.isReady) {
       magic.oauth
         .getRedirectResult()
-        .then((result) => {
-          console.log("result: ", result);
+        .then(() => {
           router.push("/");
         })
         .catch((err) => console.log("err: ", err));

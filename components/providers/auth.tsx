@@ -130,7 +130,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             });
         } else {
           isResolvingRef.current = false;
-          setAuthStatus(AuthStatus.UNAUTHENTAICTED);
+          setAuthStatus((status) => {
+            if (status === AuthStatus.RESOLVING) {
+              return AuthStatus.UNAUTHENTAICTED;
+            }
+            return status;
+          });
         }
       });
     }
@@ -211,7 +216,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await magic.user
             .logout()
             .then(() => {
-              setAuthStatus(AuthStatus.IDLE);
+              setAuthStatus(AuthStatus.UNAUTHENTAICTED);
               setProvider(null);
               toast.success("Logged out");
               queryClient.setQueryData(["user-info"], undefined);
@@ -224,9 +229,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await wallet
             .disconnect()
             .then(() => {
-              setAuthStatus(AuthStatus.IDLE);
+              setAuthStatus(AuthStatus.UNAUTHENTAICTED);
               setProvider(null);
-              toast.success("Logged out");
             })
             .catch((err) => {
               console.error("Failed to disconnect wallet");
