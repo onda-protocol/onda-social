@@ -30,7 +30,7 @@ const gigbrain: Award = {
   symbol: "GIGABRAIN",
   image: path.join(__dirname, "../public/glasseater-dark.png"),
   public: true,
-  matchingAward: "AaEiKWuVvy512iaoKCZopKFQkz4pZPanEFEJE7cwEth6",
+  matchingAward: "HmXcrU6FFTVgjPP15c1iy9JhCWyRrMKzPdNZ69TEXdt5",
 };
 
 export default gigbrain;

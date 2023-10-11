@@ -116,7 +116,7 @@ export const ProfileModal = ({ open, onRequestClose }: ProfileModalProps) => {
   );
 
   function renderBody() {
-    if (!query.data) {
+    if (query.isLoading) {
       return (
         <Box display="flex" alignItems="center" justifyContent="center">
           <Spinner />
@@ -184,7 +184,7 @@ export const ProfileModal = ({ open, onRequestClose }: ProfileModalProps) => {
                 message: "Username must be alphanumeric",
               },
               async validate(value) {
-                if (value === query.data.name) {
+                if (value === query.data?.name) {
                   return true;
                 }
 
@@ -276,6 +276,7 @@ interface ImageMenuProps {
 
 const ImageMenu = ({ onSelect }: ImageMenuProps) => {
   const auth = useAuth();
+
   const query = useQuery(
     ["assets", auth.address],
     () => fetchAssetsByOwner(auth.address!),
@@ -307,6 +308,7 @@ const ImageMenu = ({ onSelect }: ImageMenuProps) => {
             >
               <Image
                 fill
+                unoptimized
                 alt={asset.content.metadata.name}
                 src={asset.content.files[0].cdn_uri}
                 style={{
