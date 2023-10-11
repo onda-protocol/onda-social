@@ -23,13 +23,17 @@ export const DocumentHead = ({
       <title key="title">{title}</title>
       <meta key="description" name="description" content={description} />
       <meta key="author" name="author" content="Onda" />
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      />
       <link rel="manifest" href="/manifest.json" />
       <link
         key="shortcut-icon"
         rel="shortcut icon"
         type="image/x-icon"
         href="/favicon.ico"
-      ></link>
+      />
       <link
         key="icon"
         rel="icon"
