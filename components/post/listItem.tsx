@@ -1,4 +1,5 @@
 import { Box, Flex, forwardRef } from "@chakra-ui/react";
+import { useSize } from "@chakra-ui/react-use-size";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 
@@ -7,15 +8,16 @@ import { Panel } from "components/panel";
 import { PostMeta } from "components/post/meta";
 import { PostButtons, PostVoteButtons } from "components/post/buttons";
 import { PostContent } from "components/post/content";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 interface PostListItemProps {
   displayIcon?: boolean;
   post: PostWithCommentsCountAndForum;
+  onResize: () => void;
 }
 
 export const PostListItem = forwardRef<PostListItemProps, "div">(
-  function PostListItem({ displayIcon, post }, ref) {
+  function PostListItem({ displayIcon, post, onResize }, ref) {
     const router = useRouter();
     const queryClient = useQueryClient();
 
@@ -41,6 +43,15 @@ export const PostListItem = forwardRef<PostListItemProps, "div">(
       () => Object.values(post.awards ?? {}).length,
       [post.awards]
     );
+
+    const dimensions = useSize(ref);
+
+    useEffect(() => {
+      console.log("dimensions", dimensions);
+      if (dimensions) {
+        onResize();
+      }
+    }, [dimensions, onResize]);
 
     return (
       <Panel

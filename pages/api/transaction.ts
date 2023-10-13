@@ -27,8 +27,21 @@ const signer = web3.Keypair.fromSecretKey(
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<TransactionResponse>
+  res: NextApiResponse<
+    | TransactionResponse
+    | {
+        message: string;
+      }
+  >
 ) {
+  if (req.method === "GET") {
+    return res.status(200).json({ message: "Ok" });
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" });
+  }
+
   const { data, method, funded } = req.body as TransactionArgs & {
     funded?: boolean;
   };

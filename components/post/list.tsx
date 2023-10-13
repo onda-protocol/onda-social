@@ -1,6 +1,7 @@
 import {
   CSSProperties,
   memo,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -172,15 +173,20 @@ const Row = memo(function Row({ index, data, style }: RowProps) {
   const item = data.items[index];
   const rowRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const onResize = useCallback(() => {
     const el = rowRef.current;
-    if (el) {
-      let styles = window.getComputedStyle(el);
-      let marginBottom = parsePixels(styles.marginBottom);
-      let border = parsePixels(styles.borderWidth);
-      data.setRowHeight(index, el.clientHeight + marginBottom + border);
-    }
+
+    if (!el) return;
+
+    let styles = window.getComputedStyle(el);
+    let marginBottom = parsePixels(styles.marginBottom);
+    let border = parsePixels(styles.borderWidth);
+    data.setRowHeight(index, el.clientHeight + marginBottom + border);
   }, [index, data, rowRef]);
+
+  useEffect(() => {
+    onResize();
+  }, [onResize]);
 
   if (item.id === "PLACEHOLDER") {
     return (
@@ -199,6 +205,7 @@ const Row = memo(function Row({ index, data, style }: RowProps) {
         ref={rowRef}
         post={item as PostWithCommentsCountAndForum}
         displayIcon={data.displayIcon}
+        onResize={onResize}
       />
     </div>
   );
