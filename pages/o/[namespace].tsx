@@ -1,17 +1,18 @@
 import type { NextPage } from "next";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import {
   QueryClient,
   DehydratedState,
   dehydrate,
+  useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
 import {
   Box,
   Container,
-  Spinner,
   Text,
   Heading,
   Tabs,
@@ -26,7 +27,6 @@ import {
   fetchForumByNamespace,
   fetchPostsByForumNamespace,
 } from "lib/api";
-import { PostListItem } from "components/post/listItem";
 import {
   Sidebar,
   SidebarSection,
@@ -35,6 +35,14 @@ import {
   SidebarLink,
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
+import { PostList } from "components/post/list";
+
+const PostModal = dynamic(
+  () => import("../../components/modal/post").then((mod) => mod.PostModal),
+  {
+    ssr: false,
+  }
+);
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
@@ -55,9 +63,13 @@ const Community: NextPage<PageProps> = () => {
     return forum;
   });
 
-  const postsQuery = useQuery(["posts", "o", namespace], () =>
-    fetchPostsByForumNamespace(namespace)
-  );
+  const postsQuery = useInfiniteQuery({
+    queryKey: ["posts", "o", namespace],
+    queryFn: async ({ pageParam = 0 }) =>
+      fetchPostsByForumNamespace(namespace, pageParam),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === 20 ? allPages.length * 20 : undefined,
+  });
 
   return (
     <>
@@ -65,7 +77,7 @@ const Community: NextPage<PageProps> = () => {
         <Box
           position="relative"
           height={forumQuery.data?.banner ? "180px" : "90px"}
-          backgroundColor="onda.600"
+          backgroundColor="steelBlue"
           zIndex="0"
         >
           {forumQuery.data?.banner ? (
@@ -73,6 +85,9 @@ const Community: NextPage<PageProps> = () => {
               fill
               src={forumQuery.data.banner}
               alt={forumQuery.data.namespace + " banner"}
+              style={{
+                objectFit: "cover",
+              }}
             />
           ) : null}
         </Box>
@@ -86,7 +101,7 @@ const Community: NextPage<PageProps> = () => {
                   p="3px"
                   bgColor="#fff"
                   borderRadius="100%"
-                  zIndex="1"
+                  zIndex="0"
                 >
                   <Image
                     alt={forumQuery.data.namespace + " logo"}
@@ -118,28 +133,17 @@ const Community: NextPage<PageProps> = () => {
           </Container>
         </TabList>
         <TabPanels>
-          <TabPanel>
+          <TabPanel padding="0">
             <GridLayout
               leftColumn={
-                <Box mt="2">
-                  {postsQuery.isLoading ? (
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      <Spinner />
-                    </Box>
-                  ) : (
-                    postsQuery.data?.map((post) => (
-                      <PostListItem
-                        key={post.id}
-                        displayIcon={false}
-                        post={post}
-                      />
-                    ))
-                  )}
-                </Box>
+                <PostList
+                  displayIcon={false}
+                  data={postsQuery.data}
+                  isLoading={postsQuery.isLoading}
+                  shouldFetchMore={postsQuery.hasNextPage}
+                  isFetchingMore={postsQuery.isFetchingNextPage}
+                  onFetchMore={() => postsQuery.fetchNextPage()}
+                />
               }
               rightColumn={
                 <Sidebar>
@@ -149,7 +153,7 @@ const Community: NextPage<PageProps> = () => {
                     </Box>
                     <SidebarButtons forum={forumQuery.data?.id} />
                   </SidebarSection>
-                  {Array.isArray(forumQuery.data?.links) ? (
+                  {forumQuery.data?.links?.length ? (
                     <SidebarSection title="Links">
                       <SidebarList>
                         {forumQuery.data?.links.map((link, index) => (
@@ -168,6 +172,7 @@ const Community: NextPage<PageProps> = () => {
           </TabPanel>
         </TabPanels>
       </Tabs>
+      <PostModal />
     </>
   );
 };
@@ -175,13 +180,16 @@ const Community: NextPage<PageProps> = () => {
 Community.getInitialProps = async (ctx) => {
   if (typeof window === "undefined") {
     try {
-      const address = ctx.query.address as string;
+      const namespace = ctx.query.namespace as string;
       const queryClient = new QueryClient();
 
       await Promise.allSettled([
-        queryClient.prefetchQuery(["posts", "o", address], () =>
-          fetchPostsByForumNamespace(address)
+        queryClient.prefetchQuery(["forum", "namespace", namespace], () =>
+          fetchForumByNamespace(namespace)
         ),
+        // queryClient.prefetchQuery(["posts", "o", address], () =>
+        //   fetchPostsByForumNamespace(address)
+        // ),
         queryClient.prefetchQuery(["awards"], fetchAwards),
       ]);
 

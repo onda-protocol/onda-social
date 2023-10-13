@@ -4,14 +4,14 @@ import { useRouter } from "next/router";
 import { useCallback } from "react";
 import { Box, Container, Heading, Spinner } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
-import { useWallet } from "@solana/wallet-adapter-react";
 
 import type { EntryForm } from "components/editor";
-import { fetchUser } from "lib/api";
 import { getPrismaPostType } from "utils/parse";
+import { fetchUser } from "lib/api";
+import { useAuth } from "components/providers/auth";
 
-const EditorProvider = dynamic(
-  () => import("components/editor").then((mod) => mod.EditorProvider),
+const Editor = dynamic(
+  () => import("components/editor").then((mod) => mod.Editor),
   {
     ssr: false,
     loading: () => (
@@ -24,16 +24,12 @@ const EditorProvider = dynamic(
 
 const Submit: NextPage = () => {
   const router = useRouter();
-  const wallet = useWallet();
+  const auth = useAuth();
   const forum = router.query.o as string | undefined;
 
-  useQuery(
-    ["user", wallet.publicKey?.toBase58()],
-    () => fetchUser(wallet.publicKey?.toBase58()!),
-    {
-      enabled: Boolean(wallet.publicKey),
-    }
-  );
+  useQuery(["user", auth.address], () => fetchUser(auth.address!), {
+    enabled: Boolean(auth.address),
+  });
 
   const onSuccess = useCallback(
     async (signature: string, uri: string, variables: EntryForm) => {
@@ -44,12 +40,12 @@ const Submit: NextPage = () => {
           title: variables.title,
           body: variables.body,
           forum: variables.forum,
-          author: wallet.publicKey?.toBase58(),
+          author: auth.address,
           postType: getPrismaPostType(variables.postType),
         },
       });
     },
-    [router, wallet]
+    [router, auth]
   );
 
   return (
@@ -57,7 +53,7 @@ const Submit: NextPage = () => {
       <Heading size="md" my="9">
         Create a post
       </Heading>
-      <EditorProvider
+      <Editor
         config={{ type: "post", forum }}
         buttonLabel="Post"
         successMessage="Post created!"

@@ -1,8 +1,10 @@
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import { parseBigInt } from "utils/format";
 import prisma from "lib/prisma";
+import { parseBigInt } from "utils/format";
+import { getCurrentUser } from "utils/verify";
+import { mapNestedComment } from "../comments";
 
 export const config = {
   runtime: "edge",
@@ -15,6 +17,18 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const parent = searchParams.get("parent");
   const skip = parseInt(searchParams.get("skip") ?? "0");
 
+  const currentUser = await getCurrentUser(req);
+  const votes = currentUser
+    ? {
+        where: {
+          user: currentUser,
+        },
+        select: {
+          vote: true,
+        },
+      }
+    : false;
+
   const result = await prisma.comment.findMany({
     skip,
     where: {
@@ -26,6 +40,7 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
     },
     include: {
       Author: true,
+      Votes: votes,
       Children: {
         take: 10,
         orderBy: {
@@ -33,6 +48,7 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
         },
         include: {
           Author: true,
+          Votes: votes,
           _count: {
             select: {
               Children: true,
@@ -48,5 +64,8 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
     },
   });
 
-  return NextResponse.json(parseBigInt(result));
+  const parsedResults = parseBigInt(result);
+  const replies = parsedResults.map(mapNestedComment);
+
+  return NextResponse.json(replies);
 }

@@ -9,16 +9,16 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
   const url = new URL(req.url);
   const address = url.pathname.split("/")[3] as string;
   const searchParams = req.nextUrl.searchParams;
-  const page = searchParams.get("page") ?? 1;
+  const page = searchParams.get("page") ?? "1";
 
-  const assets = await fetch(process.env.HELIUS_API_URL as string, {
+  const data = await fetch(process.env.HELIUS_RPC_URL as string, {
     method: "POST",
     body: JSON.stringify({
       jsonrpc: "2.0",
       id: "string",
       method: "getAssetsByOwner",
       params: {
-        page,
+        page: Number(page),
         ownerAddress: address,
         limit: 100,
         sortBy: {
@@ -29,5 +29,5 @@ export default async function handler(req: NextRequest, _ctx: NextFetchEvent) {
     }),
   }).then((res) => res.json());
 
-  return NextResponse.json(assets);
+  return NextResponse.json(data.result.items);
 }

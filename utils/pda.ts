@@ -3,7 +3,6 @@ import {
   COMPRESSION_PROGRAM_ID,
   MODERATION_PROGRAM_ID,
   NAMESPACE_PROGRAM_ID,
-  PROFILE_PROGRAM_ID,
   AWARDS_PROGRAM_ID,
   BUBBLEGUM_PROGRAM_ID,
   METADATA_PROGRAM_ID,
@@ -62,13 +61,6 @@ export function findForumConfigPda(merkleTree: web3.PublicKey) {
   )[0];
 }
 
-export function findProfilePda(author: web3.PublicKey) {
-  return web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("profile"), author.toBuffer()],
-    PROFILE_PROGRAM_ID
-  )[0];
-}
-
 export function findTeamPda(merkleTree: web3.PublicKey) {
   return web3.PublicKey.findProgramAddressSync(
     [Buffer.from("team"), merkleTree.toBuffer()],
@@ -93,6 +85,16 @@ export function findTreeMarkerPda(merkleTree: web3.PublicKey) {
 export function findAwardPda(merkleTree: web3.PublicKey) {
   return web3.PublicKey.findProgramAddressSync(
     [merkleTree.toBuffer()],
+    AWARDS_PROGRAM_ID
+  )[0];
+}
+
+export function findClaimPda(
+  matchingAward: web3.PublicKey,
+  recipient: web3.PublicKey
+) {
+  return web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("claim"), matchingAward.toBuffer(), recipient.toBuffer()],
     AWARDS_PROGRAM_ID
   )[0];
 }

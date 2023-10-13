@@ -1,14 +1,16 @@
 import { web3 } from "@project-serum/anchor";
-import { Prisma } from "@prisma/client/edge";
+import { NotificationType, Prisma } from "@prisma/client";
+import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 import axios from "axios";
 import base58 from "bs58";
 import { Instruction } from "helius-sdk";
 
+import { genIxIdentifier } from "../../utils/web3";
+import { AWARDS_PROGRAM_ID } from "../anchor/constants";
 import { IDL as AwardsIDS } from "../anchor/idl/onda_awards";
 import { getAwardsProgram } from "../anchor/provider";
-import { AwardMetadata } from "../anchor/types";
+import { CreateAwardArgs } from "../anchor/types";
 import prisma from "../prisma";
-import { genIxIdentifier } from "./helpers";
 
 const connection = new web3.Connection(
   process.env.NEXT_PUBLIC_RPC_ENDPOINT as string
@@ -39,35 +41,66 @@ export async function awardsParser(ix: Instruction) {
     case "createAward": {
       const authorityIndex = ixAccounts.findIndex((a) => a.name === "payer");
       const awardIndex = ixAccounts.findIndex((a) => a.name === "award");
+      const treasuryIndex = ixAccounts.findIndex((a) => a.name === "treasury");
+      const matchingAwardIndex = ixAccounts.findIndex(
+        (a) => a.name === "matchingAward"
+      );
       const collectionMintIndex = ixAccounts.findIndex(
         (a) => a.name === "collectionMint"
+      );
+      const collectionMetadataIndex = ixAccounts.findIndex(
+        (a) => a.name === "collectionMetadata"
       );
       const merkleTreeIndex = ixAccounts.findIndex(
         (a) => a.name === "merkleTree"
       );
+
       const authority = ix.accounts[authorityIndex];
       const award = ix.accounts[awardIndex];
+      const treasury = ix.accounts[treasuryIndex];
+      const matchingAward = ix.accounts[matchingAwardIndex];
       const collectionMint = ix.accounts[collectionMintIndex];
+      const collectionMetadata = ix.accounts[collectionMetadataIndex];
       const merkleTree = ix.accounts[merkleTreeIndex];
 
-      const metadataArgs = rewardsProgram.coder.types.decode<AwardMetadata>(
-        "AwardMetadata",
-        Buffer.from(ixData.slice(16))
+      const createAwardArgs =
+        rewardsProgram.coder.types.decode<CreateAwardArgs>(
+          "CreateAwardArgs",
+          Buffer.from(ixData.slice(16))
+        );
+      const amount = createAwardArgs.amount;
+      const isPublic = createAwardArgs.public;
+      const feeBasisPoints = createAwardArgs.feeBasisPoints;
+      const metadata = await Metadata.fromAccountAddress(
+        connection,
+        new web3.PublicKey(collectionMetadata)
       );
-      const metadataJson = await axios.get(metadataArgs.uri);
-      const description = metadataJson.data.description as string;
-      const image = metadataJson.data.image as string;
+      const metadataJson = await axios.get(metadata.data.uri);
+      const name = metadataJson.data.name!;
+      const description = metadataJson.data.description!;
+      const image = metadataJson.data.image!;
+      const hasMatchingAward = matchingAward !== AWARDS_PROGRAM_ID.toBase58();
 
       await prisma.award.create({
         data: {
+          id: award,
+          amount: BigInt(amount.toNumber()),
+          public: isPublic,
           authority,
+          treasury,
+          feeBasisPoints,
           collectionMint,
           description,
           merkleTree,
           image,
-          id: award,
-          amount: BigInt(0),
-          name: metadataArgs.name,
+          name,
+          Matching: hasMatchingAward
+            ? {
+                connect: {
+                  id: matchingAward,
+                },
+              }
+            : undefined,
         },
       });
 
@@ -75,25 +108,29 @@ export async function awardsParser(ix: Instruction) {
     }
 
     case "giveAward": {
+      const payerIndex = ixAccounts.findIndex((a) => a.name === "payer");
       const awardIndex = ixAccounts.findIndex((a) => a.name === "award");
-      const leafOwnerIndex = ixAccounts.findIndex(
-        (a) => a.name === "leafOwner"
+      const claimIndex = ixAccounts.findIndex((a) => a.name === "claim");
+      const leafOwnerIndex = ixAccounts.findIndex((a) => a.name === "entryId");
+      const recipientIndex = ixAccounts.findIndex(
+        (a) => a.name === "recipient"
       );
+      const payer = ix.accounts[payerIndex];
       const awardId = ix.accounts[awardIndex];
+      const claimId = ix.accounts[claimIndex];
+      const hasClaim = claimId !== AWARDS_PROGRAM_ID.toBase58();
       const entryId = ix.accounts[leafOwnerIndex];
-
-      const award = await prisma.award.findUnique({
-        where: {
-          id: awardId,
-        },
-      });
+      const recipient = ix.accounts[recipientIndex];
 
       await prisma.$transaction(async (transaction) => {
-        const [rewardResult, postResult, commentResult] =
+        const [awardResult, postResult, commentResult] =
           await Promise.allSettled([
             transaction.award.findUnique({
               where: {
                 id: awardId,
+              },
+              include: {
+                Matching: true,
               },
             }),
             transaction.post.findUnique({
@@ -108,8 +145,40 @@ export async function awardsParser(ix: Instruction) {
             }),
           ]);
 
-        if (rewardResult.status === "rejected" || rewardResult.value === null) {
+        if (awardResult.status === "rejected" || awardResult.value === null) {
           return;
+        }
+
+        const award = awardResult.value;
+
+        function claimNotif() {
+          if (hasClaim && award.Matching) {
+            return transaction.notification.create({
+              data: {
+                user: recipient,
+                type: NotificationType.Claim,
+                title: "You have an award to claim!",
+                body: `Click to claim the ${award.Matching.name} award.`,
+                createdAt: Math.floor(Date.now() / 1000),
+                meta: {
+                  name: award.Matching.name,
+                  image: award.Matching.image,
+                  user: payer,
+                },
+                Claim: {
+                  connectOrCreate: {
+                    where: {
+                      id: claimId,
+                    },
+                    create: {
+                      id: claimId,
+                      award: award.Matching.id,
+                    },
+                  },
+                },
+              },
+            });
+          }
         }
 
         if (postResult.status === "fulfilled" && postResult.value !== null) {
@@ -119,23 +188,39 @@ export async function awardsParser(ix: Instruction) {
             | Prisma.JsonObject
             | undefined;
           const currentAwardParsed = currentReward ?? {
-            image: award?.image,
+            name: award.name,
+            image: award.image,
             count: 0,
           };
           currentAwardParsed.count = Number(currentAwardParsed.count) + 1;
           awards[awardId] = currentAwardParsed;
 
-          await transaction.post.update({
-            where: {
-              id: entryId,
-            },
-            data: {
-              points: {
-                increment: 1,
+          await Promise.all([
+            transaction.post.update({
+              where: {
+                id: entryId,
               },
-              awards,
-            },
-          });
+              data: {
+                awards,
+              },
+            }),
+            transaction.notification.create({
+              data: {
+                user: recipient,
+                type: NotificationType.Award,
+                title: "You received an award!",
+                body: `Your received the ${award.name} award for your post.`,
+                createdAt: Math.floor(Date.now() / 1000),
+                meta: {
+                  name: award.name,
+                  image: award.image,
+                  postId: entryId,
+                  user: payer,
+                },
+              },
+            }),
+            claimNotif(),
+          ]);
         } else if (
           commentResult.status === "fulfilled" &&
           commentResult.value !== null
@@ -144,59 +229,92 @@ export async function awardsParser(ix: Instruction) {
           const awards = (comment.awards ?? {}) as Prisma.JsonObject;
           const currentAward = awards[awardId] as Prisma.JsonObject | undefined;
           const currentAwardParsed = currentAward ?? {
-            image: award?.image,
+            name: award.name,
+            image: award.image,
             count: 0,
           };
           currentAwardParsed.count = Number(currentAwardParsed.count) + 1;
           awards[awardId] = currentAwardParsed;
 
-          await transaction.comment.update({
-            where: {
-              id: entryId,
-            },
-            data: {
-              points: {
-                increment: 1,
-              },
-              awards,
-            },
-          });
-        }
-      });
-
-      if (award) {
-        // expect one of these to fail
-        try {
-          await prisma.post.update({
-            where: {
-              id: entryId,
-            },
-            data: {
-              points: {
-                increment: 1,
-              },
-            },
-          });
-        } catch (err) {
-          try {
-            await prisma.comment.update({
+          await Promise.all([
+            transaction.comment.update({
               where: {
                 id: entryId,
               },
               data: {
-                points: {
-                  increment: 1,
+                awards,
+              },
+            }),
+            transaction.notification.create({
+              data: {
+                user: recipient,
+                type: NotificationType.Award,
+                title: "You received an award!",
+                body: `Your received the ${award.name} award for your comment.`,
+                createdAt: Math.floor(Date.now() / 1000),
+                meta: {
+                  name: award.name,
+                  image: award.image,
+                  postId: comment.post,
+                  commentId: entryId,
+                  user: payer,
                 },
               },
-            });
-          } catch {
-            // Fail silently - entry not found
-            console.log("Entry not found");
-          }
+            }),
+            claimNotif(),
+          ]);
         }
-      }
+      });
+
+      console.log("DONE!");
 
       break;
+    }
+
+    case "claimAward": {
+      const awardIndex = ixAccounts.findIndex((a) => a.name === "award");
+      const claimIndex = ixAccounts.findIndex((a) => a.name === "claim");
+      const recipientIndex = ixAccounts.findIndex(
+        (a) => a.name === "recipient"
+      );
+      const awardId = ix.accounts[awardIndex];
+      const claimId = ix.accounts[claimIndex];
+      const recipient = ix.accounts[recipientIndex];
+
+      const [notifications, award] = await Promise.all([
+        prisma.notification.findMany({
+          where: {
+            user: recipient,
+            Claim: {
+              id: claimId,
+            },
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+          take: 1,
+        }),
+        prisma.award.findUnique({
+          where: {
+            id: awardId,
+          },
+        }),
+      ]);
+
+      if (notifications[0] && award) {
+        await prisma.notification.update({
+          where: {
+            id: notifications[0].id,
+          },
+          data: {
+            read: true,
+            body: `You claimed one ${award.name} award.`,
+            Claim: {
+              disconnect: true,
+            },
+          },
+        });
+      }
     }
 
     default: {

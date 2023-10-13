@@ -1,13 +1,14 @@
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { PostType } from "@prisma/client";
 import { Box, Heading, Link as CLink, TypographyProps } from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
 import React, { memo } from "react";
 import { Tweet } from "react-tweet";
 
+import { defaultFlairColors } from "utils/colors";
 import { Markdown } from "components/markdown";
 import { OG } from "components/post/og";
-import dynamic from "next/dynamic";
 
 const YouTubeVideo = dynamic(
   () => import("components/video/youtube").then((mod) => mod.YouTubeVideo),
@@ -23,25 +24,81 @@ interface PostContentProps {
   type: PostType;
   title: string;
   titleSize?: TypographyProps["fontSize"];
+  flair?: string;
+  flairColor?: string | null;
   body: string | null;
   uri: string;
+  clip?: boolean;
 }
 
 export const PostContent = memo(function PostContent({
   type,
   title,
   titleSize = "2xl",
+  flair,
+  flairColor,
   body,
   uri,
+  clip,
 }: PostContentProps) {
+  const heading = (
+    <Box mt="2" mb="4" verticalAlign="baseline">
+      <Heading
+        as="h2"
+        display="inline"
+        fontSize={titleSize}
+        fontWeight="semibold"
+        lineHeight="1.5"
+        mr="2"
+      >
+        {title}
+      </Heading>
+      {flair && (
+        <Box display="inline-flex" verticalAlign="text-top">
+          <Box
+            display="inline-block"
+            color="gray.700"
+            bgColor={flairColor ?? defaultFlairColors[flair] ?? "gray.500"}
+            borderRadius="xl"
+            fontSize="xs"
+            fontWeight="bold"
+            width="fit-content"
+            whiteSpace="nowrap"
+            py="0.25"
+            px="2"
+            mr="1"
+          >
+            {flair}
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+
   switch (type) {
     case PostType.TEXT: {
       return (
         <>
-          <Heading my="6" as="h1" fontSize={titleSize}>
-            {title}
-          </Heading>
-          <Markdown>{body ?? ""}</Markdown>
+          {heading}
+          <Box
+            position="relative"
+            width="100%"
+            maxHeight={clip ? "120px" : "auto"}
+            overflow="hidden"
+          >
+            <Markdown preview={clip}>{body ?? ""}</Markdown>
+            {clip ? (
+              <Box
+                position="absolute"
+                left={0}
+                right={0}
+                bottom={0}
+                top="90px"
+                height="30px"
+                background="linear-gradient(to bottom, transparent, var(--chakra-colors-onda-1000))"
+              />
+            ) : null}
+          </Box>
         </>
       );
     }
@@ -49,9 +106,7 @@ export const PostContent = memo(function PostContent({
     case PostType.IMAGE: {
       return (
         <>
-          <Heading my="6" as="h1">
-            {title}
-          </Heading>
+          {heading}
           <Box
             position="relative"
             width="100%"
@@ -102,9 +157,7 @@ export const PostContent = memo(function PostContent({
         if (id) {
           return (
             <>
-              <Heading my="6" as="h1">
-                {title}
-              </Heading>
+              {heading}
               <Box display="flex" justifyContent="center" data-theme="dark">
                 <Tweet id={id} />
               </Box>
@@ -120,7 +173,7 @@ export const PostContent = memo(function PostContent({
       if (isYouTube) {
         return (
           <>
-            <Heading my="6" as="h1">
+            <Heading my="6" as="h1" fontSize={titleSize}>
               {title}
             </Heading>
             <YouTubeVideo uri={uri} />
@@ -131,12 +184,15 @@ export const PostContent = memo(function PostContent({
       return (
         <Box display="flex" justifyContent="space-between">
           <Box>
-            <Heading my="6" as="h1">
-              {title}
-            </Heading>
+            {heading}
             <CLink
               href={uri}
               isExternal
+              display="block"
+              maxWidth={["160px", "none"]}
+              whiteSpace="nowrap"
+              textOverflow="ellipsis"
+              overflow="hidden"
               sx={{
                 "& svg": {
                   display: "inline",
@@ -149,7 +205,9 @@ export const PostContent = memo(function PostContent({
               <ExternalLinkIcon />
             </CLink>
           </Box>
-          <OG url={uri} />
+          <Box position="relative" bottom={["-2", "-2", "2"]} px="2">
+            <OG url={uri} />
+          </Box>
         </Box>
       );
     }

@@ -1,65 +1,99 @@
 import type { NextPage } from "next";
-import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import {
   DehydratedState,
-  QueryClient,
-  dehydrate,
+  useInfiniteQuery,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Box, Spinner, Text } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
+import Image from "next/image";
+import { motion, useScroll, useTransform, circOut } from "framer-motion";
 
-import { fetchFora, fetchPosts, fetchAwards } from "lib/api";
-import { PostListItem } from "components/post/listItem";
+import { fetchFora, fetchPosts } from "lib/api";
 import {
   Sidebar,
   SidebarSection,
   SidebarButtons,
   SidebarItem,
+  SidebarItemSkeleton,
 } from "components/layout/sidebar";
 import { GridLayout } from "components/layout";
+import { PostList } from "components/post/list";
+
+const PostModal = dynamic(
+  () => import("../components/modal/post").then((mod) => mod.PostModal),
+  {
+    ssr: false,
+  }
+);
 
 interface PageProps {
   dehydratedState: DehydratedState | undefined;
 }
 
 const Home: NextPage<PageProps> = () => {
-  const queryClient = useQueryClient();
-  const postsQuery = useQuery(["posts"], fetchPosts);
-  const foraQuery = useQuery(["fora"], fetchFora);
+  const scroll = useScroll();
+  const opacity = useTransform(scroll.scrollY, [0, 190], [0, 1], {
+    ease: circOut,
+  });
 
-  // Seed posts to cache
-  useEffect(() => {
-    if (postsQuery.data) {
-      for (const post of postsQuery.data) {
-        queryClient.setQueryData(["post", post.id], post);
-      }
-    }
-  }, [queryClient, postsQuery.data]);
-
-  useEffect(() => {
-    if (foraQuery.data) {
-      for (const forum of foraQuery.data) {
-        queryClient.setQueryData(["forum", forum.namespace], forum);
-      }
-    }
-  }, [queryClient, foraQuery.data]);
+  const postsQuery = useInfiniteQuery({
+    queryKey: ["posts"],
+    queryFn: async ({ pageParam = 0 }) => fetchPosts(pageParam),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === 20 ? allPages.length * 20 : undefined,
+  });
 
   return (
-    <Box mt="4">
+    <>
+      <Box
+        display={["none", "none", "block"]}
+        position="relative"
+        height="190px"
+        width="100%"
+        zIndex={-1}
+      >
+        <Box position="fixed" height="190px" width="100%">
+          <Image
+            fill
+            priority
+            src="/banner2.png"
+            alt="Homepage banner"
+            style={{
+              objectFit: "cover",
+              objectPosition: "bottom",
+            }}
+          />
+        </Box>
+        <Box
+          as={motion.div}
+          position="fixed"
+          inset={0}
+          backgroundColor="onda.1000"
+          style={{ opacity }}
+        />
+        <Box
+          position="absolute"
+          bottom={0}
+          left={0}
+          height="20px"
+          width="100%"
+          backgroundColor="onda.1000"
+          borderTopRadius="20px"
+          zIndex={1}
+        />
+      </Box>
       <GridLayout
         leftColumn={
-          <Box mt="2">
-            {postsQuery.isLoading ? (
-              <Box display="flex" alignItems="center" justifyContent="center">
-                <Spinner />
-              </Box>
-            ) : (
-              postsQuery.data?.map((post) => (
-                <PostListItem key={post.id} post={post} />
-              )) ?? null
-            )}
-          </Box>
+          <PostList
+            displayIcon
+            data={postsQuery.data}
+            isLoading={postsQuery.isLoading}
+            shouldFetchMore={postsQuery.hasNextPage}
+            isFetchingMore={postsQuery.isFetchingNextPage}
+            onFetchMore={postsQuery.fetchNextPage}
+          />
         }
         rightColumn={
           <Sidebar>
@@ -67,53 +101,62 @@ const Home: NextPage<PageProps> = () => {
               <SidebarSection title="Home">
                 <Box px="4">
                   <Text>
-                    Welcome to Onda. The place to discover and engage with web3
-                    Communities, powered by the Solana blockchain.
+                    Onda is a protocol for open and decentralized community
+                    forums. Built on the Solana Blockchain, the protocol enables
+                    permissionless community creation and interaction, ensuring
+                    feeds remain open and censorship-resistant.
                   </Text>
                 </Box>
                 <SidebarButtons />
               </SidebarSection>
               <SidebarSection title="Communities">
-                {foraQuery.data?.map((forum) => (
-                  <SidebarItem
-                    key={forum.id}
-                    active={false}
-                    href={`/o/${forum.namespace}`}
-                    label={forum.displayName!}
-                    image={forum.icon}
-                  />
-                ))}
+                <ForumList />
               </SidebarSection>
             </Box>
           </Sidebar>
         }
       />
-    </Box>
+      <PostModal />
+    </>
   );
 };
 
-Home.getInitialProps = async () => {
-  if (typeof window === "undefined") {
-    try {
-      const queryClient = new QueryClient();
+const ForumList = () => {
+  const queryClient = useQueryClient();
 
-      await Promise.allSettled([
-        queryClient.prefetchQuery(["posts"], fetchPosts),
-        queryClient.prefetchQuery(["fora"], fetchFora),
-        queryClient.prefetchQuery(["awards"], fetchAwards),
-      ]);
-
-      return {
-        dehydratedState: dehydrate(queryClient),
-      };
-    } catch (err) {
-      console.log(err);
+  const foraQuery = useQuery(["fora"], async () => {
+    const fora = await fetchFora();
+    for (const forum of fora) {
+      queryClient.setQueryData(["forum", forum.id], forum);
+      queryClient.setQueryData(["forum", "namespace", forum.namespace], forum);
     }
-  }
+    return fora;
+  });
 
-  return {
-    dehydratedState: undefined,
-  };
+  if (foraQuery.isLoading)
+    return (
+      <>
+        <SidebarItemSkeleton />
+        <SidebarItemSkeleton />
+        <SidebarItemSkeleton />
+        <SidebarItemSkeleton />
+        <SidebarItemSkeleton />
+      </>
+    );
+
+  return (
+    <>
+      {foraQuery.data?.map((forum) => (
+        <SidebarItem
+          key={forum.id}
+          active={false}
+          href={`/o/${forum.namespace}`}
+          label={forum.displayName!}
+          image={forum.icon}
+        />
+      ))}
+    </>
+  );
 };
 
 export default Home;

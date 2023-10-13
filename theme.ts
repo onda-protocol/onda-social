@@ -1,7 +1,52 @@
-import { extendTheme } from "@chakra-ui/react";
-import { Inter } from "next/font/google";
+import { menuAnatomy } from "@chakra-ui/anatomy";
+import {
+  extendTheme,
+  createMultiStyleConfigHelpers,
+  defineStyle,
+} from "@chakra-ui/react";
+import { IBM_Plex_Sans, Noto_Sans } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"], variable: "--inter-font" });
+const heading = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
+const body = Noto_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const { definePartsStyle, defineMultiStyleConfig } =
+  createMultiStyleConfigHelpers(menuAnatomy.keys);
+
+const menuTheme = defineMultiStyleConfig({
+  sizes: {
+    xl: definePartsStyle({
+      list: defineStyle({
+        minWidth: "xs",
+      }),
+      item: defineStyle({
+        fontSize: "md",
+        fontWeight: "semibold",
+        px: "6",
+        py: "2",
+      }),
+    }),
+  },
+  baseStyle: definePartsStyle({
+    list: {
+      bg: "onda.1000",
+      borderRadius: "base",
+    },
+    item: {
+      bgColor: "transparent",
+      borderRadius: "sm",
+      _hover: {
+        bgColor: "deftBlue",
+      },
+    },
+  }),
+});
 
 const theme = extendTheme({
   config: {
@@ -9,6 +54,12 @@ const theme = extendTheme({
     useSystemColorMode: false,
   },
   components: {
+    Heading: {
+      baseStyle: {
+        color: "whiteAlpha.900",
+      },
+    },
+    Menu: menuTheme,
     Tabs: {
       defaultProps: {
         colorScheme: "gray",
@@ -51,11 +102,11 @@ const theme = extendTheme({
         },
         primary: {
           color: "gray.900",
-          bg: "gray.50",
+          bg: "gray.200",
           _hover: {
             bg: "gray.100",
             _disabled: {
-              bg: "gray.100",
+              bg: "gray.600",
             },
           },
           _active: {
@@ -64,24 +115,19 @@ const theme = extendTheme({
         },
       },
     },
-    Heading: {
-      baseStyle: {
-        color: "gray.100",
-      },
-    },
     Modal: {
       baseStyle: {
         dialog: {
           bg: "onda.1050",
         },
         header: {
-          color: "gray.100",
+          color: "whiteAlpha.800",
         },
       },
     },
     Text: {
       baseStyle: {
-        color: "gray.100",
+        color: "whiteAlpha.800",
       },
     },
     Table: {
@@ -149,27 +195,38 @@ const theme = extendTheme({
   },
   colors: {
     onda: {
-      50: "#CCCDF0",
-      100: "#999CE1",
-      200: "#4D51CB",
-      300: "#383CC0",
-      400: "#3034A7",
-      500: "#292C8D",
-      600: "#222474",
-      700: "#1A1C5A",
-      800: "#131441",
-      900: "#0C0D29",
-      950: "#090A20",
+      50: "#4055B5",
+      100: "#3A4EA6",
+      200: "#354797",
+      300: "#304088",
+      400: "#2A3979",
+      500: "#25326A",
+      600: "#202B5A",
+      700: "#1B244B",
+      800: "#151D3C",
+      900: "#10162D",
+      1000: "#080B16",
+      1050: "#0F121C",
     },
+    oxfordBlue: "#11182F",
+    deftBlue: "#34396A",
+    prussianBlue: "#1E293B",
+    steelBlue: "#3182CE",
+    xanthous: "#EAB308",
+    folly: "#FF004D",
+    cardinal: "#CC003D",
+    pumpkin: "#FF7A00",
+    bodyText: "#E2E8F0",
   },
   fonts: {
-    heading: inter.style.fontFamily,
-    body: inter.style.fontFamily,
+    heading: heading.style.fontFamily,
+    body: body.style.fontFamily,
   },
   styles: {
     global: () => ({
       "html, body": {
         fontSize: "14px",
+        lineHeight: "tall",
         WebkitFontSmoothing: "antialiased",
         MozOsxFontSmoothing: "grayscale",
       },
@@ -178,7 +235,7 @@ const theme = extendTheme({
         display: "flex",
       },
       body: {
-        bg: "onda.950",
+        bg: "onda.1000",
         flex: 1,
       },
     }),

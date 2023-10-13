@@ -8,6 +8,8 @@ import {
   List,
   ListItem,
   Link as ChakraLink,
+  Skeleton,
+  SkeletonText,
 } from "@chakra-ui/react";
 import { ExternalLinkIcon } from "@chakra-ui/icons";
 
@@ -20,7 +22,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ children }) => {
   return (
-    <Box my="2" pl="4" position="relative">
+    <Box my="4" pl="4" position="sticky" top="72px">
       {children}
     </Box>
   );
@@ -36,11 +38,11 @@ export const SidebarSection: React.FC<SectionProps> = ({ title, children }) => {
     <Panel as="aside" p="0" pb="1" mb="6">
       {title && (
         <Heading
+          color="whiteAlpha.700"
           fontSize="lg"
-          letterSpacing="1%"
+          letterSpacing="wide"
           fontWeight="semibold"
           p="4"
-          color="gray.300"
         >
           {title}
         </Heading>
@@ -97,6 +99,15 @@ export const SidebarItem = ({
   );
 };
 
+export const SidebarItemSkeleton = () => {
+  return (
+    <Box display="flex" alignItems="center" p="4" my="2">
+      <Skeleton height="24px" width="24px" borderRadius="full" mr="2" />
+      <SkeletonText width="52px" noOfLines={1} />
+    </Box>
+  );
+};
+
 interface SidebarButtonsProps {
   forum?: string;
 }
@@ -109,7 +120,7 @@ export const SidebarButtons: React.FC<SidebarButtonsProps> = ({ forum }) => {
         href={`/submit${forum ? `?o=${forum}` : ""}`}
         width="100%"
         borderRadius="lg"
-        variant="solid"
+        variant="primary"
         mb="2"
       >
         Create Post

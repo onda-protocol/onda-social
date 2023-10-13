@@ -1,36 +1,10 @@
-import type { SessionWalletInterface } from "@gumhq/react-sdk";
-import type { WalletContextState } from "@solana/wallet-adapter-react";
-import { WebBundlr } from "@bundlr-network/client";
-import { getOrCreateSession } from "lib/gum";
+import type Bundlr from "@bundlr-network/client/build/cjs/common/bundlr";
+import { web3 } from "@project-serum/anchor";
+import { WalletContextState } from "@solana/wallet-adapter-react";
 
-const BUNDLR_URL = process.env.NEXT_PUBLIC_BUNDLR_URL as string;
-
-async function getBundlr(
-  wallet: WalletContextState,
-  session: SessionWalletInterface | null,
-  data: string | Buffer
-) {
-  const byteLength = Buffer.isBuffer(data)
-    ? data.byteLength
-    : Buffer.from(data, "utf-8").byteLength;
-  const isFreeUpload = byteLength < 100000;
-  const useSession = session && isFreeUpload;
-  const signer = useSession ? session : wallet;
-
-  if (session && useSession) {
-    session = await getOrCreateSession(session);
-  }
-
-  const bundlr = new WebBundlr(BUNDLR_URL, "solana", signer, {
-    providerUrl: process.env.NEXT_PUBLIC_RPC_ENDPOINT as string,
-  });
-  await bundlr.ready();
-
-  const cost = await bundlr.utils.getPrice("solana", byteLength);
-  await bundlr.fund(cost.toNumber());
-
-  return bundlr;
-}
+const BUNDLR_URL = process.env.NEXT_PUBLIC_BUNDLR_URL!;
+const RPC_URL = process.env.HELIUS_RPC_URL!;
+const MAX_BYTE_LENGTH = 10000000;
 
 export type ContentType =
   | "application/json"
@@ -39,13 +13,58 @@ export type ContentType =
   | "image/jpeg"
   | "image/gif";
 
-export async function upload(
-  wallet: WalletContextState,
-  session: SessionWalletInterface | null,
+let nodeBundlr: Bundlr | null = null;
+
+export async function nodeUpload(
+  keypair: web3.Keypair,
   data: string | Buffer,
   contentType: ContentType
 ) {
-  const bundlr = await getBundlr(wallet, session, data);
+  const { NodeBundlr } = await import("@bundlr-network/client");
+
+  if (nodeBundlr === null) {
+    nodeBundlr = new NodeBundlr(BUNDLR_URL, "solana", keypair.secretKey, {
+      providerUrl: RPC_URL!,
+    });
+    await nodeBundlr.ready();
+  }
+
+  const byteLength =
+    typeof data === "string"
+      ? Buffer.from(data, "utf-8").byteLength
+      : data.byteLength;
+
+  if (byteLength > MAX_BYTE_LENGTH) {
+    throw new Error("Data too large");
+  }
+
+  // const lamports = await bundlr.getPrice(byteLength);
+  // await bundlr.fund(lamports);
+  const result = await nodeBundlr.upload(data, {
+    tags: [{ name: "Content-Type", value: contentType }],
+  });
+
+  console.log(`Data uploaded ==> https://arweave.net/${result.id}`);
+  return `https://arweave.net/${result.id}`;
+}
+
+export async function webUpload(
+  wallet: WalletContextState,
+  data: string | Buffer,
+  contentType: ContentType
+) {
+  const { WebBundlr } = await import("@bundlr-network/client");
+  const bundlr = new WebBundlr(BUNDLR_URL, "solana", wallet, {
+    providerUrl: process.env.NEXT_PUBLIC_RPC_ENDPOINT!,
+  });
+  await bundlr.ready();
+
+  const byteLength =
+    typeof data === "string"
+      ? Buffer.from(data, "utf-8").byteLength
+      : data.byteLength;
+  const lamports = await bundlr.getPrice(byteLength);
+  await bundlr.fund(lamports);
 
   const result = await bundlr.upload(data, {
     tags: [{ name: "Content-Type", value: contentType }],

@@ -1,26 +1,38 @@
-import React, { useEffect, useMemo } from "react";
-import { web3 } from "@project-serum/anchor";
-import {
-  useAnchorWallet,
-  useConnection,
-  useWallet,
-} from "@solana/wallet-adapter-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import toast from "react-hot-toast";
-import { Box, Button, Input, Textarea, Select } from "@chakra-ui/react";
-import { useSessionWallet } from "@gumhq/react-sdk";
-import { IoDocumentText, IoImage, IoLink } from "react-icons/io5";
-import { Controller, useForm, useWatch } from "react-hook-form";
-
-import { fetchFora, fetchForum } from "lib/api";
-import { addEntry } from "lib/anchor/actions";
-import { ContentType, upload } from "lib/bundlr/index";
-import { RadioCardMenu } from "components/input";
-import { ImagePicker } from "components/input/imagePicker";
-import { getOrCreateSession } from "lib/gum";
 import { useRouter } from "next/router";
-import SessionProvider from "components/providers/sessions";
-import { PublicKey } from "@metaplex-foundation/js";
+import React, { useEffect, forwardRef, useState } from "react";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Box,
+  Button,
+  Input,
+  Text,
+  Textarea,
+  Select,
+  Flex,
+  Link as ChakraLink,
+} from "@chakra-ui/react";
+import toast from "react-hot-toast";
+import {
+  Control,
+  Controller,
+  useController,
+  useForm,
+  useWatch,
+} from "react-hook-form";
+import { IoDocumentText, IoInformationCircle, IoLink } from "react-icons/io5";
+
+import { SerializedForum, fetchFora, signAndConfirmTransaction } from "lib/api";
+import {
+  EntryDataArgs,
+  CommentArgs,
+  TextPostArgs,
+  LinkPostArgs,
+} from "lib/api/types";
+import { RadioCardMenu } from "components/input";
+import { AuthStatus, useAuth } from "components/providers/auth";
+import { Markdown } from "components/markdown";
+// import { ImagePicker } from "components/input/imagePicker";
 
 export interface EntryForm {
   title: string;
@@ -28,7 +40,8 @@ export interface EntryForm {
   image: File | null;
   forum: string;
   url: string;
-  postType: "textPost" | "imagePost" | "linkPost";
+  flair?: string;
+  postType: "textPost" | "linkPost";
 }
 
 type EntryConfig =
@@ -52,15 +65,7 @@ interface EditorProps {
   onSuccess?: (signature: string, uri: string, variables: EntryForm) => void;
 }
 
-export const EditorProvider = (props: EditorProps) => {
-  return (
-    <SessionProvider>
-      <Editor {...props} />
-    </SessionProvider>
-  );
-};
-
-const Editor = ({
+export const Editor = ({
   buttonLabel,
   placeholder,
   successMessage,
@@ -71,9 +76,7 @@ const Editor = ({
   const router = useRouter();
   const forum = router.query.o as string | undefined;
   const { connection } = useConnection();
-  const wallet = useWallet();
-  const anchorWallet = useAnchorWallet();
-  const sessionWallet = useSessionWallet();
+  const auth = useAuth();
 
   const queryClient = useQueryClient();
   const foraQuery = useQuery(
@@ -102,6 +105,7 @@ const Editor = ({
       body: "",
       image: null,
       forum: forum || "",
+      flair: undefined,
       postType: "textPost",
     },
   });
@@ -127,61 +131,51 @@ const Editor = ({
     EntryForm
   >(
     async (data) => {
-      if (!anchorWallet || !wallet) {
+      if (!auth.address) {
         throw new Error("Wallet not connected");
       }
 
-      const session = await getOrCreateSession(sessionWallet);
-
-      const forumAddress =
-        config.type === "comment" ? config.forum : data.forum;
-
-      const forum = await queryClient.fetchQuery(
-        ["forum", forumAddress],
-        () => fetchForum(forumAddress),
-        {
-          staleTime: 300_000,
-        }
-      );
-
-      if (!forum) {
-        throw new Error("Forum not found");
+      if (!auth.signTransaction) {
+        throw new Error("Wallet not connected");
       }
 
-      let uri: string;
-      let dataArgs = {};
+      let dataArgs: EntryDataArgs;
 
-      if (config.type === "post") {
+      if (config.type === "comment") {
+        const comment: CommentArgs = {
+          type: "comment",
+          author: auth.address,
+          forum: config.forum,
+          parent: config.parent,
+          post: config.post,
+          body: data.body,
+        };
+        dataArgs = comment;
+      } else {
         switch (data.postType) {
-          case "linkPost": {
-            uri = data.url;
-            dataArgs = {
-              linkPost: {
-                uri,
-                title: data.title,
-              },
-            };
-            break;
-          }
-
           case "textPost": {
-            uri = await upload(wallet, session, data.body, "application/json");
-            dataArgs = { textPost: { title: data.title, uri } };
+            const textPost: TextPostArgs = {
+              type: "textPost",
+              author: auth.address,
+              forum: data.forum,
+              title: data.title,
+              body: data.body,
+              flair: data.flair ?? null,
+            };
+            dataArgs = textPost;
             break;
           }
 
-          case "imagePost": {
-            if (data.image === null) {
-              throw new Error("Image required");
-            }
-            const buffer = Buffer.from(await data.image.arrayBuffer());
-            uri = await upload(
-              wallet,
-              session,
-              buffer,
-              data.image.type as ContentType
-            );
-            dataArgs = { imagePost: { title: data.title, uri } };
+          case "linkPost": {
+            const linkPost: LinkPostArgs = {
+              type: "linkPost",
+              author: auth.address,
+              forum: data.forum,
+              title: data.title,
+              url: data.url,
+              flair: data.flair ?? null,
+            };
+            dataArgs = linkPost;
             break;
           }
 
@@ -189,25 +183,17 @@ const Editor = ({
             throw new Error("Invalid post type");
           }
         }
-      } else {
-        uri = await upload(wallet, session, data.body, "application/json");
-        dataArgs = {
-          comment: {
-            uri,
-            post: new web3.PublicKey(config.post),
-            parent: config.parent ? new web3.PublicKey(config.parent) : null,
-          },
-        };
       }
+      console.log("dataArgs: ", dataArgs);
 
-      const signature = await addEntry(connection, anchorWallet, session, {
-        forum,
+      const response = await signAndConfirmTransaction(connection, auth, {
+        method: "addEntry",
         data: dataArgs,
       });
 
       return {
-        uri,
-        signature,
+        uri: response.uri!,
+        signature: response.txId,
       };
     },
     {
@@ -240,14 +226,27 @@ const Editor = ({
       <Box
         noValidate
         as="form"
-        onSubmit={methods.handleSubmit((data) => mutation.mutate(data))}
+        onSubmit={methods.handleSubmit((data) => {
+          if (auth.status !== AuthStatus.AUTHENTICATED) {
+            auth.showUI();
+          } else {
+            mutation.mutate(data);
+          }
+        })}
       >
         <Textarea
           mt="2"
           placeholder={placeholder}
           minHeight="100px"
-          backgroundColor="#090A20"
-          {...methods.register("body", { required: true })}
+          backgroundColor="blackAlpha.100"
+          {...methods.register("body", {
+            required: true,
+            validate(value) {
+              if (Buffer.from(value, "utf-8").byteLength > 100_000) {
+                return "Must be less than 100 KiB";
+              }
+            },
+          })}
         />
         <Box display="flex" mt="2" justifyContent="right">
           {onRequestClose && (
@@ -261,11 +260,10 @@ const Editor = ({
             </Button>
           )}
           <Button
-            isDisabled={sessionWallet.isLoading}
-            isLoading={mutation.isLoading}
             variant="solid"
             type="submit"
             cursor="pointer"
+            isLoading={mutation.isLoading}
           >
             {buttonLabel || "Submit"}
           </Button>
@@ -278,25 +276,14 @@ const Editor = ({
     switch (postType) {
       case "textPost": {
         return (
-          <Textarea
-            mt="4"
-            placeholder={placeholder || "Text"}
-            minHeight={config.type === "post" ? "200px" : "100px"}
-            backgroundColor="#090A20"
-            {...methods.register("body", { required: true })}
-          />
-        );
-      }
-
-      case "imagePost": {
-        return (
           <Controller
             control={methods.control}
-            name="image"
+            name="body"
+            rules={{ required: true }}
             render={({ field }) => (
-              <ImagePicker
-                name={field.name}
-                // @ts-ignore
+              <MarkdownEditor
+                placeholder={placeholder}
+                size="lg"
                 value={field.value}
                 onChange={field.onChange}
               />
@@ -304,6 +291,23 @@ const Editor = ({
           />
         );
       }
+
+      // case "imagePost": {
+      //   return (
+      //     <Controller
+      //       control={methods.control}
+      //       name="image"
+      //       render={({ field }) => (
+      //         <ImagePicker
+      //           name={field.name}
+      //           // @ts-ignore
+      //           value={field.value}
+      //           onChange={field.onChange}
+      //         />
+      //       )}
+      //     />
+      //   );
+      // }
 
       case "linkPost": {
         return (
@@ -317,7 +321,13 @@ const Editor = ({
     <Box
       noValidate
       as="form"
-      onSubmit={methods.handleSubmit((data) => mutation.mutate(data))}
+      onSubmit={methods.handleSubmit((data) => {
+        if (auth.status !== AuthStatus.AUTHENTICATED) {
+          auth.showUI();
+        } else {
+          mutation.mutate(data);
+        }
+      })}
     >
       <Controller
         name="forum"
@@ -375,7 +385,7 @@ const Editor = ({
             })}
           />
           {renderInputs()}
-          <Box display="flex" mt="2" justifyContent="right">
+          <Box display="flex" mt="2" alignItems="center" justifyContent="right">
             {onRequestClose && (
               <Button
                 isDisabled={mutation.isLoading}
@@ -386,13 +396,17 @@ const Editor = ({
                 Cancel
               </Button>
             )}
+            {config.type === "post" && foraQuery.data && (
+              <Box width="200px" pr="2">
+                <SelectFlair fora={foraQuery.data} control={methods.control} />
+              </Box>
+            )}
             <Button
-              isDisabled={sessionWallet.isLoading}
-              isLoading={mutation.isLoading}
               variant="solid"
               minWidth="100px"
               type="submit"
               cursor="pointer"
+              isLoading={mutation.isLoading}
             >
               {buttonLabel || "Submit"}
             </Button>
@@ -406,7 +420,7 @@ const Editor = ({
 const SelectForum = React.forwardRef<
   HTMLSelectElement,
   {
-    options: Awaited<ReturnType<typeof fetchFora>>;
+    options: SerializedForum[];
     selected: string;
   } & React.ComponentPropsWithoutRef<typeof Select>
 >(function SelectForum({ options, selected, ...other }, ref) {
@@ -422,3 +436,137 @@ const SelectForum = React.forwardRef<
     </Select>
   );
 });
+
+interface SelectFlairProps {
+  fora: SerializedForum[];
+  control: Control<EntryForm>;
+}
+
+const SelectFlair = ({ fora, control }: SelectFlairProps) => {
+  const selectedForum = useWatch<EntryForm, "forum">({
+    control,
+    name: "forum",
+  });
+  const flairControl = useController<EntryForm, "flair">({
+    control,
+    name: "flair",
+    rules: { required: false },
+  });
+
+  const forum = fora?.find((f) => f.id === selectedForum);
+
+  useEffect(() => {
+    if (selectedForum) {
+      flairControl.field.onChange(undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedForum]);
+
+  if (!forum?.Flair) return null;
+
+  return (
+    <Select
+      placeholder="Select Flair"
+      {...flairControl.field}
+      onChange={(e) => {
+        console.log(e.target.value);
+        flairControl.field.onChange(e.target.value);
+      }}
+    >
+      {forum.Flair?.map((flair) => (
+        <option key={flair.id} value={flair.name}>
+          {flair.name}
+        </option>
+      ))}
+    </Select>
+  );
+};
+
+interface MarkdownEditorProps {
+  placeholder?: string;
+  value: string;
+  size: "md" | "lg";
+  onChange: (value: string) => void;
+}
+
+const MarkdownEditor = forwardRef<HTMLTextAreaElement, MarkdownEditorProps>(
+  function MarkdownEditor({ placeholder, size, value, onChange }, ref) {
+    const [previewMode, setPreviewMode] = useState(false);
+
+    return (
+      <Box
+        display="flex"
+        flexDirection="column"
+        mt="2"
+        borderRadius="md"
+        border="1px solid"
+        borderColor="inherit"
+        outline="2px solid transparent"
+        _hover={{
+          borderColor: "var(--chakra-colors-whiteAlpha-400)",
+        }}
+        _focusWithin={{
+          borderColor: "#63b3ed",
+          boxShadow: "0 0 0 1px #63b3ed",
+          outline: "2px solid var(--chakra-ring-color)",
+          zIndex: 1,
+        }}
+      >
+        {previewMode && (
+          <Box px="4" py="2" minHeight={size === "lg" ? "200px" : "100px"}>
+            <Markdown>{value ?? ""}</Markdown>
+          </Box>
+        )}
+        <Textarea
+          ref={ref}
+          display={previewMode ? "none" : "block"}
+          placeholder={placeholder}
+          minHeight={size === "lg" ? "200px" : "100px"}
+          borderRadius={0}
+          border="none"
+          outline="none"
+          _focus={{
+            outline: 0,
+            boxShadow: "none",
+          }}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <Box
+          flex={0}
+          backgroundColor="blackAlpha.400"
+          borderTop="1px solid"
+          borderColor="whiteAlpha.100"
+          borderBottomRadius="md"
+          padding="3"
+        >
+          <Flex align="center" justify="space-between">
+            <ChakraLink
+              display="flex"
+              alignItems="center"
+              href="https://commonmark.org/help/"
+              target="_blank"
+            >
+              <IoInformationCircle
+                style={{
+                  display: "inline",
+                  marginRight: "var(--chakra-space-1)",
+                }}
+              />
+              <Text as="span">Markdown</Text>
+            </ChakraLink>
+            <Button
+              size="sm"
+              variant={previewMode ? "primary" : "solid"}
+              onClick={() => {
+                setPreviewMode((v) => !v);
+              }}
+            >
+              {previewMode ? "Write" : "Preview"}
+            </Button>
+          </Flex>
+        </Box>
+      </Box>
+    );
+  }
+);

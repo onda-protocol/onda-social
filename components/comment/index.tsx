@@ -1,8 +1,14 @@
 import dynamic from "next/dynamic";
+import { VoteType } from "@prisma/client";
 import { web3 } from "@project-serum/anchor";
 import { Box, Button } from "@chakra-ui/react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAnchorWallet } from "@solana/wallet-adapter-react";
+import {
+  InfiniteData,
+  QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useState } from "react";
 import { IoChatbox } from "react-icons/io5";
 import { BsArrowsExpand } from "react-icons/bs";
@@ -14,25 +20,31 @@ import {
   SerializedCommentNested,
   fetchReplies,
   fetchUser,
+  vote,
 } from "lib/api";
 import { Markdown } from "../markdown";
 import { PostMeta } from "../post/meta";
 import {
   PostButton,
-  RewardButton,
+  AwardButton,
   DeleteButton,
+  VoteButtons,
 } from "components/post/buttons";
+import { useAuth } from "components/providers/auth";
 
-const EditorProvider = dynamic(
-  () => import("components/editor").then((mod) => mod.EditorProvider),
+const Editor = dynamic(
+  () => import("components/editor").then((mod) => mod.Editor),
   { ssr: false }
 );
 
+type CommentsQueryKey = (string | { offset: number })[];
+
 interface CommentListItemProps {
   forum: string;
+  postAuthor: string;
   comment: SerializedCommentNested;
   depth?: number;
-  queryKey: (string | { offset: number })[];
+  queryKey: CommentsQueryKey;
   isRoot?: boolean;
   disableReplies?: boolean;
 }
@@ -40,6 +52,7 @@ interface CommentListItemProps {
 export const CommentListItem: React.FC<CommentListItemProps> = memo(
   function CommentListItem({
     forum,
+    postAuthor,
     comment,
     queryKey,
     isRoot = false,
@@ -49,18 +62,18 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
     const toggleReply = useCallback(() => setReply((reply) => !reply), []);
     const [collapsed, setCollapsed] = useState(false);
 
-    const anchorWallet = useAnchorWallet();
+    const auth = useAuth();
     const queryClient = useQueryClient();
     const isAuthor = useMemo(
-      () => anchorWallet?.publicKey.toBase58() === comment.author,
-      [anchorWallet, comment.author]
+      () => Boolean(auth.address && auth.address === comment.author),
+      [auth, comment.author]
     );
 
     const onReplyAdded = useCallback(
       async (_: string, uri: string, entry: EntryForm) => {
-        if (anchorWallet === undefined) return;
+        if (!auth.address) return;
 
-        const userAddress = anchorWallet.publicKey.toBase58();
+        const userAddress = auth.address;
         const author = await queryClient.fetchQuery(["user", userAddress], () =>
           fetchUser(userAddress)
         );
@@ -79,77 +92,30 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           points: BigInt(0).toString(),
           awards: {},
           hash: "",
+          dataHash: "",
           author: userAddress,
           Author: author,
+          Votes: [],
+          _vote: null,
           _count: { Children: 0 },
           Children: [],
         };
 
-        queryClient.setQueryData<SerializedCommentNested[]>(
-          queryKey,
-          (data) => {
-            // If the comment has a nested comment i.e. SerializedCommentNested
-            // then we need to update the comment's children
-            for (const index in data) {
-              const c = data[parseInt(index)];
+        updateCommentsCache(queryClient, queryKey, comment.id, (comment) => {
+          const updatedComment = {
+            ...comment,
+            _count: {
+              ...comment._count,
+              Children: comment._count.Children + 1,
+            },
+          };
 
-              if (comment.id === c.id) {
-                const updatedComment = {
-                  ...c,
-                  _count: {
-                    ...c._count,
-                    Children: c._count.Children + 1,
-                  },
-                };
-
-                if (c.Children !== undefined) {
-                  updatedComment.Children = [newComment, ...(c.Children ?? [])];
-                }
-                return [
-                  ...data.slice(0, parseInt(index)),
-                  updatedComment,
-                  ...data.slice(parseInt(index) + 1),
-                ];
-              } else if (c.Children !== undefined) {
-                for (const i in c.Children) {
-                  const child = c.Children[parseInt(i)];
-
-                  if (child.id === comment.id) {
-                    const updatedComment = {
-                      ...c,
-                    };
-                    const updatedChild = {
-                      ...child,
-                      _count: {
-                        ...child._count,
-                        Children: child._count.Children + 1,
-                      },
-                    };
-
-                    if ("Children" in updatedChild) {
-                      updatedChild.Children = [
-                        newComment,
-                        ...(updatedChild.Children ?? []),
-                      ];
-                    }
-
-                    updatedComment.Children = [
-                      ...c.Children.slice(0, parseInt(i)),
-                      updatedChild,
-                      ...c.Children.slice(parseInt(i) + 1),
-                    ];
-
-                    return [
-                      ...data.slice(0, parseInt(index)),
-                      updatedComment,
-                      ...data.slice(parseInt(index) + 1),
-                    ];
-                  }
-                }
-              }
-            }
+          if (comment.Children !== undefined) {
+            updatedComment.Children = [newComment, ...(comment.Children ?? [])];
           }
-        );
+
+          return updatedComment;
+        });
 
         if (!hasNestedChildren) {
           queryClient.setQueryData<SerializedCommentNested[]>(
@@ -160,7 +126,7 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           );
         }
       },
-      [comment, queryKey, anchorWallet, queryClient]
+      [comment, queryKey, auth, queryClient]
     );
 
     // Disable comment replies if parent is not a valid public key
@@ -180,8 +146,9 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
       <Box position="relative" ml={isRoot ? "0" : "8"} mt="0">
         <Box p="4" pb="2">
           <PostMeta
+            isOp={postAuthor === comment.author}
             displayAvatar
-            showRewards
+            displayAward="xsmall"
             author={comment.Author}
             points={Number(comment.points)}
             awards={comment.awards as AwardsJson}
@@ -191,13 +158,19 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
 
           {!collapsed && (
             <Box pt="2" pl={`calc(28px + var(--chakra-space-2))`}>
-              <Markdown>{comment.body}</Markdown>
+              <Box pt="2">
+                <Markdown>{comment.body}</Markdown>
+              </Box>
               <Box display="flex" flexDirection="row" gap="2" pt="4" pb="2">
-                <CommentAwardButton
-                  disabled={disabled}
-                  comment={comment}
-                  queryKey={queryKey}
-                />
+                <CommentVoteButton comment={comment} queryKey={queryKey} />
+                {auth.address && auth.address !== comment.author && (
+                  <CommentAwardButton
+                    disabled={disabled}
+                    forum={forum}
+                    comment={comment}
+                    queryKey={queryKey}
+                  />
+                )}
                 {!disableReplies && (
                   <PostButton
                     label="Reply"
@@ -216,10 +189,10 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
                 )}
               </Box>
               {reply && disableReplies === false && (
-                <EditorProvider
+                <Editor
                   buttonLabel="Reply"
                   placeholder={`Reply to ${
-                    comment.Author.name ?? comment.author
+                    comment.Author?.name ?? comment.author
                   }`}
                   successMessage="Reply added"
                   config={{
@@ -236,8 +209,13 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
           )}
         </Box>
 
-        {comment._count.Children > 0 && !collapsed ? (
-          <CommentReplies forum={forum} comment={comment} queryKey={queryKey} />
+        {comment._count?.Children > 0 && !collapsed ? (
+          <CommentReplies
+            forum={forum}
+            postAuthor={postAuthor}
+            comment={comment}
+            queryKey={queryKey}
+          />
         ) : null}
 
         {collapsed ? (
@@ -263,12 +241,14 @@ export const CommentListItem: React.FC<CommentListItemProps> = memo(
 
 interface CommentAwardButtonProps {
   disabled?: boolean;
+  forum: string;
   comment: SerializedCommentNested;
-  queryKey: (string | { offset: number })[];
+  queryKey: CommentsQueryKey;
 }
 
 const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
   disabled,
+  forum,
   comment,
   queryKey,
 }) => {
@@ -276,19 +256,68 @@ const CommentAwardButton: React.FC<CommentAwardButtonProps> = ({
 
   const handleCacheUpdate = useCallback(
     (award: SerializedAward) => {
-      queryClient.setQueryData<Array<SerializedCommentNested>>(
-        queryKey,
-        nestedCommentsAwardsReducer(comment.id, award)
-      );
+      updateCommentsCache(queryClient, queryKey, comment.id, (comment) => ({
+        ...comment,
+        awards: incrementAward(comment.awards, award),
+        points: increment(comment.points),
+      }));
     },
     [queryClient, comment, queryKey]
   );
 
   return (
-    <RewardButton
+    <AwardButton
       disabled={disabled}
+      forum={forum}
       entryId={comment.id}
+      author={comment.Author.id}
+      createdAt={Number(comment.createdAt)}
+      editedAt={comment.editedAt ? Number(comment.editedAt) : null}
+      dataHash={comment.dataHash!}
+      nonce={Number(comment.nonce)}
       onSuccess={handleCacheUpdate}
+    />
+  );
+};
+
+interface CommentVoteButtonProps {
+  comment: SerializedCommentNested;
+  queryKey: CommentsQueryKey;
+}
+
+const CommentVoteButton = ({ comment, queryKey }: CommentVoteButtonProps) => {
+  const auth = useAuth();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation(
+    async (voteType: VoteType) => {
+      if (!auth.address) {
+        throw new Error("Wallet not connected");
+      }
+      console.log(`Voting ${voteType} on ${comment._vote}`);
+      return vote(comment.id, "comment", voteType);
+    },
+    {
+      onMutate(voteType) {
+        updateCommentsCache(queryClient, queryKey, comment.id, (comment) => ({
+          ...comment,
+          points:
+            voteType === VoteType.UP
+              ? increment(comment.points, comment._vote ? 2 : 1)
+              : decrement(comment.points, comment._vote ? 2 : 1),
+          _vote: voteType,
+        }));
+      },
+    }
+  );
+  return (
+    <VoteButtons
+      direction="row"
+      points={Number(comment.points)}
+      vote={comment._vote}
+      disabled={!auth.address}
+      onUpvote={() => mutation.mutate(VoteType.UP)}
+      onDownvote={() => mutation.mutate(VoteType.DOWN)}
     />
   );
 };
@@ -297,7 +326,7 @@ interface CommentDeleteButtonProps {
   disabled?: boolean;
   forumId: string;
   comment: SerializedCommentNested;
-  queryKey: (string | { offset: number })[];
+  queryKey: CommentsQueryKey;
 }
 
 const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
@@ -309,17 +338,20 @@ const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
   const queryClient = useQueryClient();
 
   const onCommentDeleted = useCallback(() => {
-    queryClient.setQueryData<Array<SerializedCommentNested>>(
-      queryKey,
-      nestedCommentsDeleteReducer(comment.id)
-    );
+    updateCommentsCache(queryClient, queryKey, comment.id, (comment) => ({
+      ...comment,
+      body: "[deleted]",
+      uri: "[deleted]",
+      editedAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
+    }));
   }, [queryClient, queryKey, comment]);
 
   return (
     <DeleteButton
       disabled={disabled}
       forumId={forumId}
-      entry={comment}
+      entryId={comment.id}
+      entryType="comment"
       onDeleted={onCommentDeleted}
     />
   );
@@ -327,12 +359,14 @@ const CommentDeleteButton: React.FC<CommentDeleteButtonProps> = ({
 
 interface CommentRepliesProps {
   forum: string;
+  postAuthor: string;
   comment: SerializedCommentNested;
-  queryKey: (string | { offset: number })[];
+  queryKey: CommentsQueryKey;
 }
 
 const CommentReplies: React.FC<CommentRepliesProps> = ({
   forum,
+  postAuthor,
   comment,
   queryKey,
 }) => {
@@ -344,6 +378,7 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
             <CommentListItem
               key={comment.id}
               forum={forum}
+              postAuthor={postAuthor}
               comment={comment}
               queryKey={queryKey}
             />
@@ -351,13 +386,18 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
           {comment._count.Children > comment.Children.length && (
             <CommentSiblingsLazy
               comment={comment}
+              postAuthor={postAuthor}
               forum={forum}
               offset={comment.Children.length}
             />
           )}
         </>
       ) : (
-        <CommentChildrenLazy forum={forum} comment={comment} />
+        <CommentChildrenLazy
+          forum={forum}
+          postAuthor={postAuthor}
+          comment={comment}
+        />
       )}
     </>
   );
@@ -365,10 +405,15 @@ const CommentReplies: React.FC<CommentRepliesProps> = ({
 
 interface CommentChildrenLazyProps {
   forum: string;
+  postAuthor: string;
   comment: SerializedCommentNested;
 }
 
-const CommentChildrenLazy = ({ forum, comment }: CommentChildrenLazyProps) => {
+const CommentChildrenLazy = ({
+  forum,
+  postAuthor,
+  comment,
+}: CommentChildrenLazyProps) => {
   const [loadMore, setLoadMore] = useState(false);
   const queryKey = useMemo(() => ["replies", comment.id], [comment.id]);
   const query = useQuery(
@@ -394,6 +439,7 @@ const CommentChildrenLazy = ({ forum, comment }: CommentChildrenLazyProps) => {
         <CommentListItem
           key={comment.id}
           forum={forum}
+          postAuthor={postAuthor}
           comment={comment}
           queryKey={queryKey}
         />
@@ -405,11 +451,13 @@ const CommentChildrenLazy = ({ forum, comment }: CommentChildrenLazyProps) => {
 interface CommentSiblingsLazyProps {
   comment: SerializedCommentNested;
   forum: string;
+  postAuthor: string;
   offset: number;
 }
 
 const CommentSiblingsLazy = ({
   comment,
+  postAuthor,
   forum,
   offset,
 }: CommentSiblingsLazyProps) => {
@@ -440,6 +488,7 @@ const CommentSiblingsLazy = ({
         <CommentListItem
           key={comment.id}
           forum={forum}
+          postAuthor={postAuthor}
           comment={comment}
           queryKey={queryKey}
         />
@@ -461,7 +510,7 @@ const MoreRepliesButton: React.FC<MoreRepliesButton> = ({
   loading,
   onClick,
 }) => (
-  <Box position="relative" ml="8" pt="2" pb="2" bgColor="onda.950" zIndex={1}>
+  <Box position="relative" ml="8" pt="2" pb="2" bgColor="onda.1000" zIndex={1}>
     <Box ml={nested ? "4" : "12"}>
       <Button size="sm" variant="ghost" fontWeight="semibold" onClick={onClick}>
         {loading
@@ -489,11 +538,11 @@ const Branch = ({ dashed, onClick }: BranchProps) => (
     px="4px"
     zIndex={1}
     cursor={onClick ? "pointer" : "default"}
-    borderColor="gray.800"
+    borderColor="whiteAlpha.200"
     _hover={
       onClick
         ? {
-            borderColor: "gray.600",
+            borderColor: "whiteAlpha.400",
           }
         : undefined
     }
@@ -511,8 +560,35 @@ const Branch = ({ dashed, onClick }: BranchProps) => (
   </Box>
 );
 
-function increment(like: string) {
-  return Number(Number(like) + 1).toString();
+function updateCommentsCache(
+  queryClient: QueryClient,
+  queryKey: CommentsQueryKey,
+  commentId: string,
+  updater: (comment: SerializedCommentNested) => SerializedCommentNested
+) {
+  if (queryKey[0] === "comments") {
+    queryClient.setQueryData<InfiniteData<SerializedCommentNested[]>>(
+      queryKey,
+      createPagedCommentsReducer(commentId, updater)
+    );
+  } else {
+    queryClient.setQueryData<SerializedCommentNested[]>(
+      queryKey,
+      (comments) => {
+        if (comments) {
+          return nestedCommentsReducer(commentId, comments, updater);
+        }
+      }
+    );
+  }
+}
+
+function increment(num: string, count: number = 1) {
+  return Number(Number(num) + count).toString();
+}
+
+function decrement(num: string, count: number = 1) {
+  return Number(Number(num) - count).toString();
 }
 
 function incrementAward(awardJson: AwardsJson, award: SerializedAward) {
@@ -522,6 +598,7 @@ function incrementAward(awardJson: AwardsJson, award: SerializedAward) {
     awards[award.id].count = awards[award.id].count + 1;
   } else {
     awards[award.id] = {
+      name: award.name,
       image: award.image,
       count: 1,
     };
@@ -530,71 +607,73 @@ function incrementAward(awardJson: AwardsJson, award: SerializedAward) {
   return { ...awards };
 }
 
-function nestedCommentsAwardsReducer(
+function createPagedCommentsReducer(
   id: string,
-  award: SerializedAward
+  updater: (comment: SerializedCommentNested) => SerializedCommentNested
 ): (
-  input: SerializedCommentNested[] | undefined
-) => SerializedCommentNested[] | undefined {
-  return nestedCommentsReducer(id, (comment) => ({
-    ...comment,
-    awards: incrementAward(comment.awards, award),
-    points: increment(comment.points),
-  }));
-}
+  data: InfiniteData<SerializedCommentNested[]> | undefined
+) => InfiniteData<SerializedCommentNested[]> | undefined {
+  return (data) => {
+    if (!data) return;
 
-function nestedCommentsDeleteReducer(
-  id: string
-): (
-  comments: SerializedCommentNested[] | undefined
-) => SerializedCommentNested[] | undefined {
-  return nestedCommentsReducer(id, (comment) => ({
-    ...comment,
-    body: "[deleted]",
-    uri: "[deleted]",
-    editedAt: BigInt(Math.floor(Date.now() / 1000)).toString(),
-  }));
+    const pages = data?.pages ?? [];
+
+    for (const pageIndex in pages) {
+      const page = pages[pageIndex];
+
+      const update = nestedCommentsReducer(id, page, updater);
+
+      if (update) {
+        return {
+          ...data,
+          pages: [
+            ...pages.slice(0, Number(pageIndex)),
+            update,
+            ...pages.slice(Number(pageIndex) + 1),
+          ],
+        };
+      }
+    }
+
+    return data;
+  };
 }
 
 function nestedCommentsReducer(
   id: string,
+  comments: SerializedCommentNested[],
   updater: (comment: SerializedCommentNested) => SerializedCommentNested
-): (
-  input: SerializedCommentNested[] | undefined
-) => SerializedCommentNested[] | undefined {
-  return (comments) => {
-    if (!comments) {
-      return;
-    }
+): SerializedCommentNested[] | undefined {
+  if (!comments) {
+    return;
+  }
 
-    for (const index in comments) {
-      const comment: SerializedCommentNested = comments[index];
+  for (const index in comments) {
+    const comment: SerializedCommentNested = comments[index];
 
-      if (comment.id === id) {
+    if (comment.id === id) {
+      return [
+        ...comments.slice(0, Number(index)),
+        updater(comment),
+        ...comments.slice(Number(index) + 1),
+      ];
+    } else if (comment.Children && comment.Children.length > 0) {
+      const updatedChildren = nestedCommentsReducer(
+        id,
+        comment.Children,
+        updater
+      );
+
+      if (updatedChildren) {
         return [
           ...comments.slice(0, Number(index)),
-          updater(comment),
+          {
+            ...comments[index],
+            Children: updatedChildren,
+          },
           ...comments.slice(Number(index) + 1),
         ];
-      } else if (comment.Children && comment.Children.length > 0) {
-        const updatedChildren = nestedCommentsReducer(
-          id,
-          updater
-        )(comment.Children);
-
-        if (updatedChildren) {
-          return [
-            ...comments.slice(0, Number(index)),
-            {
-              ...comments[index],
-              Children: updatedChildren,
-            },
-            ...comments.slice(Number(index) + 1),
-          ];
-        }
       }
     }
-
-    return comments;
-  };
+  }
 }
